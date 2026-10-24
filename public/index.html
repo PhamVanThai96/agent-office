@@ -49,7 +49,7 @@
     <form id="enzySched" hidden>
       <label class="chk"><input id="esOn" type="checkbox"> Tự động chạy theo lịch (server phải đang bật)</label>
       <div class="esRow"><span>Ngày</span><input id="esDaily" type="time"></div>
-      <div class="esRow"><span>Tuần</span><select id="esWDay"><option value="1">Thứ 2</option><option value="2">Thứ 3</option><option value="3">Thứ 4</option><option value="4">Thứ 5</option><option value="5">Thứ 6</option><option value="6">Thứ 7</option><option value="0">Chủ nhật</option></select><input id="esWTime" type="time"></div>
+      <div class="esRow"><span>Tuần</span><select id="esWDay" hidden></select><small>ngày 1·8·15·22·29</small><input id="esWTime" type="time"></div>
       <div class="esRow"><span>Tháng</span><select id="esMDay"></select><input id="esMTime" type="time"></div>
       <button id="esSave" type="submit">Lưu lịch</button>
     </form>

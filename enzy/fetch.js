@@ -127,6 +127,26 @@ async function adsExcel(page) {
   return readXlsxObjects(fs.readFileSync(file));
 }
 
+// Chọn khoảng ngày cố định (đầu–cuối kỳ theo lịch) trong ô "Khoảng thời gian" (lựa chọn tuỳ chọn + ô nhập ngày).
+async function pickDates(page, from, to) {
+  const f = (d) => `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  const box = combo(page, 'Khoảng thời gian');
+  await box.click();
+  const opts = page.locator('[role="option"]');
+  await opts.first().waitFor({ timeout: STEP_MS });
+  const all = await opts.allInnerTexts();
+  const i = all.findIndex((t) => /t[uù][yỳ]\s*(ch[oọ]n|ch[iỉ]nh)|tu[ỳy]\s*ch[ọo]n|custom|kho[aả]ng ng[aà]y|ch[oọ]n ng[aà]y/i.test(norm(t)) || /t[ùu]y|tuỳ|custom|ch[ọo]n ng/i.test(t));
+  if (i < 0) { await page.keyboard.press('Escape'); throw new Error(`Trang báo cáo không có lựa chọn khoảng ngày tuỳ chọn (các lựa chọn hiện có: ${all.map((t) => t.trim()).join(' | ')}). Cần chọn khoảng ngày cố định ${f(from)} – ${f(to)}.`); }
+  await opts.nth(i).click();
+  await settle(page, 1200);
+  const di = page.locator('[data-testid="stDateInput"] input').first();
+  await di.waitFor({ timeout: STEP_MS });
+  await di.click();
+  await di.fill(`${f(from)} – ${f(to)}`);
+  await di.press('Enter');
+  await settle(page, 1500);
+}
+
 /**
  * opts: { url, user, pass, brand, system, store, accounts: [], range: 'Hôm qua (trọn ngày)', headless }
  * Trả về dữ liệu thô: { range, period, updated, metrics, grid, code, notes, accounts: {selected, missing} }
@@ -141,7 +161,7 @@ export async function fetchEnzy(opts) {
     if (opts.brand) await selectBox(page, 'Thương hiệu', opts.brand);
     if (opts.system) await selectBox(page, 'hệ thống làm việc', opts.system);
     await page.locator('[data-testid="stMain"] h1', { hasText: 'Báo Cáo Quảng Cáo' }).first().waitFor({ timeout: STEP_MS });
-    await selectBox(page, 'Khoảng thời gian', opts.range);
+    if (opts.dates) await pickDates(page, opts.dates.from, opts.dates.to); else await selectBox(page, 'Khoảng thời gian', opts.range);
     await toggleCompare(page);
     const accounts = await setAccounts(page, opts.accounts);
     if (opts.store) await selectBox(page, 'Cửa hàng', opts.store);

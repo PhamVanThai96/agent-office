@@ -119,6 +119,20 @@ function writeOwnerDashboard(cfg, kind, key, d, rows) {
   return { rel: `reports/enzy/${kind}/${key}-dashboard-content.html`, md: ownerSummaryMarkdown(g, lab) };
 }
 
+// Kỳ theo lịch (không phải "N ngày gần nhất"): tuần = các khối 1–7, 8–14, 15–21, 22–28, 29–cuối tháng; tháng = tháng dương lịch.
+// Lấy kỳ chứa "hôm qua" (ngày trọn vẹn gần nhất) và chỉ tính tới hôm qua nếu kỳ chưa kết thúc (vd. hôm nay 6/10 → tuần 1–5/10, tháng 1–5/10).
+// Ngày 1 hàng tháng (hoặc ngày đầu khối) thì hôm qua thuộc kỳ trước nên ra trọn kỳ trước. Ngày: null (dùng "Hôm qua").
+const eom = (y, m) => new Date(y, m + 1, 0).getDate();
+export function calendarRange(kind, now = new Date()) {
+  if (kind === 'daily') return null;
+  const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yy = y.getFullYear(), mm = y.getMonth(), d = y.getDate();
+  if (kind === 'monthly') return { from: new Date(yy, mm, 1), to: y };
+  const st = d >= 29 ? 29 : Math.floor((d - 1) / 7) * 7 + 1;
+  return { from: new Date(yy, mm, st), to: y };
+}
+export const WEEK_START_DAYS = [1, 8, 15, 22, 29];
+
 const p2 = (n) => String(n).padStart(2, '0');
 const dayKey = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 // Ngày cuối kỳ từ "00:00 17/10/2026 đến 23:59 23/10/2026" → 20261023
@@ -164,7 +178,7 @@ export function createEnzy(deps) {
     // ENZY_FAKE_RAW=<file.json>: dùng dữ liệu thô đã lưu thay cho trang thật (chỉ để thử nghiệm).
     const raw = process.env.ENZY_FAKE_RAW ? { ...readJson(process.env.ENZY_FAKE_RAW, {}), range: RANGE[kind] } : await fetchEnzy({
       url: cfg.URL, user: process.env.ENZY_USER || cfg.USER, pass: process.env.ENZY_PASS || cfg.PASS,
-      brand: cfg.BRAND, system: cfg.SYSTEM, store: cfg.STORE, accounts: cfg.ACCOUNTS, range: RANGE[kind],
+      brand: cfg.BRAND, system: cfg.SYSTEM, store: cfg.STORE, accounts: cfg.ACCOUNTS, range: RANGE[kind], dates: calendarRange(kind),
     });
     const d = parseEnzy(raw);
     if (d.totals.spend == null) throw new Error('Không đọc được số liệu tổng từ trang báo cáo (cấu trúc trang có thể đã thay đổi).');
@@ -247,7 +261,7 @@ export function createEnzy(deps) {
     const ran = (k) => state.last[k]?.day === today && (state.last[k].ok || Date.now() - state.last[k].at < 3600e3);
     const out = [];
     if (hm >= s.daily && !ran('daily')) out.push('daily');
-    if (now.getDay() === s.weekly.day && hm >= s.weekly.time && !ran('weekly')) out.push('weekly');
+    if (WEEK_START_DAYS.includes(now.getDate()) && hm >= s.weekly.time && !ran('weekly')) out.push('weekly');
     if (now.getDate() === s.monthly.day && hm >= s.monthly.time && !ran('monthly')) out.push('monthly');
     return out;
   }

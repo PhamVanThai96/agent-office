@@ -539,7 +539,7 @@ function renderEnzy(e) {
   const line = (text, cls) => { const d = document.createElement('div'); d.textContent = text; if (cls) d.className = cls; box.append(d); return d; };
   if (!e.configured) line('Chưa có tài khoản đăng nhập trang báo cáo: bấm ⚙ (hoặc nút 📊 Cấu hình Enzy) để nhập, không cần sửa code hay khởi động lại server.', 'warn');
   const s = e.schedule;
-  line(s.enabled ? `Lịch: ngày ${s.daily} · tuần ${WDAY[s.weekly.day]} ${s.weekly.time} · tháng ngày ${s.monthly.day} ${s.monthly.time}` : 'Lịch tự động: đang tắt (bấm ⏰ để bật)', 'muted');
+  line(s.enabled ? `Lịch: ngày ${s.daily} · tuần (ngày 1·8·15·22·29) ${s.weekly.time} · tháng ngày ${s.monthly.day} ${s.monthly.time}` : 'Lịch tự động: đang tắt (bấm ⏰ để bật)', 'muted');
   line(`Tài khoản: ${e.accounts.join(', ')}`, 'muted');
   if (e.owners?.length) line(`Dashboard content: ${e.owners.join(', ')}`, 'muted');
   if (e.running) { const d = line(` ${KIND_VI[e.running.kind]}: ${e.running.step}`, 'run'); const sp = document.createElement('i'); sp.className = 'spin'; d.prepend(sp); }
