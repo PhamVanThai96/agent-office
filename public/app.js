@@ -170,6 +170,16 @@ function build(agents, state) {
   fit();
 }
 
+// Biểu tượng tiến trình: hiện ở "Bảng task" khi có agent đang làm (tạo báo cáo, giao việc…).
+function updateBusy() {
+  const w = Object.entries(info).filter(([, v]) => v.status === 'working' || v.status === 'waiting').map(([id]) => meta[id]?.name || id);
+  const h = document.querySelector('#board h4');
+  if (!h) return;
+  let b = h.querySelector('.busy');
+  if (!w.length) { b?.remove(); return; }
+  if (!b) { b = document.createElement('span'); b.className = 'busy'; h.append(b); }
+  b.replaceChildren(Object.assign(document.createElement('i'), { className: 'spin' }), document.createTextNode(` Đang xử lý (${w.length} agent)…`));
+}
 function setAgent(id, status, report) {
   const el = els[id];
   if (!el) return;
@@ -178,6 +188,7 @@ function setAgent(id, status, report) {
   if (status === 'working' && prev !== 'working' && el.think) { el.think.querySelector('.tlog').replaceChildren(); el.think.classList.remove('open'); el.root.classList.remove('thinkOpen'); thinkHide(id, false); }
   if (status !== 'working' && status !== 'waiting' && el.think && prev) thinkHide(id, true);
   for (const s of Object.keys(STATUS)) el.root.classList.toggle(s, s === status);
+  updateBusy();
   el.badge.className = 'badge st-' + status;
   el.badge.textContent = STATUS[status] || status;
   if (el.think) { const pl = el.think.querySelector('.pill'); pl.textContent = STATUS[status] || status; pl.className = 'pill st-' + status; }
@@ -531,7 +542,7 @@ function renderEnzy(e) {
   line(s.enabled ? `Lịch: ngày ${s.daily} · tuần ${WDAY[s.weekly.day]} ${s.weekly.time} · tháng ngày ${s.monthly.day} ${s.monthly.time}` : 'Lịch tự động: đang tắt (bấm ⏰ để bật)', 'muted');
   line(`Tài khoản: ${e.accounts.join(', ')}`, 'muted');
   if (e.owners?.length) line(`Dashboard content: ${e.owners.join(', ')}`, 'muted');
-  if (e.running) line(`⏳ ${KIND_VI[e.running.kind]}: ${e.running.step}`, 'run');
+  if (e.running) { const d = line(` ${KIND_VI[e.running.kind]}: ${e.running.step}`, 'run'); const sp = document.createElement('i'); sp.className = 'spin'; d.prepend(sp); }
   if (e.queued.length) line(`Đang chờ: ${e.queued.map((k) => KIND_VI[k]).join(', ')}`, 'muted');
   for (const k of ['daily', 'weekly', 'monthly']) {
     const l = e.last[k];

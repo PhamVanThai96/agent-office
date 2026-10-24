@@ -315,3 +315,8 @@ body.dropping #dropzone { display:flex; }
 #ed .toolsBox input[type=checkbox] { width:auto; margin:0; display:inline; }
 #finalLinks { display:flex; flex-direction:column; gap:4px; margin-top:6px; } #finalLinks a.flink { display:block; padding:6px 10px; border-radius:8px; background:#e3f3ea; border:1px solid #bfe0cb; color:#1d6b46; font-size:12px; font-weight:600; text-decoration:none; } #finalLinks a.flink:hover { background:#d4ecdf; }
 #final.min #finalLinks { display:none; }
+
+.spin { display:inline-block; width:12px; height:12px; border:2px solid rgba(120,140,170,.35); border-top-color:#34517a; border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.busy { margin-left:10px; font-size:12px; font-weight:500; color:#34517a; }
+@media (prefers-color-scheme:dark) { .spin { border-top-color:#9bb8e0; } .busy { color:#9bb8e0; } }
