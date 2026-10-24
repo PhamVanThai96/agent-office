@@ -104,6 +104,23 @@
     });
   }
 
+  // Xác nhận một thao tác nhạy cảm bằng mật khẩu Admin. Trả Promise<string|null> (mật khẩu, hoặc null nếu huỷ).
+  function confirmPw(title, message) {
+    return prompt().then(function (ok) {
+      if (!ok) return null;
+      return show(function (d, done) {
+        d.appendChild(el('h3', '', title || 'Xác nhận bằng mật khẩu Admin'));
+        d.appendChild(el('p', '', message || 'Nhập lại mật khẩu Admin để thực hiện thao tác này.'));
+        var f = el('form'), pw = field('Mật khẩu Admin', 'password', 'password', 'current-password');
+        var b = el('div', 'btns'), ok2 = el('button', 'dg', 'Xác nhận'), no = el('button', 'sec', 'Huỷ');
+        ok2.type = 'submit'; no.type = 'button'; no.onclick = function () { done(null); };
+        b.append(ok2, no); f.append(pw.l, b); d.appendChild(f);
+        f.onsubmit = function (e) { e.preventDefault(); if (pw.i.value) done(pw.i.value); };
+      });
+    });
+  }
+
+  window.adminConfirm = confirmPw;
   window.adminFetch = adminFetch;
   window.adminPrompt = prompt;
   window.adminPanel = panel;

@@ -318,6 +318,11 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(401, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: st.configured ? 'admin_required' : 'admin_setup_required', canSetup: st.canSetup, message: st.configured ? 'Cần đăng nhập Admin để thực hiện thao tác này.' : 'Chưa thiết lập Admin. Hãy tạo Admin ID và mật khẩu (làm từ máy chạy server).' }));
         return;
       }
+      if (adminAuth.NEEDS_REAUTH.has(url.pathname)) {
+        const ra = await adminAuth.reauth(req, b.adminPassword);
+        if (!ra.ok) { res.writeHead(403, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: 'admin_password_wrong', message: ra.error })); return; }
+        delete b.adminPassword;
+      }
     }
     if (url.pathname === '/learn/act') {
       if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }

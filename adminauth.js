@@ -101,6 +101,18 @@ export async function login(req, res, id, pw) {
   return { ok: false, code: 401, error: n >= MAX_FAILS ? 'Sai quá nhiều lần, đã khoá 5 phút.' : `Admin ID hoặc mật khẩu không đúng (${n}/${MAX_FAILS}).` };
 }
 
+// Thao tác nhạy cảm (sửa/xoá agent): ngoài phiên đăng nhập còn phải nhập lại mật khẩu Admin cho CHÍNH thao tác đó.
+export const NEEDS_REAUTH = new Set(['/agent/save', '/agent/delete']);
+export async function reauth(req, pw) {
+  const key = ip(req), f = fails.get(key), a = load();
+  if (f && f.until > Date.now()) return { ok: false, error: `Sai quá nhiều lần, thử lại sau ${Math.ceil((f.until - Date.now()) / 60000)} phút.` };
+  if (a && typeof pw === 'string' && matches(a, a.id, pw)) { fails.delete(key); return { ok: true }; }
+  const n = (f?.n || 0) + 1;
+  fails.set(key, { n, until: n >= MAX_FAILS ? Date.now() + LOCK_MS : 0 });
+  await new Promise((r) => setTimeout(r, 500));
+  return { ok: false, error: 'Mật khẩu Admin không đúng.' };
+}
+
 export function logout(req, res) {
   const t = cookieOf(req); if (t) sessions.delete(t);
   setCookie(res, '', 0);

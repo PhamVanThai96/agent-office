@@ -731,9 +731,14 @@ function openEditor(id) {
 }
 
 async function sendAgent(url, body) {
-  const r = await post(url, body);
+  const del = url === 'agent/delete';
+  const pw = await adminConfirm(del ? 'Xoá agent' : 'Lưu thay đổi agent', del ? `Xoá agent #${body.id} không thể hoàn tác. Nhập mật khẩu Admin để xác nhận.` : 'Nhập mật khẩu Admin để lưu thay đổi agent.');
+  if (!pw) return;
+  const r = await post(url, { ...body, adminPassword: pw });
   if (r.ok) { ed.close(); return; }
-  $('edErr').textContent = await r.text();
+  let msg = await r.text();
+  try { msg = JSON.parse(msg).message || msg; } catch {}
+  $('edErr').textContent = msg;
 }
 
 const TOOL_LABELS = [['read_file', 'Đọc file'], ['write_file', 'Ghi file'], ['run_command', 'Chạy lệnh (đọc/chẩn đoán/tạo mới)'], ['list_dir', 'Xem thư mục'], ['skill_search', 'Tra cứu nhanh kỹ năng (skills)'], ['trend_scan', 'Quét trend thời gian thực'], ['web_search', 'Tìm web'], ['web_fetch', 'Đọc trang web'], ['make_image', 'Tạo ảnh'], ['make_docx', 'Tạo Word'], ['ask_colleague', 'Hỏi đồng nghiệp']];
