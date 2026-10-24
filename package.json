@@ -1,0 +1,13 @@
+{
+  "name": "demo-agent-office",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "docx": "^9.13.0",
+    "playwright-core": "^1.48.2",
+    "sharp": "^0.35.5"
+  }
+}

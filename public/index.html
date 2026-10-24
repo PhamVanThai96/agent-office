@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Office</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="office">
+  <div id="legend"></div>
+  <div id="stage">
+    <div id="world">
+      <div id="floor"></div>
+      <svg id="links" width="1100" height="670">
+        <defs><filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter></defs>
+      </svg>
+      <div id="bubbles"></div>
+      <div id="pop" hidden></div>
+    </div>
+  </div>
+</main>
+<div id="split" title="Kéo để đổi độ rộng"></div>
+<aside id="side">
+  <div id="mode"></div>
+  <button id="addAgent" type="button">+ Thêm agent</button>
+  <div id="perm"></div>
+  <div id="allowed"></div>
+  <section id="final" hidden>
+    <h4><span>Báo cáo gửi CEO</span><a id="finalLink" href="#" target="_blank" hidden>Mở file</a><button id="finalToggle" type="button" class="mini" title="Thu gọn / mở rộng">▾</button></h4>
+    <div id="finalText"></div>
+  </section>
+  <section id="enzy" hidden>
+    <h4><span>Báo cáo quảng cáo Enzy tự động</span><button id="enzyCfg" type="button" class="mini" title="Lịch chạy">⏰</button></h4>
+    <div id="enzyStatus"></div>
+    <div class="enzyBtns"><button type="button" data-kind="daily">Chạy báo cáo ngày</button><button type="button" data-kind="weekly">Tuần</button><button type="button" data-kind="monthly">Tháng</button></div>
+    <form id="enzySched" hidden>
+      <label class="chk"><input id="esOn" type="checkbox"> Tự động chạy theo lịch (server phải đang bật)</label>
+      <div class="esRow"><span>Ngày</span><input id="esDaily" type="time"></div>
+      <div class="esRow"><span>Tuần</span><select id="esWDay"><option value="1">Thứ 2</option><option value="2">Thứ 3</option><option value="3">Thứ 4</option><option value="4">Thứ 5</option><option value="5">Thứ 6</option><option value="6">Thứ 7</option><option value="0">Chủ nhật</option></select><input id="esWTime" type="time"></div>
+      <div class="esRow"><span>Tháng</span><select id="esMDay"></select><input id="esMTime" type="time"></div>
+      <button id="esSave" type="submit">Lưu lịch</button>
+    </form>
+  </section>
+  <section id="board"><h4>Bảng task</h4><div id="tasks"></div></section>
+  <section id="feedWrap"><h4>Giao tiếp giữa các agent</h4><div id="log"></div></section>
+  <form id="f">
+    <div id="tpl" hidden></div>
+    <div id="files" hidden></div>
+    <textarea id="task" rows="3" placeholder="Giao việc cho Content Lead… (kéo thả file vào trang để đính kèm)" autocomplete="off"></textarea>
+    <div class="compose">
+      <button id="attach" type="button" class="ghost" title="Đính kèm file (hoặc kéo thả / dán vào ô nhập)">📎 Đính kèm</button>
+      <span class="hint">Enter gửi · Shift+Enter xuống dòng · /id giao thẳng</span>
+      <button id="go">Giao</button>
+    </div>
+    <input id="picker" type="file" multiple hidden>
+  </form>
+</aside>
+<dialog id="cfgDlg">
+  <form id="cfgForm" method="dialog">
+    <h3>Cấu hình AI của CEO</h3>
+    <div class="row2">
+      <label>AI_PROVIDER <select id="cfProvider"><option value="claude">Claude</option><option value="gpt">GPT</option><option value="gemini">Gemini</option></select></label>
+      <label>Model <input id="cfModel" placeholder="để trống = mặc định"></label>
+    </div>
+    <div class="row2">
+      <label>Kết nối <select id="cfConn"><option value="API">API (dùng key)</option><option value="CLI">CLI (app đã đăng nhập)</option></select></label>
+      <label>Chế độ <select id="cfMode"><option value="MOCK">MOCK (giả lập)</option><option value="REAL">REAL (AI thật)</option></select></label>
+    </div>
+    <div class="row2">
+      <label>Mức chi tiết báo cáo <select id="cfDetail"><option value="detailed">Chi tiết (giải thích đầy đủ)</option><option value="brief">Ngắn gọn (tiết kiệm token)</option></select></label>
+      <label>Độ dài tối đa mỗi agent (token) <input id="cfWorkMax" type="number" min="200" max="16000" step="100" placeholder="mặc định"></label>
+    </div>
+    <label>Độ dài tối đa báo cáo cuối của quản lí (token, 200-16000; ~1 token ≈ 0,45 từ tiếng Việt) <input id="cfSumMax" type="number" min="200" max="16000" step="100" placeholder="mặc định"></label>
+    <label id="cfKeyRow">API key <input id="cfKey" type="password" autocomplete="off" placeholder=""></label>
+    <label id="cfClearRow"><input id="cfClear" type="checkbox"> Xoá key đã lưu của provider này</label>
+    <div class="row2"><span id="cfAuthNote">Kết nối bằng CLI sẽ dùng tài khoản đã đăng nhập trên máy chạy server.</span><button id="cfAuth" type="button" class="ghost">Đăng nhập / xác thực</button></div>
+    <div id="cfNote"></div>
+    <div id="cfErr"></div>
+    <div class="edBtns"><span></span><button id="cfCancel" type="button" class="ghost">Huỷ</button><button id="cfSave" type="submit">Lưu</button></div>
+  </form>
+</dialog>
+<dialog id="ed">
+  <form id="edForm" method="dialog">
+    <h3 id="edTitle"></h3>
+    <label>ID <input id="edId" maxlength="20" placeholder="vd: legal" required pattern="[a-z][a-z0-9_]*"></label>
+    <label>Tên hiển thị <input id="edName" required></label>
+    <label>Mô tả công việc <input id="edRole"></label>
+    <div class="row2">
+      <label>Phòng <select id="edRoom"></select></label>
+      <label>Màu <input id="edColor" type="color"></label>
+    </div>
+    <label>Skill (cách nhau bằng dấu phẩy) <input id="edSkills" placeholder="Viết code, Sửa lỗi"></label>
+    <label>Prompt (chỉ dẫn cho AI) <textarea id="edPrompt" rows="4" required></textarea></label>
+    <label>File skill (đường dẫn file .md/.txt, để trống = không dùng) <input id="edSkillFile" placeholder="vd: /home/worker/agency-agents/engineering/engineering-senior-developer.md"></label>
+    <label class="chk"><input id="edGate" type="checkbox"> Là bước duyệt (gate): kết luận "YÊU CẦU SỬA" sẽ trả việc về bước trước, tối đa 1 vòng</label>
+    <label>Được hỏi đồng nghiệp (id, cách nhau dấu phẩy; để trống = không giới hạn, gõ - = không được hỏi ai) <input id="edAsk" placeholder="vd: rag, dev"></label>
+    <div class="row2">
+      <label>AI <select id="edProvider"></select></label>
+      <label>Model <input id="edModel" placeholder="để trống = mặc định"></label>
+    </div>
+    <div id="edErr"></div>
+    <div class="edBtns">
+      <button id="edDel" type="button" class="off">Xoá agent</button>
+      <span></span>
+      <button id="edCancel" type="button" class="ghost">Huỷ</button>
+      <button id="edSave" type="submit">Lưu</button>
+    </div>
+  </form>
+</dialog>
+<div id="dropzone"><div>Thả file để đính kèm vào việc giao<small>Ảnh, kịch bản, brief, CSV chỉ số… tối đa 20MB/file, 10 file/lần</small></div></div>
+<script src="app.js"></script>
+</body>
+</html>

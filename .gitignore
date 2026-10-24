@@ -1,0 +1,20 @@
+node_modules/
+.DS_Store
+*.tmp
+*.bak
+
+# Khoá API, mật khẩu, quyền truy cập — dùng config.example.json / enzy.example.json làm mẫu
+config.json
+enzy.json
+permissions.json
+
+# Dữ liệu chạy: bộ nhớ agent, file tải lên, số liệu quảng cáo, báo cáo, bản sao lưu
+memory.json
+uploads/
+data/
+reports/
+backups/
+
+# Ảnh chụp số liệu nội bộ và file tạm
+images/Ảnh màn hình*
+images/code.md

@@ -1,0 +1,25 @@
+{
+  "MODE": "MOCK",
+  "CONNECTION": "CLI",
+  "AI_PROVIDER": "claude",
+  "ANTHROPIC_API_KEY": "",
+  "OPENAI_API_KEY": "",
+  "GEMINI_API_KEY": "",
+  "MODELS": {
+    "claude": "claude-sonnet-5",
+    "gpt": "gpt-4o",
+    "gemini": "gemini-3.5-flash-lite"
+  },
+  "SOURCE_DIR": "",
+  "CLI": {
+    "claude": "claude",
+    "gpt": "codex",
+    "gemini": "gemini"
+  },
+  "CLI_MODELS": {
+    "claude": "",
+    "gpt": "",
+    "gemini": ""
+  },
+  "PORT": 3000
+}

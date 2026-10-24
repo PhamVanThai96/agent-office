@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xem báo cáo · Agent Office</title>
+<style>
+* { box-sizing:border-box; }
+body { margin:0; height:100vh; display:flex; flex-direction:column; background:#e6e2d8; color:#232834; font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; }
+header { display:flex; align-items:center; gap:14px; padding:10px 18px; background:#fff; border-bottom:1px solid #e4e1d8; }
+header h1 { margin:0; font-size:17px; flex:1; }
+a.btn.sec { background:#eeece5; color:#3a4150; }
+a.btn, button { padding:6px 14px; border:0; border-radius:999px; background:#34517a; color:#fff; font-weight:600; cursor:pointer; text-decoration:none; font-size:13px; }
+.wrap { flex:1; display:flex; min-height:0; }
+nav { width:320px; overflow:auto; background:#fff; border-right:1px solid #e4e1d8; padding:8px; }
+nav .it { display:block; width:100%; text-align:left; background:none; color:#232834; border-radius:10px; padding:8px 10px; font-weight:500; }
+nav .it:hover { background:#f1efe8; } nav .it.on { background:#dfe8f5; }
+nav .it small { display:block; color:#7b8494; font-size:11px; }
+nav .empty { color:#7b8494; padding:12px; }
+main { flex:1; min-width:0; display:flex; flex-direction:column; padding:14px; }
+#title { font-weight:700; margin-bottom:8px; display:flex; gap:10px; align-items:center; }
+details.menu { position:relative; }
+details.menu summary { list-style:none; padding:6px 14px; border-radius:999px; background:#2f8f5b; color:#fff; font-weight:600; cursor:pointer; font-size:13px; }
+details.menu summary::-webkit-details-marker { display:none; }
+details.menu > div { position:absolute; right:0; top:34px; z-index:5; min-width:210px; background:#fff; border:1px solid #d9d6cc; border-radius:10px; box-shadow:0 6px 20px #0002; padding:4px; display:flex; flex-direction:column; }
+details.menu > div a { padding:8px 12px; color:#232834; text-decoration:none; font-size:13px; border-radius:6px; }
+details.menu > div a:hover { background:#eef1f6; }
+#title span { flex:1; word-break:break-all; }
+#view { flex:1; min-height:0; overflow:auto; background:#fff; border-radius:12px; padding:12px; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+#view iframe { width:100%; height:100%; border:0; background:#fff; }
+#view img { max-width:100%; display:block; margin:auto; }
+#view pre { white-space:pre-wrap; margin:0; }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th, td { border:1px solid #e0ddd3; padding:5px 10px; text-align:left; vertical-align:top; }
+th { background:#f1efe8; position:sticky; top:-12px; }
+tr:nth-child(even) td { background:#faf9f5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Xem báo cáo</h1>
+  <button id="refresh" type="button">Làm mới</button>
+  <a class="btn" id="back" href="./">← Văn phòng</a>
+</header>
+<div class="wrap">
+  <nav id="list"></nav>
+  <main>
+    <div id="title"><span>Chọn một report ở bên trái</span></div>
+    <div id="view"></div>
+  </main>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const slash = location.pathname.endsWith('/');
+const ROOT = slash ? '' : 'reports/';
+$('back').href = slash ? '../' : './';
+const fileUrl = (n) => ROOT + n.split('/').map(encodeURIComponent).join('/');
+const ext = (n) => (n.match(/\.([^.]+)$/) || [, ''])[1].toLowerCase();
+const fmt = (b) => (b < 1024 ? b + ' B' : (b / 1024).toFixed(1) + ' KB');
+
+function parseCsv(text) {
+  const rows = []; let row = [], cur = '', q = false;
+  const sep = (text.split('\n', 1)[0].match(/;/g) || []).length > (text.split('\n', 1)[0].match(/,/g) || []).length ? ';' : ',';
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === sep) { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur.replace(/\r$/, '')); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur || row.length) { row.push(cur.replace(/\r$/, '')); rows.push(row); }
+  return rows.filter((r) => r.some((x) => x !== ''));
+}
+
+function table(rows) {
+  const t = document.createElement('table');
+  rows.forEach((r, i) => {
+    const tr = t.insertRow();
+    r.forEach((v) => { const c = document.createElement(i === 0 ? 'th' : 'td'); c.textContent = v; tr.append(c); });
+  });
+  return t;
+}
+
+async function open(item, btn) {
+  document.querySelectorAll('nav .on').forEach((e) => e.classList.remove('on'));
+  btn?.classList.add('on');
+  const url = fileUrl(item.name), e = ext(item.name), view = $('view');
+  $('title').replaceChildren();
+  const name = document.createElement('span'); name.textContent = item.name;
+  const tab = document.createElement('a'); tab.className = 'btn sec'; tab.href = url; tab.target = '_blank'; tab.textContent = 'Mở tab mới';
+  const dl = document.createElement('a'); dl.className = 'btn'; dl.href = url + '?download=1'; dl.setAttribute('download', item.name.split('/').pop()); dl.textContent = 'Tải báo cáo';
+  if (e === 'svg') { dl.href = url + '?export=png'; dl.setAttribute('download', ''); dl.textContent = 'Tải báo cáo (PNG)'; }
+  const ex = document.createElement('details'); ex.className = 'menu';
+  const fm = item.formats || [];
+  if (fm.length) {
+    const sm = document.createElement('summary'); sm.className = 'btn'; sm.textContent = 'Xuất file ▾';
+    const box = document.createElement('div');
+    for (const f of fm) { const a = document.createElement('a'); a.href = url + '?export=' + f.id; a.setAttribute('download', ''); a.textContent = f.label; a.onclick = () => { ex.open = false; }; box.append(a); }
+    ex.append(sm, box);
+  }
+  $('title').append(name, tab, dl, ...(fm.length ? [ex] : []));
+  view.replaceChildren();
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(e)) {
+    const img = document.createElement('img'); img.src = url; img.alt = item.name; view.append(img);
+  } else if (['html', 'htm', 'md', 'markdown'].includes(e)) {
+    const f = document.createElement('iframe'); f.setAttribute('sandbox', 'allow-popups'); f.src = url; view.append(f);
+  } else if (e === 'docx') {
+    const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'File Word (.docx) không xem trước được trên web. Bấm "Tải báo cáo" để tải về và mở bằng Word.'; view.append(d);
+  } else {
+    const text = await (await fetch(url)).text();
+    if (e === 'csv') view.append(table(parseCsv(text)));
+    else if (e === 'json') {
+      try {
+        const j = JSON.parse(text);
+        if (Array.isArray(j) && j.length && j.every((x) => x && typeof x === 'object' && !Array.isArray(x))) {
+          const cols = [...new Set(j.flatMap(Object.keys))];
+          view.append(table([cols, ...j.map((o) => cols.map((c) => (typeof o[c] === 'object' ? JSON.stringify(o[c]) : o[c] ?? '')))]));
+        } else { const p = document.createElement('pre'); p.textContent = JSON.stringify(j, null, 2); view.append(p); }
+      } catch { const p = document.createElement('pre'); p.textContent = text; view.append(p); }
+    } else { const p = document.createElement('pre'); p.textContent = text; view.append(p); }
+  }
+}
+
+async function load() {
+  const list = await (await fetch(ROOT + '?list=1')).json();
+  const nav = $('list');
+  nav.replaceChildren();
+  if (!list.length) { nav.innerHTML = '<div class="empty">Thư mục reports đang trống.</div>'; return; }
+  for (const it of list) {
+    const b = document.createElement('button'); b.className = 'it'; b.type = 'button';
+    b.textContent = it.name;
+    const s = document.createElement('small'); s.textContent = `${new Date(it.mtime).toLocaleString('vi-VN')} · ${fmt(it.size)}`;
+    b.append(s);
+    b.onclick = () => open(it, b);
+    nav.append(b);
+  }
+}
+$('refresh').onclick = load;
+load();
+</script>
+</body>
+</html>

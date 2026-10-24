@@ -1,0 +1,254 @@
+{
+  "_ghi_chu": "Quy trình vận hành team content (01 tín hiệu → 02 backlog → 03 brief → 04 kịch bản → 05 duyệt 1 → 06 dựng → 07 duyệt 2 → 08 đo lường → 09 insight). Mỗi quy trình: keywords (không dấu, khớp theo thứ tự từ trên xuống) → steps (chạy lần lượt, mỗi bước nhận kết quả bước trước). Bước có thể là id agent hoặc {agent, when:[từ khoá]} (chỉ chạy nếu yêu cầu có từ khoá). Mảng lồng nhau = chạy song song. Agent có \"gate\": true là bước duyệt: YÊU CẦU SỬA sẽ trả việc về bước trước (tối đa 1 vòng). Không khớp quy trình nào thì Content Lead tự lập kế hoạch bằng AI.",
+  "workflows": [
+    {
+      "id": "full",
+      "name": "Quy trình đầy đủ: từ ý tưởng đến video",
+      "when": "chạy trọn quy trình từ tín hiệu, backlog, brief, kịch bản, duyệt, dựng video đến duyệt cuối",
+      "template": "Chạy quy trình đầy đủ cho chủ đề: ",
+      "keywords": [
+        "quy trinh day du",
+        "tron quy trinh",
+        "tu y tuong",
+        "end to end",
+        "full quy trinh"
+      ],
+      "steps": [
+        "signal",
+        "planner",
+        "writer",
+        "script_review",
+        [
+          "video",
+          {
+            "agent": "designer",
+            "when": [
+              "thumbnail",
+              "anh bia",
+              "banner",
+              "poster",
+              "thiet ke"
+            ]
+          }
+        ],
+        "video_review"
+      ],
+      "titles": {
+        "signal": "01 Thu thập tín hiệu cho: {c}",
+        "planner": "02-03 Lập backlog, chọn chủ đề ưu tiên và viết brief",
+        "writer": "04 Viết kịch bản theo brief đã chốt",
+        "script_review": "05 Duyệt 1: Leader duyệt kịch bản",
+        "video": "06 Lập kế hoạch dựng video theo kịch bản đã duyệt",
+        "designer": "06 Thiết kế thumbnail/ảnh bìa theo kịch bản đã duyệt",
+        "video_review": "07 Duyệt 2: duyệt video/thiết kế trước khi đăng"
+      }
+    },
+    {
+      "id": "measure",
+      "name": "Đo lường & rút insight",
+      "when": "theo dõi chỉ số, báo cáo hiệu quả ngày/tuần/tháng, rút insight, tạo idea mới cho backlog",
+      "template": "Báo cáo hiệu quả content tuần này và rút insight (đính kèm file chỉ số): ",
+      "keywords": [
+        "chi so",
+        "do luong",
+        "hieu qua",
+        "bao cao ngay",
+        "bao cao tuan",
+        "bao cao thang",
+        "luot xem",
+        "giu chan",
+        "chuyen doi",
+        "kpi",
+        "insight",
+        "retention"
+      ],
+      "steps": [
+        "analyst",
+        {
+          "agent": "planner",
+          "when": [
+            "backlog",
+            "idea",
+            "y tuong",
+            "toi uu",
+            "ke hoach"
+          ],
+          "title": "09 Đưa insight và thử nghiệm mới vào backlog"
+        }
+      ],
+      "titles": {
+        "analyst": "08-09 Đối chiếu chỉ số với mục tiêu, rút insight: {c}"
+      }
+    },
+    {
+      "id": "signals",
+      "name": "Thu thập tín hiệu thị trường",
+      "when": "tìm xu hướng, câu hỏi khách hàng, đối thủ, tín hiệu kênh",
+      "template": "Thu thập tín hiệu và xu hướng tuần này về: ",
+      "keywords": [
+        "tin hieu",
+        "xu huong",
+        "trend",
+        "doi thu",
+        "social listening",
+        "cau hoi thuong gap",
+        "khach hang noi gi"
+      ],
+      "steps": [
+        "signal",
+        {
+          "agent": "planner",
+          "when": [
+            "backlog",
+            "uu tien",
+            "ke hoach",
+            "chu de"
+          ]
+        }
+      ],
+      "titles": {
+        "signal": "01 Thu thập tín hiệu: {c}",
+        "planner": "02 Đưa tín hiệu vào backlog và chấm ưu tiên"
+      }
+    },
+    {
+      "id": "backlog",
+      "name": "Backlog & lịch nội dung tuần",
+      "when": "lập backlog, chấm ưu tiên, chốt danh sách/lịch nội dung tuần",
+      "template": "Lập backlog và lịch nội dung tuần tới cho: ",
+      "keywords": [
+        "backlog",
+        "lich noi dung",
+        "ke hoach noi dung",
+        "danh sach tuan",
+        "uu tien",
+        "y tuong",
+        "content plan"
+      ],
+      "steps": [
+        "signal",
+        "planner"
+      ],
+      "titles": {
+        "signal": "01 Thu thập tín hiệu làm nguồn ý tưởng: {c}",
+        "planner": "02 Lập backlog, chấm ưu tiên, đề xuất danh sách tuần"
+      }
+    },
+    {
+      "id": "brief",
+      "name": "Chốt mục tiêu & brief",
+      "when": "viết brief: mục tiêu, đối tượng, kênh, thông điệp, format, CTA, hạn",
+      "template": "Viết brief cho nội dung: ",
+      "keywords": [
+        "brief",
+        "muc tieu noi dung",
+        "chot muc tieu"
+      ],
+      "steps": [
+        "planner"
+      ],
+      "titles": {
+        "planner": "03 Chốt mục tiêu và viết brief: {c}"
+      }
+    },
+    {
+      "id": "video_edit",
+      "name": "Dựng video & duyệt 2",
+      "when": "dựng video, shot list, phụ đề, âm thanh từ kịch bản đã có",
+      "template": "Lập kế hoạch dựng video từ kịch bản đính kèm: ",
+      "keywords": [
+        "dung video",
+        "edit video",
+        "shot list",
+        "phu de",
+        "storyboard",
+        "ke hoach quay"
+      ],
+      "steps": [
+        "video",
+        "video_review"
+      ],
+      "titles": {
+        "video": "06 Dựng video: {c}",
+        "video_review": "07 Duyệt 2: duyệt video trước khi đăng"
+      }
+    },
+    {
+      "id": "script",
+      "name": "Viết kịch bản & duyệt 1",
+      "when": "viết kịch bản video, bài đăng, caption, hook, CTA",
+      "template": "Viết kịch bản TikTok 30s cho: ",
+      "keywords": [
+        "kich ban",
+        "content",
+        "noi dung",
+        "video",
+        "tiktok",
+        "reels",
+        "shorts",
+        "facebook",
+        "caption",
+        "hashtag",
+        "hook",
+        "bai viet",
+        "bai dang",
+        "quang cao",
+        "marketing",
+        "chien dich"
+      ],
+      "steps": [
+        "writer",
+        "script_review",
+        {
+          "agent": "designer",
+          "when": [
+            "thumbnail",
+            "anh bia",
+            "banner",
+            "poster",
+            "hinh anh"
+          ],
+          "title": "Thiết kế thumbnail/hình ảnh cho kịch bản đã duyệt"
+        },
+        {
+          "agent": "video_review",
+          "when": [
+            "thumbnail",
+            "anh bia",
+            "banner",
+            "poster",
+            "hinh anh"
+          ],
+          "title": "07 Duyệt 2: duyệt thiết kế trước khi đăng"
+        }
+      ],
+      "titles": {
+        "writer": "04 Viết kịch bản: {c}",
+        "script_review": "05 Duyệt 1: Leader duyệt kịch bản"
+      }
+    },
+    {
+      "id": "design",
+      "name": "Thiết kế hình ảnh",
+      "when": "thiết kế thumbnail, ảnh bìa, banner, poster, key visual",
+      "template": "Thiết kế thumbnail 1080x1920 cho: ",
+      "keywords": [
+        "thiet ke",
+        "thumbnail",
+        "anh bia",
+        "banner",
+        "poster",
+        "logo",
+        "key visual"
+      ],
+      "steps": [
+        "designer",
+        "video_review"
+      ],
+      "titles": {
+        "designer": "Thiết kế: {c}",
+        "video_review": "07 Duyệt 2: duyệt thiết kế (nhận diện, thông điệp, CTA)"
+      }
+    }
+  ]
+}

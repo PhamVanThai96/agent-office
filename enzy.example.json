@@ -1,0 +1,16 @@
+{
+  "URL": "https://enzyfood.streamlit.app/~/+/",
+  "USER": "",
+  "PASS": "",
+  "BRAND": "Enzy",
+  "SYSTEM": "Facebook Ads",
+  "STORE": "HNC Vietnam",
+  "ACCOUNTS": ["Enzy 1", "Enzy 2", "Enzy 5", "Enzy 6", "Enzy 8"],
+  "PROMPT": "prompt/daily-report-enzy-data-prompt.md",
+  "SCHEDULE": {
+    "enabled": false,
+    "daily": "08:00",
+    "weekly": { "day": 1, "time": "08:30" },
+    "monthly": { "day": 1, "time": "09:00" }
+  }
+}
