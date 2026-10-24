@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,7 +38,13 @@ function matches(a, id, pw) {
 
 export const isConfigured = () => Boolean(load());
 export const ip = (req) => String(req.socket?.remoteAddress || '').replace(/^::ffff:/, '');
-export const isLoopback = (req) => ['127.0.0.1', '::1'].includes(ip(req)) && !req.headers['x-forwarded-for'];
+// "Từ chính máy này": kết nối đến từ loopback HOẶC từ chính địa chỉ mạng của máy (vd mở bằng http://192.168.x.x:3000 trên cùng máy). Máy khác không thể giả địa chỉ nguồn của máy này.
+const ownAddresses = () => new Set(Object.values(os.networkInterfaces()).flat().filter(Boolean).map((i) => i.address.split('%')[0]));
+export const isLoopback = (req) => {
+  if (req.headers['x-forwarded-for']) return false;
+  const a = ip(req);
+  return ['127.0.0.1', '::1'].includes(a) || ownAddresses().has(a);
+};
 
 const cookieOf = (req) => (String(req.headers.cookie || '').match(new RegExp(`(?:^|;\\s*)${COOKIE}=([a-f0-9]{64})`)) || [])[1];
 const setCookie = (res, token, maxAge) => res.setHeader('set-cookie', `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${maxAge}`);
@@ -64,6 +71,13 @@ export function status(req) {
 
 const validId = (id) => /^[\w.@-]{3,32}$/.test(String(id || ''));
 const validPw = (pw) => typeof pw === 'string' && pw.length >= 8 && pw.length <= 200;
+
+// Dùng cho script dòng lệnh (scripts/set-admin.mjs): đặt/đổi Admin trực tiếp trên máy chạy server.
+export function setCredentials(id, pw) {
+  if (!validId(id)) throw new Error('Admin ID dài 3–32 ký tự (chữ, số, _ . @ -).');
+  if (!validPw(pw)) throw new Error('Mật khẩu tối thiểu 8 ký tự.');
+  save(id, pw);
+}
 
 // Trả về { ok, error?, code? }.
 export function setup(req, res, id, pw) {

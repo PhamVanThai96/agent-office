@@ -45,12 +45,12 @@
       return show(function (d, done) {
         var setup = !st.configured;
         d.appendChild(el('h3', '', setup ? 'Thiết lập Admin lần đầu' : 'Xác thực Admin'));
-        d.appendChild(el('p', '', setup ? (st.canSetup ? 'Tạo Admin ID và mật khẩu để bảo vệ việc sửa/xoá agent và đổi cấu hình. Mật khẩu tối thiểu 8 ký tự.' : 'Chưa có Admin. Việc thiết lập lần đầu chỉ làm được trên chính máy chạy server (mở http://localhost).') : (info.message || 'Nhập Admin ID và mật khẩu để tiếp tục.')));
+        d.appendChild(el('p', '', setup ? (st.canSetup ? 'Tạo Admin ID và mật khẩu để bảo vệ việc sửa/xoá agent và đổi cấu hình. Mật khẩu tối thiểu 8 ký tự.' : 'Chưa có Admin. Việc tạo lần đầu chỉ làm được trên chính máy chạy server: hãy mở trang này bằng http://localhost (không dùng địa chỉ máy khác), hoặc chạy lệnh: node scripts/set-admin.mjs') : (info.message || 'Nhập Admin ID và mật khẩu để tiếp tục.')));
         var f = el('form'), id = field('Admin ID', 'text', 'id', 'username'), pw = field('Mật khẩu', 'password', 'password', setup ? 'new-password' : 'current-password'), pw2 = setup ? field('Nhập lại mật khẩu', 'password', 'password2', 'new-password') : null;
         f.append(id.l, pw.l); if (pw2) f.appendChild(pw2.l);
         var err = el('div', 'err'), b = el('div', 'btns'), ok = el('button', '', setup ? 'Tạo Admin' : 'Đăng nhập'), no = el('button', 'sec', 'Huỷ');
         ok.type = 'submit'; no.type = 'button'; no.onclick = function () { done(false); };
-        if (setup && !st.canSetup) ok.disabled = true;
+        if (setup && !st.canSetup) { ok.disabled = true; err.textContent = 'Nút Tạo Admin bị tắt vì bạn đang mở từ máy khác. Dùng http://localhost trên máy chạy server hoặc lệnh: node scripts/set-admin.mjs'; }
         b.append(ok, no); f.append(err, b); d.appendChild(f);
         f.onsubmit = function (e) {
           e.preventDefault(); err.textContent = '';
