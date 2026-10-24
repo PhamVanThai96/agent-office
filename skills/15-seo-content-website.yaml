@@ -1,0 +1,33 @@
+id: 15-seo-content-website
+title: SEO & nội dung website (enzy.vn)
+summary: "Theo ý định tìm kiếm của người Việt: thông tin (\"hạt nêm chay là gì\", \"cách nấu canh chay\"), cân nhắc (\"hạt nêm chay có tốt không\", \"review\",…"
+agents: [planner, writer]
+when: [seo, blog, bai viet, website, google, tu khoa, enzy.vn]
+order: 15
+tags: [định, tìm, kiếm, người, việt, cụm, chủ, page, tín, tốc]
+updated: 2026-10-24
+sections:
+  - id: theo-y-dinh-tim-kiem-cua-nguoi-viet
+    title: Theo ý định tìm kiếm của người Việt
+    tags: [định, tìm, kiếm, người, việt]
+    text: "- **Theo ý định tìm kiếm** của người Việt: thông tin (\"hạt nêm chay là gì\", \"cách nấu canh chay\"), cân nhắc (\"hạt nêm chay có tốt không\", \"review\", \"giá\"), mua (\"mua hạt nêm chay Enzy\"). Mỗi từ khoá chính chỉ 1 URL (tránh hai bài tranh nhau cùng từ khoá)."
+  - id: cum-chu-de
+    title: Cụm chủ đề
+    tags: [cụm, chủ]
+    text: "- **Cụm chủ đề:** trang trụ cột \"hạt nêm chay\" + bài vệ tinh (không bột ngọt, hạt nêm cho bé, công thức món chay, so sánh hạt nêm, cách bảo quản) liên kết nội bộ hai chiều."
+  - id: on-page
+    title: On-page
+    tags: [page]
+    text: "- **On-page:** title ≤60 ký tự chứa từ khoá, meta ≤155 ký tự có lời kêu gọi, 1 H1, H2/H3 theo câu hỏi, đoạn trả lời ngắn đầu bài, FAQ, ảnh có alt tiếng Việt, dữ liệu có cấu trúc Product (giá, tình trạng) và FAQ."
+  - id: uy-tin
+    title: Uy tín
+    tags: [tín]
+    text: "- **Uy tín (E-E-A-T, nhóm thực phẩm–sức khoẻ):** nhà máy, thành phần, người thật, chứng nhận CÓ giấy tờ; không claim y tế."
+  - id: toc-do
+    title: Tốc độ
+    tags: [tốc]
+    text: "- **Tốc độ:** một số trang sản phẩm enzy.vn phản hồi chậm (có trang chờ >10 giây) — ưu tiên cache/tối ưu vì ảnh hưởng thứ hạng và tỷ lệ mua."
+  - id: do
+    title: Đo
+    tags: []
+    text: "- **Đo:** Google Search Console (nhấp, hiển thị, CTR, vị trí), từ khoá vào top 3, đơn từ organic; cập nhật bài sau 4–8 tuần dựa trên truy vấn thực tế."

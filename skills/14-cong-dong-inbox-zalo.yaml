@@ -1,0 +1,37 @@
+id: 14-cong-dong-inbox-zalo
+title: Inbox, Zalo & cộng đồng (từ lead đến đơn và mua lại)
+summary: Kênh bán chính là quảng cáo tin nhắn → inbox → sale tư vấn/chốt đơn, nên chất lượng tư vấn quyết định doanh thu.
+agents: [planner, analyst, writer]
+when: [inbox, zalo, messenger, nhom, cong dong, chot don, lead, tin nhan, cskh, tu van, mua lai]
+order: 14
+tags: [tổng, quan, đọc, phễu, vấn, phản, đối, chăm, sóc, sau, bán, nhóm]
+updated: 2026-10-24
+sections:
+  - id: tong-quan
+    title: Tổng quan
+    tags: [tổng, quan]
+    text: Kênh bán chính là quảng cáo tin nhắn → inbox → sale tư vấn/chốt đơn, nên chất lượng tư vấn quyết định doanh thu.
+  - id: doc-pheu
+    title: Đọc phễu
+    tags: [đọc, phễu]
+    text: "- **Đọc phễu:** lead rẻ nhưng tỷ lệ chốt thấp → sai tệp khách hoặc kịch bản tư vấn yếu; tỷ lệ chốt cao nhưng lead đắt → vấn đề creative/target. Luôn đọc cùng Giá/lead, Tỷ lệ chốt, CPA."
+  - id: tu-van
+    title: Tư vấn
+    tags: [vấn]
+    text: "- **Tư vấn:** phản hồi ≤5 phút giờ cao điểm; chào 1 câu + hỏi 1 câu về nhu cầu (ăn chay? có bé nhỏ? người \"say bột ngọt\"?); đề xuất đúng sản phẩm (skill Sản phẩm); chốt bằng combo/freeship."
+  - id: xu-ly-phan-doi
+    title: Xử lý phản đối
+    tags: [phản, đối]
+    text: "- **Xử lý phản đối:** \"đắt\" (thành phần, 420g dùng bao lâu, giá/bữa), \"hàng giả\" (đồng kiểm khi nhận, kênh chính hãng), \"có bột ngọt không\" (4 KHÔNG), \"cho bé dùng được không\" (bột nêm ăn dặm từ 6 tháng). Không hứa công dụng chữa bệnh."
+  - id: cham-soc-sau-ban
+    title: Chăm sóc sau bán
+    tags: [chăm, sóc, sau, bán]
+    text: "- **Chăm sóc sau bán:** nhắn sau 24h (hướng dẫn dùng, công thức), 3 ngày (cảm nhận, xin ảnh/đánh giá), gần hết hộp (nhắc mua lại/combo); khách im lặng sau 2 lần nhắn thì dừng."
+  - id: nhom-zalo-facebook
+    title: Nhóm Zalo/Facebook
+    tags: [nhóm, zalo/facebook]
+    text: "- **Nhóm Zalo/Facebook:** 70% nội dung giá trị (công thức chay, mẹo bếp) – tối đa 30% bán hàng; lịch cố định (sáng mẹo, trưa tương tác, tối khách khoe món); 72 giờ đầu: chào + hướng dẫn quy tắc, mời tự giới thiệu, tặng công thức/ưu đãi thành viên mới."
+  - id: ranh-gioi
+    title: Ranh giới
+    tags: [ranh, giới]
+    text: "- **Ranh giới:** chỉ thêm người/nhắn hàng loạt khi họ đồng ý; không làm phiền ngoài giờ; dữ liệu cá nhân cần được đồng ý và bảo mật (quy định bảo vệ dữ liệu cá nhân, NĐ 13/2023)."

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { detect } from './cli.js';
+import { detect, lastModel } from './cli.js';
 
 const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FILE = path.join(APP_DIR, 'config.json');
@@ -54,6 +54,19 @@ for (const name of Object.keys(PROVIDERS)) {
 }
 const model = connection === 'CLI' ? cliModels[provider] : (str(raw.MODELS?.[provider], '') || P.model);
 
+// Model mà CLI tự dùng khi ô model để trống: đọc từ cấu hình của chính CLI (nếu có) để hiển thị đúng tên đang chạy.
+function cliDefaultModel(name) {
+  try {
+    const home = os.homedir();
+    if (name === 'claude') return String(JSON.parse(fs.readFileSync(path.join(home, '.claude/settings.json'), 'utf8')).model || '');
+    if (name === 'gpt') return fs.readFileSync(path.join(home, '.codex/config.toml'), 'utf8').match(/^\s*model\s*=\s*["']([^"']+)["']/m)?.[1] || '';
+  } catch { /* không có file cấu hình CLI */ }
+  return '';
+}
+const cliDefaults = {};
+for (const name of Object.keys(PROVIDERS)) cliDefaults[name] = cliDefaultModel(name) || `mặc định của ${CLI_DEFAULT[name]} CLI`;
+const modelLabel = model || (connection === 'CLI' ? cliDefaults[provider] : '');
+
 let mode = (str(raw.MODE, process.env.MODE) || 'MOCK').toUpperCase();
 if (mode !== 'MOCK' && mode !== 'REAL') {
   notes.push(`MODE "${mode}" không hợp lệ, dùng MOCK.`);
@@ -93,7 +106,7 @@ const detail = String(raw.REPORT_DETAIL || process.env.REPORT_DETAIL || 'detaile
 const tok = (...v) => { const n = Math.round(Number(v.find((x) => x !== undefined && x !== '' && x !== null))); return n >= 200 && n <= 16000 ? n : 0; };
 return {
   connection, cliCmd, cliModels, cliOk, keys, models, providers: Object.keys(PROVIDERS), aliases: ALIAS,
-  mode, note, provider, apiKey, model, sourceDir, appDir: APP_DIR,
+  mode, note, provider, apiKey, model, modelLabel, cliDefaults, sourceDir, appDir: APP_DIR,
   port: Number(raw.PORT || process.env.PORT) || 3000,
   detail,
   workMax: tok(raw.MAX_WORK_TOKENS, process.env.MAX_WORK_TOKENS) || (detail === 'brief' ? 1500 : 4000),
@@ -119,7 +132,7 @@ export function settings() {
     mode: CONFIG.mode, connection: CONFIG.connection, provider: CONFIG.provider, note: CONFIG.note,
     providers: Object.fromEntries(Object.entries(PROVIDERS).map(([name, p]) => [name, {
       hasKey: Boolean(CONFIG.keys[name]), keyHint: hint(CONFIG.keys[name]), keyName: p.keyName,
-      model: CONFIG.models[name], cliModel: CONFIG.cliModels[name], cliOk: CONFIG.cliOk[name], cliCmd: CONFIG.cliCmd[name],
+      model: CONFIG.models[name], cliModel: CONFIG.cliModels[name], cliDefault: CONFIG.cliDefaults[name], cliDetected: lastModel(name), cliOk: CONFIG.cliOk[name], cliCmd: CONFIG.cliCmd[name],
     }])),
   };
 }

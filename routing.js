@@ -20,7 +20,7 @@ export function loadWorkflows() {
 
 export function classify(command) {
   const text = plain(command);
-  return loadWorkflows().find((w) => (w.keywords || []).some((k) => has(text, k))) || null;
+  return loadWorkflows().find((w) => (w.keywords || []).some((k) => has(text, k)) && !(w.unless || []).some((k) => has(text, k))) || null;
 }
 
 const TITLES = {

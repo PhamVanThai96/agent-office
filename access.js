@@ -4,28 +4,30 @@ import { fileURLToPath } from 'node:url';
 import { CONFIG } from './config.js';
 import { parseSpec, render } from './imaging.js';
 import { parseDocxInput, imagePaths, buildDocx } from './docx.js';
+import { classify, execute, formatResult, risky } from './cmd.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const STORE = path.join(ROOT, 'permissions.json');
 
 // Quyền đọc và quyền ghi lưu tách biệt: được đọc không có nghĩa là được ghi.
-let allowed = [], allowedWrite = [];
+let allowed = [], allowedWrite = [], allowedCmd = [];
 try {
   const saved = JSON.parse(fs.readFileSync(STORE, 'utf8'));
   allowed = saved.allowed || [];
   allowedWrite = saved.allowedWrite || [];
+  allowedCmd = saved.allowedCmd || [];
 } catch { /* chưa có quyền nào được lưu */ }
-const save = () => fs.writeFileSync(STORE, JSON.stringify({ allowed, allowedWrite }, null, 2), { mode: 0o600 });
+const save = () => fs.writeFileSync(STORE, JSON.stringify({ allowed, allowedWrite, allowedCmd }, null, 2), { mode: 0o600 });
 const MAX_WRITE = 200 * 1024;
 const MAX_IMG_OUT = 25 * 1024 * 1024;
 // Không cho agent ghi vào file chứa khoá API và kho quyền (tránh tự cấp quyền / lộ khoá).
 const ROOT_REAL = (() => { try { return fs.realpathSync(ROOT); } catch { return ROOT; } })();
 const PROTECTED = ['config.json', 'config.json.tmp', 'permissions.json', 'memory.json', 'memory.json.tmp'].map((f) => path.join(ROOT_REAL, f));
 // Agent không được tự sửa kiến thức nền của chính mình (skills/), agents.json và workflows.json.
-const PROTECTED_DIRS = [path.join(ROOT_REAL, 'skills')];
-const PROTECTED_FILES = ['agents.json', 'workflows.json', 'enzy.json'].map((f) => path.join(ROOT_REAL, f));
+const PROTECTED_DIRS = [path.join(ROOT_REAL, 'skills'), path.join(ROOT_REAL, 'data', 'agents'), path.join(ROOT_REAL, 'data', 'usage')];
+const PROTECTED_FILES = ['agents.json', 'workflows.json', 'enzy.json', 'data/admin.json'].map((f) => path.join(ROOT_REAL, f));
 // File chứa khoá API / mật khẩu: agent không được đọc kể cả khi người dùng bấm cho phép.
-const SECRET = ['config.json', 'enzy.json', 'permissions.json'].map((f) => path.join(ROOT_REAL, f));
+const SECRET = ['config.json', 'enzy.json', 'permissions.json', 'data/admin.json'].map((f) => path.join(ROOT_REAL, f));
 
 const pending = new Map();
 let seq = 0;
@@ -36,6 +38,16 @@ function canon(p) {
   try { return fs.realpathSync(abs); } catch { return abs; }
 }
 
+// Thư mục làm việc của agent (SOURCE_DIR): trong đây agent tự đọc và TẠO MỚI file được; sửa file có sẵn hoặc ra ngoài thì phải xin quyền.
+const wsReal = () => { try { return fs.realpathSync(CONFIG.sourceDir); } catch { return path.resolve(CONFIG.sourceDir); } };
+const inside = (c, root) => c === root || c.startsWith(root + path.sep);
+const inWs = (c) => inside(c, wsReal());
+const REPORTS_REAL = (() => { try { return fs.realpathSync(path.join(ROOT, 'reports')); } catch { return path.join(ROOT_REAL, 'reports'); } })();
+const autoCreate = (c) => inWs(c) || inside(c, REPORTS_REAL) || inside(c, path.join(ROOT_REAL, 'reports'));
+const SECRET_NAME = /(^|[\\/])(\.env[\w.]*|id_rsa[\w.]*|[\w.-]*\.pem|\.ssh|\.aws|\.npmrc|\.netrc)([\\/]|$)/i;
+const secretLike = (c) => SECRET.includes(c) || SECRET_NAME.test(c);
+const protectedPath = (c) => PROTECTED.includes(c) || PROTECTED_FILES.includes(c) || PROTECTED_DIRS.some((d) => inside(c, d));
+
 // File CEO tự kéo thả vào khi giao việc: cho phép đọc trong phiên chạy server, không ghi vào permissions.json.
 const sessionRead = new Set();
 export function grantRead(p) { sessionRead.add(canon(p)); }
@@ -43,20 +55,24 @@ export function grantRead(p) { sessionRead.add(canon(p)); }
 const covered = (c, mode = 'read') => (mode === 'read' && sessionRead.has(c))
   || (mode === 'write' ? allowedWrite : allowed).some((a) => c === a || c.startsWith(a + path.sep));
 
-export const listAllowed = () => [...allowed.map((p) => ({ path: p, mode: 'read' })), ...allowedWrite.map((p) => ({ path: p, mode: 'write' }))];
+export const listAllowed = () => [...allowed.map((p) => ({ path: p, mode: 'read' })), ...allowedWrite.map((p) => ({ path: p, mode: 'write' })), ...allowedCmd.map((c) => ({ path: c, mode: 'exec' }))];
 export const listPending = () => [...pending.values()].map(({ resolve, ...p }) => p);
 
 export function revoke(p, mode = 'read') {
-  if (mode === 'write') allowedWrite = allowedWrite.filter((a) => a !== p);
+  if (mode === 'exec') allowedCmd = allowedCmd.filter((a) => a !== p);
+  else if (mode === 'write') allowedWrite = allowedWrite.filter((a) => a !== p);
   else allowed = allowed.filter((a) => a !== p);
   save();
 }
 
-export function decide(id, allow) {
+// remember: với lệnh (exec) người dùng chọn "lần này" hoặc "luôn cho phép lệnh này"; quyền đọc/ghi file luôn được ghi nhớ như trước.
+export function decide(id, allow, remember = true) {
   const req = pending.get(id);
   if (!req) return false;
   pending.delete(id);
-  if (allow && !covered(req.path, req.mode)) {
+  if (allow && req.mode === 'exec') {
+    if (remember && !allowedCmd.includes(req.command)) { allowedCmd.push(req.command); save(); }
+  } else if (allow && !covered(req.path, req.mode)) {
     (req.mode === 'write' ? allowedWrite : allowed).push(req.path);
     save();
   }
@@ -76,6 +92,20 @@ async function ensureAccess(agent, p, action, onEvent, mode = 'read', c = canon(
   onEvent?.({ type: 'status', id: agent.id, status: 'working' });
   onEvent?.({ type: 'log', from: 'Hệ thống', text: `${granted ? 'Đã cho phép (ghi nhớ)' : 'Đã từ chối'}: ${c}` });
   return granted ? c : null;
+}
+
+// Xin phép chạy một lệnh cụ thể (không phải đường dẫn): người dùng thấy đúng câu lệnh, thư mục chạy và lý do cần xin.
+async function ensureCommand(agent, command, cwd, reason, onEvent) {
+  if (allowedCmd.includes(command)) return true;
+  const id = `req${++seq}`;
+  onEvent?.({ type: 'status', id: agent.id, status: 'waiting' });
+  const granted = await new Promise((resolve) => {
+    pending.set(id, { id, agent: agent.name, path: cwd, action: 'chạy lệnh', mode: 'exec', command, reason, risky: risky(command), resolve });
+    onEvent?.({ type: 'log', from: agent.name, text: `Xin quyền chạy lệnh: ${command}` });
+  });
+  onEvent?.({ type: 'status', id: agent.id, status: 'working' });
+  onEvent?.({ type: 'log', from: 'Hệ thống', text: `${granted ? 'Đã cho phép chạy' : 'Đã từ chối'}: ${command}` });
+  return granted;
 }
 
 // Chuẩn hoá đường dẫn đích để ghi: xử lý symlink ở thư mục cha, chặn file được bảo vệ và thư mục.
@@ -99,10 +129,14 @@ function target(p) {
 
 export function toolsFor(agent, onEvent) {
   const denied = { error: 'Người dùng đã từ chối quyền truy cập.' };
+  // Đọc: trong thư mục dự án thì tự đọc (trừ file bí mật); ngoài đó phải xin quyền như trước.
+  const readAccess = async (p, action) => { const c = canon(p); return inWs(c) && !secretLike(c) ? c : ensureAccess(agent, p, action, onEvent, 'read', c); };
+  // Ghi: tạo file MỚI trong thư mục dự án/reports thì tự làm; ghi đè file có sẵn hoặc ghi ra ngoài thì xin quyền (và sao lưu .bak).
+  const writeAccess = async (p, action, c, exists) => (!exists && autoCreate(c) ? c : ensureAccess(agent, p, action, onEvent, 'write', c));
   return {
     async readFile(p) {
-      if (SECRET.includes(canon(p))) return { error: 'File chứa thông tin bí mật, agent không được đọc.' };
-      const c = await ensureAccess(agent, p, 'đọc file', onEvent);
+      if (secretLike(canon(p))) return { error: 'File chứa thông tin bí mật, agent không được đọc.' };
+      const c = await readAccess(p, 'đọc file');
       if (!c) return denied;
       try { return { content: fs.readFileSync(c, 'utf8').slice(0, 4000) }; } catch (e) { return { error: e.message }; }
     },
@@ -114,7 +148,7 @@ export function toolsFor(agent, onEvent) {
       if (t.error) return { error: t.error };
       const { c, exists } = t;
       const kb = (Buffer.byteLength(content) / 1024).toFixed(1);
-      const g = await ensureAccess(agent, toReports(p), `ghi file (${exists ? 'ghi đè, sẽ sao lưu .bak' : 'tạo mới'}, ${kb}KB)`, onEvent, 'write', c);
+      const g = await writeAccess(toReports(p), `ghi file (${exists ? 'ghi đè, sẽ sao lưu .bak' : 'tạo mới'}, ${kb}KB)`, c, exists);
       if (!g) return denied;
       try {
         let backup;
@@ -131,7 +165,7 @@ export function toolsFor(agent, onEvent) {
       // Xin quyền đọc từng ảnh nguồn (ảnh gốc + ảnh chèn) trước khi ghép.
       const paths = { base: '', layers: [] };
       const readImg = async (p) => {
-        const c = await ensureAccess(agent, p, 'đọc ảnh', onEvent);
+        const c = secretLike(canon(p)) ? null : await readAccess(p, 'đọc ảnh');
         if (!c) return null;
         try { if (!fs.statSync(c).isFile()) return { error: `${p} không phải file.` }; } catch { return { error: `Không thấy file ${p}.` }; }
         return c;
@@ -145,7 +179,7 @@ export function toolsFor(agent, onEvent) {
       const t = target(spec.output);
       if (t.error) return { error: t.error };
       const { c, exists } = t;
-      const g = await ensureAccess(agent, toReports(spec.output), `tạo ảnh (${exists ? 'ghi đè, sẽ sao lưu .bak' : 'tạo mới'})`, onEvent, 'write', c);
+      const g = await writeAccess(toReports(spec.output), `tạo ảnh (${exists ? 'ghi đè, sẽ sao lưu .bak' : 'tạo mới'})`, c, exists);
       if (!g) return denied;
       const r = await render(spec, paths, c);
       if (r.error) return r;
@@ -164,7 +198,7 @@ export function toolsFor(agent, onEvent) {
       const { spec } = parsed;
       const images = new Map();
       for (const p of imagePaths(spec.content).slice(0, 10)) {
-        const c = await ensureAccess(agent, p, 'đọc ảnh để chèn vào .docx', onEvent);
+        const c = secretLike(canon(p)) ? null : await readAccess(p, 'đọc ảnh để chèn vào .docx');
         if (!c) return denied;
         try {
           const st = fs.statSync(c);
@@ -175,7 +209,7 @@ export function toolsFor(agent, onEvent) {
       const t = target(spec.output);
       if (t.error) return { error: t.error };
       const { c, exists } = t;
-      const g = await ensureAccess(agent, toReports(spec.output), `tạo tài liệu Word (${exists ? 'ghi đè, sẽ sao lưu .bak' : 'tạo mới'})`, onEvent, 'write', c);
+      const g = await writeAccess(toReports(spec.output), `tạo tài liệu Word (${exists ? 'ghi đè, sẽ sao lưu .bak' : 'tạo mới'})`, c, exists);
       if (!g) return denied;
       let r;
       try { r = await buildDocx(spec, images); } catch (e) { return { error: `Không tạo được .docx: ${e.message}` }; }
@@ -188,8 +222,31 @@ export function toolsFor(agent, onEvent) {
         return { ok: true, path: c, bytes: r.data.length, created: !exists, ...(backup ? { backup } : {}), ...(r.warnings.length ? { warnings: r.warnings } : {}) };
       } catch (e) { return { error: e.message }; }
     },
+    // Chạy lệnh để đọc/chẩn đoán/tạo file mới: lệnh chỉ đọc hoặc chỉ tạo mới chạy ngay; lệnh có thể sửa file có sẵn phải được người dùng cho phép đúng câu lệnh đó.
+    async runCommand(input) {
+      const command = String(input?.command ?? '').trim();
+      const root = wsReal();
+      let cwd = root;
+      if (input?.cwd) {
+        const c = canon(String(input.cwd));
+        let isDir = false; try { isDir = fs.statSync(c).isDirectory(); } catch { /* không có */ }
+        if (!inWs(c) || !isDir) return { error: 'cwd phải là thư mục có sẵn trong thư mục dự án.' };
+        cwd = c;
+      }
+      const resolve = (p) => { const a = path.resolve(cwd, p); try { return fs.realpathSync(a); } catch { return a; } };
+      const ctx = { root, cwd, cwdRel: path.relative(root, cwd) || '.', resolve, isSecret: secretLike, isProtected: protectedPath };
+      const plan = classify(command, ctx);
+      if (plan.level === 'deny') return { error: `Lệnh bị chặn: ${plan.reason}`, blocked: true };
+      let shell = plan.shell;
+      if (plan.level === 'ask') {
+        if (!(await ensureCommand(agent, command, cwd, plan.reason, onEvent))) return denied;
+        shell = command;
+      }
+      const r = await execute(shell, { cwd, timeoutS: input?.timeout_s });
+      return formatResult(r, command, ctx);
+    },
     async listDir(p) {
-      const c = await ensureAccess(agent, p, 'xem thư mục', onEvent);
+      const c = await readAccess(p, 'xem thư mục');
       if (!c) return denied;
       try { return { entries: fs.readdirSync(c).slice(0, 100) }; } catch (e) { return { error: e.message }; }
     },

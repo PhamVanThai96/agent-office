@@ -12,7 +12,7 @@ header h1 { margin:0; font-size:17px; flex:1; }
 a.btn.sec { background:#eeece5; color:#3a4150; }
 a.btn, button { padding:6px 14px; border:0; border-radius:999px; background:#34517a; color:#fff; font-weight:600; cursor:pointer; text-decoration:none; font-size:13px; }
 .wrap { flex:1; display:flex; min-height:0; }
-nav { width:320px; overflow:auto; background:#fff; border-right:1px solid #e4e1d8; padding:8px; }
+nav { width:340px; overflow:auto; background:#fff; border-right:1px solid #e4e1d8; padding:8px; }
 nav .it { display:block; width:100%; text-align:left; background:none; color:#232834; border-radius:10px; padding:8px 10px; font-weight:500; }
 nav .it:hover { background:#f1efe8; } nav .it.on { background:#dfe8f5; }
 nav .it small { display:block; color:#7b8494; font-size:11px; }
@@ -34,6 +34,28 @@ table { border-collapse:collapse; width:100%; font-size:13px; }
 th, td { border:1px solid #e0ddd3; padding:5px 10px; text-align:left; vertical-align:top; }
 th { background:#f1efe8; position:sticky; top:-12px; }
 tr:nth-child(even) td { background:#faf9f5; }
+nav { display:flex; flex-direction:column; padding:0; overflow:hidden; }
+#bar { position:sticky; top:0; z-index:3; background:#fff; border-bottom:1px solid #e4e1d8; padding:8px; display:flex; flex-direction:column; gap:8px; }
+#bar .r1, #bar .r2 { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+#bar select { flex:1; min-width:0; height:30px; border:1px solid #d9d6cc; border-radius:8px; padding:0 8px; font:inherit; font-size:13px; background:#fff; }
+#bar label.all { display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
+#bar .cnt { font-size:12px; color:#7b8494; margin-left:auto; }
+#bar button { height:30px; padding:0 12px; font-size:12.5px; }
+#bar button:disabled { opacity:.45; cursor:default; }
+#bar .del { background:#8a3a37; }
+#items { padding:8px; overflow:auto; flex:1; }
+.grp { margin-bottom:6px; }
+.gh { position:sticky; top:-8px; z-index:2; display:flex; align-items:center; gap:8px; padding:6px 8px; margin:0 0 4px; background:#eef1f6; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; user-select:none; }
+.gh .n { margin-left:auto; font-weight:500; font-size:12px; color:#7b8494; }
+.gh .car { width:14px; color:#7b8494; }
+.grp.closed .row { display:none; }
+.row { display:flex; align-items:flex-start; gap:4px; }
+.row input[type=checkbox], .gh input[type=checkbox] { flex:none; width:16px; height:16px; margin:11px 2px 0 4px; accent-color:#34517a; cursor:pointer; }
+.gh input[type=checkbox] { margin:0; }
+.row .it { flex:1; min-width:0; }
+.row.sel .it { background:#e8eef8; }
+.tagk { display:inline-block; font-size:10.5px; font-weight:600; padding:0 7px; border-radius:999px; background:#e6ebf3; color:#34517a; margin-right:6px; vertical-align:1px; }
+.tagk.dash { background:#e3f3ea; color:#1d6b46; }
 </style>
 </head>
 <body>
@@ -43,12 +65,23 @@ tr:nth-child(even) td { background:#faf9f5; }
   <a class="btn" id="back" href="./">← Văn phòng</a>
 </header>
 <div class="wrap">
-  <nav id="list"></nav>
+  <nav id="list">
+    <div id="bar">
+      <div class="r1"><select id="month" aria-label="Lọc theo tháng"></select></div>
+      <div class="r2">
+        <label class="all"><input id="all" type="checkbox"> Chọn tất cả</label>
+        <span class="cnt" id="cnt"></span>
+      </div>
+      <div class="r2"><button id="dl" type="button" disabled>⬇ Tải xuống</button><button id="rm" type="button" class="del" disabled>🗑 Xoá</button></div>
+    </div>
+    <div id="items"></div>
+  </nav>
   <main>
     <div id="title"><span>Chọn một report ở bên trái</span></div>
     <div id="view"></div>
   </main>
 </div>
+<script src="/admin.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const slash = location.pathname.endsWith('/');
@@ -83,11 +116,12 @@ function table(rows) {
 }
 
 async function open(item, btn) {
-  document.querySelectorAll('nav .on').forEach((e) => e.classList.remove('on'));
+  document.querySelectorAll('nav .it.on').forEach((e) => e.classList.remove('on'));
   btn?.classList.add('on');
+  viewing = item.name;
   const url = fileUrl(item.name), e = ext(item.name), view = $('view');
   $('title').replaceChildren();
-  const name = document.createElement('span'); name.textContent = item.name;
+  const name = document.createElement('span'); name.textContent = item.title || item.name; name.title = item.name;
   const tab = document.createElement('a'); tab.className = 'btn sec'; tab.href = url; tab.target = '_blank'; tab.textContent = 'Mở tab mới';
   const dl = document.createElement('a'); dl.className = 'btn'; dl.href = url + '?download=1'; dl.setAttribute('download', item.name.split('/').pop()); dl.textContent = 'Tải báo cáo';
   if (e === 'svg') { dl.href = url + '?export=png'; dl.setAttribute('download', ''); dl.textContent = 'Tải báo cáo (PNG)'; }
@@ -104,7 +138,7 @@ async function open(item, btn) {
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(e)) {
     const img = document.createElement('img'); img.src = url; img.alt = item.name; view.append(img);
   } else if (['html', 'htm', 'md', 'markdown'].includes(e)) {
-    const f = document.createElement('iframe'); f.setAttribute('sandbox', 'allow-popups'); f.src = url; view.append(f);
+    const f = document.createElement('iframe'); f.setAttribute('sandbox', /^enzy\/[^/]+\/\d{8}-dashboard-content\.html$/.test(item.name) ? 'allow-popups allow-scripts' : 'allow-popups'); f.src = url; view.append(f);
   } else if (e === 'docx') {
     const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'File Word (.docx) không xem trước được trên web. Bấm "Tải báo cáo" để tải về và mở bằng Word.'; view.append(d);
   } else {
@@ -122,20 +156,104 @@ async function open(item, btn) {
   }
 }
 
-async function load() {
-  const list = await (await fetch(ROOT + '?list=1')).json();
-  const nav = $('list');
-  nav.replaceChildren();
-  if (!list.length) { nav.innerHTML = '<div class="empty">Thư mục reports đang trống.</div>'; return; }
-  for (const it of list) {
-    const b = document.createElement('button'); b.className = 'it'; b.type = 'button';
-    b.textContent = it.name;
-    const s = document.createElement('small'); s.textContent = `${new Date(it.mtime).toLocaleString('vi-VN')} · ${fmt(it.size)}`;
-    b.append(s);
-    b.onclick = () => open(it, b);
-    nav.append(b);
-  }
+const sel = new Set();       // báo cáo đang được chọn (đường dẫn)
+let all = [], shown = [], current = '';
+const closed = new Set(JSON.parse(sessionStorage.getItem('rp-closed') || '[]'));
+const mlabel = (m) => 'Tháng ' + m.slice(5) + '/' + m.slice(0, 4);
+const kindOf = (n) => { const m = n.match(/^enzy\/(daily|weekly|monthly)\//); return m ? ({ daily: 'Enzy · ngày', weekly: 'Enzy · tuần', monthly: 'Enzy · tháng' })[m[1]] : ''; };
+
+function updateBar() {
+  const n = sel.size;
+  $('cnt').textContent = n ? `Đã chọn ${n}/${shown.length}` : `${shown.length} báo cáo`;
+  $('dl').disabled = $('rm').disabled = !n;
+  $('dl').textContent = n ? `⬇ Tải xuống (${n})` : '⬇ Tải xuống';
+  $('rm').textContent = n ? `🗑 Xoá (${n})` : '🗑 Xoá';
+  $('all').checked = n > 0 && n === shown.length;
+  $('all').indeterminate = n > 0 && n < shown.length;
+  document.querySelectorAll('.grp').forEach((g) => {
+    const boxes = [...g.querySelectorAll('.row input')], c = boxes.filter((x) => x.checked).length, gb = g.querySelector('.gh input');
+    gb.checked = c > 0 && c === boxes.length; gb.indeterminate = c > 0 && c < boxes.length;
+  });
 }
+
+function draw() {
+  const box = $('items');
+  box.replaceChildren();
+  shown = all.filter((x) => !current || x.day.startsWith(current));
+  for (const k of [...sel]) if (!shown.some((x) => x.name === k)) sel.delete(k);
+  if (!shown.length) { box.innerHTML = '<div class="empty">Chưa có báo cáo nào.</div>'; updateBar(); return; }
+  const groups = new Map();
+  for (const it of shown) { const m = it.day.slice(0, 7); if (!groups.has(m)) groups.set(m, []); groups.get(m).push(it); }
+  for (const [m, items] of groups) {
+    const g = document.createElement('div'); g.className = 'grp' + (closed.has(m) ? ' closed' : '');
+    const h = document.createElement('div'); h.className = 'gh';
+    const gb = document.createElement('input'); gb.type = 'checkbox'; gb.title = `Chọn cả ${mlabel(m)}`;
+    const car = document.createElement('span'); car.className = 'car'; car.textContent = closed.has(m) ? '▸' : '▾';
+    const t = document.createElement('span'); t.textContent = mlabel(m);
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = `${items.length} báo cáo`;
+    h.append(gb, car, t, n); g.append(h);
+    gb.onclick = (e) => { e.stopPropagation(); for (const it of items) gb.checked ? sel.add(it.name) : sel.delete(it.name); g.querySelectorAll('.row').forEach((r, i) => { r.classList.toggle('sel', sel.has(items[i].name)); r.querySelector('input').checked = sel.has(items[i].name); }); updateBar(); };
+    h.onclick = () => { const c = g.classList.toggle('closed'); car.textContent = c ? '▸' : '▾'; c ? closed.add(m) : closed.delete(m); try { sessionStorage.setItem('rp-closed', JSON.stringify([...closed])); } catch { /* bỏ qua */ } };
+    for (const it of items) {
+      const row = document.createElement('div'); row.className = 'row' + (sel.has(it.name) ? ' sel' : '');
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = sel.has(it.name); cb.setAttribute('aria-label', 'Chọn ' + (it.title || it.name));
+      cb.onchange = () => { cb.checked ? sel.add(it.name) : sel.delete(it.name); row.classList.toggle('sel', cb.checked); updateBar(); };
+      const b = document.createElement('button'); b.className = 'it'; b.type = 'button'; b.title = it.name;
+      const kd = kindOf(it.name);
+      if (kd) { const tg = document.createElement('span'); tg.className = 'tagk'; tg.textContent = kd; b.append(tg); }
+      if (/dashboard-content/.test(it.name)) { const tg = document.createElement('span'); tg.className = 'tagk dash'; tg.textContent = 'Dashboard'; b.append(tg); }
+      b.append(document.createTextNode(it.title || it.name));
+      const sm = document.createElement('small'); sm.textContent = `${new Date(it.mtime).toLocaleString('vi-VN')} · ${fmt(it.size)}${it.title ? ' · ' + it.name.split('/').pop() : ''}`;
+      b.append(sm);
+      b.onclick = () => { open(it, b); };
+      row.append(cb, b); g.append(row);
+    }
+    box.append(g);
+  }
+  updateBar();
+}
+
+async function load() {
+  all = await (await fetch(ROOT + '?list=1')).json();
+  const months = [...new Set(all.map((x) => x.day.slice(0, 7)))];
+  $('month').replaceChildren(new Option('Tất cả các tháng', ''), ...months.map((m) => new Option(`${mlabel(m)} (${all.filter((x) => x.day.startsWith(m)).length})`, m)));
+  if (!months.includes(current)) current = '';
+  $('month').value = current;
+  draw();
+}
+$('month').onchange = () => { current = $('month').value; draw(); };
+$('all').onchange = () => { sel.clear(); if ($('all').checked) shown.forEach((x) => sel.add(x.name)); draw(); };
+
+const post = (path, files) => adminFetch(ROOT + path, { method: 'POST', body: JSON.stringify({ files }) });
+const saveBlob = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+$('dl').onclick = async () => {
+  const files = [...sel];
+  if (!files.length) return;
+  $('dl').disabled = true;
+  try {
+    if (files.length === 1) {
+      const a = document.createElement('a'); a.href = fileUrl(files[0]) + '?download=1'; a.setAttribute('download', files[0].split('/').pop()); document.body.append(a); a.click(); a.remove();
+    } else {
+      const r = await post('zip', files);
+      if (!r.ok) { alert(await r.text()); return; }
+      saveBlob(await r.blob(), (r.headers.get('content-disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'bao-cao.zip');
+    }
+  } finally { updateBar(); }
+};
+$('rm').onclick = async () => {
+  const files = [...sel];
+  if (!files.length) return;
+  const names = files.slice(0, 5).map((f) => '• ' + ((all.find((x) => x.name === f) || {}).title || f)).join('\n') + (files.length > 5 ? `\n… và ${files.length - 5} báo cáo khác` : '');
+  if (!confirm(`Xoá vĩnh viễn ${files.length} báo cáo?\n\n${names}\n\nKhông thể khôi phục.`)) return;
+  const r = await post('delete', files);
+  if (!r.ok) { alert(await r.text()); return; }
+  const j = await r.json();
+  if (j.failed?.length) alert(`Không xoá được ${j.failed.length} file:\n${j.failed.join('\n')}`);
+  if (files.includes(viewing)) { $('title').replaceChildren(Object.assign(document.createElement('span'), { textContent: 'Chọn một report ở bên trái' })); $('view').replaceChildren(); viewing = ''; }
+  sel.clear();
+  await load();
+};
+let viewing = '';
 $('refresh').onclick = load;
 load();
 </script>

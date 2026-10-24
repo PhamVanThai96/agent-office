@@ -1,0 +1,49 @@
+id: 12-tiktok-viet-nam
+title: TikTok & video ngắn tại Việt Nam
+summary: "Mục tiêu tham khảo (hiệu chỉnh theo dữ liệu kênh của team): xem hết ≥35–40% với video 15–45s, tương tác ≥5%, tin nhắn/1.000 lượt xem tăng dần."
+agents: [planner, writer, video]
+when: [tiktok, reels, shorts, video ngan, viral, hook, kich ban, koc, kol]
+order: 12
+tags: [tổng, quan, thuật, toán, tiên, xem, hết, thời, cấu, trúc, 45s, hook]
+updated: 2026-10-24
+sections:
+  - id: tong-quan
+    title: Tổng quan
+    tags: [tổng, quan]
+    text: "Mục tiêu tham khảo (hiệu chỉnh theo dữ liệu kênh của team): xem hết ≥35–40% với video 15–45s, tương tác ≥5%, tin nhắn/1.000 lượt xem tăng dần."
+  - id: thuat-toan-uu-tien-ty-le-xem-het-thoi-gi
+    title: Thuật toán ưu tiên tỷ lệ xem hết, thời gian xem, lưu/chia sẻ
+    tags: [thuật, toán, tiên, xem, hết, thời]
+    text: "- **Thuật toán ưu tiên** tỷ lệ xem hết, thời gian xem, lưu/chia sẻ, bình luận; 3 giây đầu quyết định. Một video = một ý."
+  - id: cau-truc-15-45s
+    title: Cấu trúc 15–45s
+    tags: [cấu, trúc, 45s]
+    text: "- **Cấu trúc 15–45s:** 0–3s hook (kết quả, nỗi đau, câu hỏi gây tò mò, \"đừng…\" ) → thân 1 ý, đổi cảnh/chữ mỗi 2–3s → cuối 1 CTA duy nhất (nhắn tin/bấm giỏ) + khép vòng về hook để xem lại."
+  - id: hook-hop-enzy
+    title: Hook hợp Enzy
+    tags: [hook, hợp, enzy]
+    text: "- **Hook hợp Enzy:** \"Trước khi mua hạt nêm, nhìn thành phần này\", \"Mẹ nào cũng hỏi: hạt nêm gì mà đắt thế?\" (trả lời bình luận bằng video), \"Bỏ bột ngọt 7 ngày, cả nhà đổi vị\", \"Nấu canh chay 3 phút\"."
+  - id: tru-cot-nhip
+    title: Trụ cột & nhịp
+    tags: [trụ, cột, nhịp]
+    text: "- **Trụ cột & nhịp:** 40% mẹo/giáo dục, 30% giải trí–trend, 20% niềm tin, 10% bán hàng; 4–5 video/tuần/kênh; thử khung 11–13h và 19–22h rồi theo dữ liệu."
+  - id: trend-am-thanh-hashtag
+    title: Trend âm thanh/hashtag
+    tags: [trend, thanh/hashtag]
+    text: "- **Trend âm thanh/hashtag:** chỉ nhảy vào khi hợp thương hiệu; 3–5 hashtag (1 trend, 2 ngách như #anchay #hatnemchay, 1 thương hiệu). Trả lời bình luận bằng video để kéo tương tác."
+  - id: koc-kol
+    title: KOC/KOL
+    tags: [koc/kol]
+    text: "- **KOC/KOL:** ưu tiên nano/micro (dưới ~100k) review thật; brief ngắn (thông điệp, điều cấm nói, CTA); phải ghi rõ quảng cáo/#ad. Chạy Spark Ads chỉ với video organic đã có tín hiệu tốt."
+  - id: tiktok-shop-gio-hang
+    title: TikTok Shop / giỏ hàng
+    tags: [tiktok, shop, giỏ, hàng]
+    text: "- **TikTok Shop / giỏ hàng:** video demo nêm nếm thật, tiêu đề sản phẩm rõ, giá khớp enzy.vn."
+  - id: nhan-ban-1-video
+    title: Nhân bản 1 video
+    tags: [nhân, bản, video]
+    text: "- **Nhân bản 1 video:** Reels, YouTube Shorts, Facebook video, Zalo; đổi chữ/hook mở đầu cho từng kênh, đăng bản gốc không watermark."
+  - id: tuan-thu
+    title: Tuân thủ
+    tags: [tuân, thủ]
+    text: "- **Tuân thủ:** không \"số 1/tốt nhất/rẻ nhất\" khi không có căn cứ; không claim chữa bệnh; chứng nhận ghi \"theo công bố của Enzy\"."

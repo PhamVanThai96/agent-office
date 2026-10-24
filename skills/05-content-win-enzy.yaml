@@ -1,0 +1,44 @@
+id: 05-content-win-enzy
+title: Yếu tố khiến content Enzy THẮNG (đào tạo đợt 1/4)
+summary: "Nguồn: 23 content \"WIN\" mạnh nhất trong 91 content thắng của page Hạt Nêm Chay (đọc từ Facebook công khai: chữ mô tả, cảm xúc/bình luận/chia sẻ,…"
+agents: [planner, writer, video, script_review, video_review]
+when: [kich ban, content, video, hook, caption, bai viet, quang cao, ads, idea, y tuong, brief, noi dung, backlog, review, reel]
+order: 5
+tags: [tổng, quan, hook, đầu, dòng, caption, chữ, trên, cấu, trúc, video, thắng]
+updated: 2026-10-24
+sections:
+  - id: tong-quan
+    title: Tổng quan
+    tags: [tổng, quan]
+    text: "Nguồn: 23 content \"WIN\" mạnh nhất trong 91 content thắng của page Hạt Nêm Chay (đọc từ Facebook công khai: chữ mô tả, cảm xúc/bình luận/chia sẻ, thời lượng, khung hình; chưa nghe được lời thoại, chưa biết giờ đăng). Content thắng có trung vị ~712 cảm xúc, 222 bình luận, 24 chia sẻ (content thường: 32, 9, 1); nhiều video đạt 1–8,5 triệu lượt xem. Đợt 1 là tín hiệu mạnh, chưa phải kết luận cho cả 91 content."
+  - id: hook-mo-dau-dong-dau-caption-chu-tren-0-
+    title: Hook mở đầu (dòng đầu caption + chữ trên 0–3 giây đầu) — 6 kiểu đã thắng
+    tags: [hook, đầu, dòng, caption, chữ, trên]
+    text: |-
+      **Hook mở đầu (dòng đầu caption + chữ trên 0–3 giây đầu) — 6 kiểu đã thắng:**
+      1. Phá lầm tưởng: "Ai cũng tưởng bỏ mì chính chuyển sang hạt nêm là tốt…" (20,8K cảm xúc, 8,5K bình luận).
+      2. Nêu thẳng sự phản đối của khách: "Hạt nêm gì mà đắt thế?" (10K cảm xúc, 17,7K bình luận — nhiều bình luận nhất).
+      3. Giá trị/câu chuyện người làm: "Làm thật để giữ phước" (8,1 triệu lượt xem).
+      4. Cảnh báo/tin nóng: "Hàng trăm tấn hạt nêm giả đã bị phát hiện…", "Không bột ngọt – sao lại ngon?".
+      5. Gọi đúng đối tượng 2 giây/ý: "Bạn bận rộn / Bạn ăn chay, thực dưỡng…" (rắc cơm: 16K cảm xúc, 3,5 triệu xem).
+      6. Ưu đãi cụ thể ngay đầu: "Vừa được giảm giá – vừa miễn phí ship" (12K cảm xúc, 4 triệu xem).
+  - id: cau-truc-video-thang-45-110-giay-da-so-6
+    title: Cấu trúc video thắng (45–110 giây, đa số 60–90s)
+    tags: [cấu, trúc, video, thắng, "110", giây]
+    text: "**Cấu trúc video thắng (45–110 giây, đa số 60–90s):** hook chữ lớn 2–3 giây/dòng → người thật của Enzy mặc đồng phục đứng TRONG NHÀ MÁY/vùng nguyên liệu, cầm sản phẩm (độ tin cậy) → cảnh cận nguyên liệu (ngưu bàng, nấm, 10 loại hạt, bột cô đặc) → cảnh dùng thật (múc rắc cơm, nấu, ăn) → kết quả bằng chữ (\"giàu omega 3, tốt cho tim mạch\") → CTA. Dạng \"đập hộp/unbox\" và người ăn thật cũng thắng. Mỗi cảnh ≤3 giây, chữ trên video luôn có."
+  - id: caption-thang
+    title: Caption thắng
+    tags: [caption, thắng]
+    text: "**Caption thắng:** dòng 1 là hook (in hoa/emoji), tiếp theo vấn đề → giải pháp, gạch đầu dòng ✅/🌱 ngắn: \"3 KHÔNG\" (bột ngọt, bảo quản, phụ gia), thành phần cụ thể, muối biển hầm niêu đất, nguồn nguyên liệu (Global GAP), vi chất B12–sắt–kẽm; xưng \"Tiến\" (người sáng lập kể) ở các bài mạnh nhất; kết bằng 1 câu mời thử/nhắn tin."
+  - id: chu-de-thang-nhieu-nhat-ty-le-thang-tren
+    title: Chủ đề thắng nhiều nhất (tỷ lệ thắng trên toàn bộ 1.244 content)
+    tags: [chủ, thắng, nhiều, nhất, trên, toàn]
+    text: "**Chủ đề thắng nhiều nhất (tỷ lệ thắng trên toàn bộ 1.244 content):** bỏ/không mì chính (21%), hàng giả/cảnh báo (20%), unbox (20%), khác biệt – không lừa – giữ phước (20%), tăng giá/gồng giá (22%); dịp 30/4 (35%), Vu Lan–2/9 (25%), Noel (22%), 8/3 (18%), Tết chỉ 9%. Hạt nêm chay (11%) thắng nhiều hơn rắc cơm (6%) và bánh (9%); chủ đề \"cho bé/ăn dặm\" chỉ 5%."
+  - id: nhip-nguoi-lam
+    title: Nhịp & người làm
+    tags: [nhịp, người, làm]
+    text: "**Nhịp & người làm:** bài thắng hơi thiên về thứ Bảy và thứ Hai (tín hiệu yếu, cần kiểm tra thêm); người làm có tỷ lệ thắng cao: GIAO 16% (khuyến mãi 30/4), THUÝ 10%. Chưa có dữ liệu giờ đăng."
+  - id: quy-tac-khi-viet-duyet
+    title: Quy tắc khi viết/duyệt
+    tags: [quy, tắc, viết/duyệt]
+    text: "**Quy tắc khi viết/duyệt:** chọn 1 trong 6 kiểu hook; có người thật + nhà máy trong 10 giây đầu; phản đối \"đắt/giả\" trả lời bằng quy trình + thành phần, không so sánh hạ thấp đối thủ; không claim y tế, chứng nhận ghi \"theo công bố của Enzy\"; ưu đãi/giá phải khớp enzy.vn lúc đăng."

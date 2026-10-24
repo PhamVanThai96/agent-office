@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchEnzy } from './fetch.js';
 import { parseEnzy, buildDataMarkdown, snapshot } from './metrics.js';
+import { normalizeAds, groupByOwner, buildOwnerDashboard, ownerSummaryMarkdown } from './owners.js';
 
 // Báo cáo quảng cáo Enzy tự động: lấy số liệu từ trang Streamlit → tính chỉ số, bảng, biểu đồ → giao #analyst viết nhận định.
 // Cấu hình ở enzy.json (quyền 600, chứa tài khoản đăng nhập trang báo cáo; agent không được đọc/ghi file này).
@@ -12,6 +13,8 @@ const DATA = path.join(ROOT, 'data', 'enzy');
 const STATE = path.join(DATA, 'state.json');
 export const KINDS = ['daily', 'weekly', 'monthly'];
 const KIND_LABEL = { daily: 'Báo cáo ngày', weekly: 'Báo cáo tuần', monthly: 'Báo cáo tháng' };
+// Nhãn đặt trước tiêu đề báo cáo để dễ tìm/lọc: [Daily] / [Weekly] / [Monthly].
+const KIND_TAG = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' };
 const RANGE = { daily: 'Hôm qua (trọn ngày)', weekly: '7 ngày gần nhất (không gồm hôm nay)', monthly: '30 ngày gần nhất (không gồm hôm nay)' };
 
 const DEFAULTS = {
@@ -19,6 +22,7 @@ const DEFAULTS = {
   USER: '', PASS: '',
   BRAND: 'Enzy', SYSTEM: 'Facebook Ads', STORE: 'HNC Vietnam',
   ACCOUNTS: ['Enzy 1', 'Enzy 2', 'Enzy 5', 'Enzy 6', 'Enzy 8'],
+  OWNERS: ['TRÂN', 'NGA'], // người thực hiện: tên nằm cuối tên quảng cáo, vd "… (TRÂN)"; để trống = không tạo dashboard theo người
   PROMPT: 'prompt/daily-report-enzy-data-prompt.md',
   SCHEDULE: { enabled: false, daily: '08:00', weekly: { day: 1, time: '08:30' }, monthly: { day: 1, time: '09:00' } },
 };
@@ -48,6 +52,73 @@ export function saveSchedule(s) {
   return raw.SCHEDULE;
 }
 
+// Cấu hình hiển thị trên GUI: không bao giờ trả mật khẩu về trình duyệt, chỉ báo đã lưu hay chưa.
+export function publicConfig() {
+  const c = loadConfig();
+  return {
+    URL: c.URL, USER: c.USER, hasPass: Boolean(c.PASS), envCreds: Boolean(process.env.ENZY_USER || process.env.ENZY_PASS),
+    BRAND: c.BRAND, SYSTEM: c.SYSTEM, STORE: c.STORE, ACCOUNTS: c.ACCOUNTS, OWNERS: c.OWNERS, PROMPT: c.PROMPT,
+  };
+}
+
+// Lưu cấu hình từ GUI. PASS để trống = giữ nguyên; lịch chạy do saveSchedule quản lý nên không đụng tới.
+export function saveConfig(b) {
+  const text = (v, name, max = 200) => {
+    const t = String(v ?? '').trim();
+    if (!t) throw new Error(`${name} không được để trống.`);
+    if (t.length > max) throw new Error(`${name} quá dài.`);
+    return t;
+  };
+  const raw = readJson(CONFIG_FILE, { ...DEFAULTS });
+  let u;
+  try { u = new URL(text(b.URL, 'URL trang báo cáo', 500)); } catch { throw new Error('URL trang báo cáo không hợp lệ.'); }
+  if (!['https:', 'http:'].includes(u.protocol)) throw new Error('URL phải bắt đầu bằng https:// (hoặc http://).');
+  const accounts = [...new Set((Array.isArray(b.ACCOUNTS) ? b.ACCOUNTS : String(b.ACCOUNTS || '').split(/[\n,]/)).map((x) => String(x).trim()).filter(Boolean))];
+  if (!accounts.length) throw new Error('Cần ít nhất 1 tài khoản quảng cáo.');
+  if (accounts.length > 5) throw new Error('Trang báo cáo chỉ so sánh tối đa 5 tài khoản.');
+  if (accounts.some((a) => a.length > 80)) throw new Error('Tên tài khoản quảng cáo quá dài.');
+  const owners = [...new Set((Array.isArray(b.OWNERS) ? b.OWNERS : String(b.OWNERS || '').split(/[\n,;]/)).map((x) => String(x).trim()).filter(Boolean))];
+  if (owners.length > 10) throw new Error('Tối đa 10 người thực hiện.');
+  if (owners.some((o) => o.length > 30 || /[()]/.test(o))) throw new Error('Tên người thực hiện tối đa 30 ký tự, không chứa dấu ngoặc.');
+  const prompt = text(b.PROMPT, 'File prompt', 300);
+  const abs = path.resolve(ROOT, prompt);
+  if (abs !== ROOT && !abs.startsWith(ROOT + path.sep)) throw new Error('File prompt phải nằm trong thư mục dự án.');
+  if (!/\.(md|txt)$/i.test(abs)) throw new Error('File prompt phải là .md hoặc .txt.');
+  if (!fs.existsSync(abs)) throw new Error(`Không thấy file prompt: ${prompt}`);
+  raw.URL = u.toString();
+  raw.USER = String(b.USER ?? '').trim().slice(0, 200);
+  if (b.clearPass === true) raw.PASS = '';
+  else if (typeof b.PASS === 'string' && b.PASS !== '') raw.PASS = b.PASS.slice(0, 200);
+  raw.BRAND = text(b.BRAND, 'Thương hiệu', 80);
+  raw.SYSTEM = text(b.SYSTEM, 'Hệ thống quảng cáo', 80);
+  raw.STORE = text(b.STORE, 'Cửa hàng', 80);
+  raw.ACCOUNTS = accounts;
+  raw.OWNERS = owners;
+  raw.PROMPT = prompt;
+  writeJson(CONFIG_FILE, raw, 0o600);
+}
+
+// "00:00 17/10/2026 đến 23:59 23/10/2026" → "17/10 – 23/10/2026"; một ngày → "23/10/2026".
+function periodLabel(period) {
+  const ds = [...String(period).matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)].map((m) => m.slice(1));
+  if (!ds.length) return String(period || '');
+  const [a, b] = [ds[0], ds.at(-1)];
+  return a.join('/') === b.join('/') ? b.join('/') : `${a[0]}/${a[1]} – ${b[0]}/${b[1]}/${b[2]}`;
+}
+
+// Dashboard content theo người thực hiện (HTML độc lập) từ danh sách từng quảng cáo. Trả về đường dẫn tương đối trong reports/ hoặc ''.
+function writeOwnerDashboard(cfg, kind, key, d, rows) {
+  const owners = cfg.OWNERS || [];
+  if (!owners.length || !rows?.length) return '';
+  const g = groupByOwner(normalizeAds(rows), owners);
+  const lab = periodLabel(d.period);
+  const title = `[${KIND_TAG[kind]}] Dashboard content ${g.listed.join(' + ')} và nhóm còn lại — ${KIND_LABEL[kind]} ${lab}`;
+  const dir = path.join(ROOT, 'reports', 'enzy', kind);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${key}-dashboard-content.html`), buildOwnerDashboard({ title, period: lab, updated: d.updated, kindLabel: KIND_LABEL[kind], ...g }));
+  return { rel: `reports/enzy/${kind}/${key}-dashboard-content.html`, md: ownerSummaryMarkdown(g, lab) };
+}
+
 const p2 = (n) => String(n).padStart(2, '0');
 const dayKey = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 // Ngày cuối kỳ từ "00:00 17/10/2026 đến 23:59 23/10/2026" → 20261023
@@ -69,7 +140,7 @@ function history(kind, before) {
 function buildTask(cfg, kind, d) {
   let body = '';
   try { body = fs.readFileSync(path.resolve(ROOT, cfg.PROMPT), 'utf8').replace(/^\/\w+[^\n]*\n/, '').trim(); } catch { body = 'Viết báo cáo hiệu quả quảng cáo dựa trên file số liệu đính kèm.'; }
-  const title = `${KIND_LABEL[kind]} quảng cáo Enzy — ${d.period || RANGE[kind]}`;
+  const title = `[${KIND_TAG[kind]}] ${KIND_LABEL[kind]} quảng cáo Enzy — ${d.period || RANGE[kind]}`;
   return {
     title,
     task: `/analyst ${title}\nKỲ BÁO CÁO: ${KIND_LABEL[kind].toUpperCase()} (${RANGE[kind]}). File số liệu đính kèm do hệ thống tự lấy từ trang báo cáo Enzy lúc ${d.updated || 'vừa xong'}; số liệu, bảng và biểu đồ đã được tính sẵn và sẽ tự đính kèm vào báo cáo — dùng đúng các số này, không tự tính lại hay vẽ lại.\n\n${body}`,
@@ -86,10 +157,10 @@ export function createEnzy(deps) {
   const queue = [];
   let working = false;
 
-  async function runOnce(kind, reason) {
+  async function runOnce(kind, reason, dashOnly = false) {
     const cfg = loadConfig();
-    state.running = { kind, step: 'Đang lấy số liệu từ trang báo cáo…', since: Date.now() };
-    deps.log(`Báo cáo Enzy (${KIND_LABEL[kind]}, ${reason}): đang lấy số liệu cho ${cfg.ACCOUNTS.join(', ')}…`);
+    state.running = { kind, dashOnly, step: 'Đang lấy số liệu từ trang báo cáo…', since: Date.now() };
+    deps.log(`${dashOnly ? 'Dashboard content' : 'Báo cáo Enzy'} (${KIND_LABEL[kind]}, ${reason}): đang lấy số liệu cho ${cfg.ACCOUNTS.join(', ')}…`);
     // ENZY_FAKE_RAW=<file.json>: dùng dữ liệu thô đã lưu thay cho trang thật (chỉ để thử nghiệm).
     const raw = process.env.ENZY_FAKE_RAW ? { ...readJson(process.env.ENZY_FAKE_RAW, {}), range: RANGE[kind] } : await fetchEnzy({
       url: cfg.URL, user: process.env.ENZY_USER || cfg.USER, pass: process.env.ENZY_PASS || cfg.PASS,
@@ -98,39 +169,60 @@ export function createEnzy(deps) {
     const d = parseEnzy(raw);
     if (d.totals.spend == null) throw new Error('Không đọc được số liệu tổng từ trang báo cáo (cấu trúc trang có thể đã thay đổi).');
     const key = periodKey(d.period);
+    if (raw.adsRows?.length) writeJson(path.join(DATA, kind, `${key}-ads.json`), raw.adsRows);
+    if (dashOnly) {
+      // Chỉ dựng dashboard (không lưu số liệu kỳ, không giao #analyst, không tốn token AI).
+      writeJson(path.join(DATA, kind, `${key}-meta.json`), { period: d.period, updated: d.updated });
+      if (!raw.adsRows?.length) throw new Error(`Không tải được file Excel từng quảng cáo${raw.adsError ? ` (${raw.adsError})` : ''}.`);
+      if (!(cfg.OWNERS || []).length) throw new Error('Chưa cấu hình người thực hiện (📊 Dữ liệu Enzy).');
+      return { key, period: d.period, dashboard: writeOwnerDashboard(cfg, kind, key, d, raw.adsRows).rel };
+    }
     const md = buildDataMarkdown(kind, d, history(kind, key));
     writeJson(path.join(DATA, kind, `${key}.json`), snapshot(d));
     fs.writeFileSync(path.join(DATA, kind, `${key}-raw.txt`), raw.code || '');
+    let dashboard = '', ownerMd = '';
+    try { const w = writeOwnerDashboard(cfg, kind, key, d, raw.adsRows); dashboard = w?.rel || ''; ownerMd = w?.md || ''; } catch (e) { deps.log(`Dashboard content theo người thực hiện lỗi: ${e.message}`); }
+    if (raw.adsError) deps.log(`Không tải được file Excel từng quảng cáo (${raw.adsError}); bỏ qua dashboard theo người thực hiện.`);
     // Bản số liệu xem được ngay trên trang Báo cáo, kể cả khi bước AI lỗi.
     const repDir = path.join(ROOT, 'reports', 'enzy', kind);
     fs.mkdirSync(repDir, { recursive: true });
-    fs.writeFileSync(path.join(repDir, `${key}-so-lieu.md`), md);
+    // Bảng so sánh NGA/TRÂN/nhóm còn lại nằm ngay trong báo cáo (link tương đối khác nhau cho file .md và trang báo cáo tổng hợp).
+    const mdFile = md + (ownerMd ? '\n' + ownerMd.replace('{{DASH}}', `${key}-dashboard-content.html`) : '');
+    const mdApp = md + (ownerMd ? '\n' + ownerMd.replace('{{DASH}}', `enzy/${kind}/${key}-dashboard-content.html`) : '');
+    fs.writeFileSync(path.join(repDir, `${key}-so-lieu.md`), mdFile);
     const upRel = `enzy/${kind}-${key}.md`;
     fs.mkdirSync(path.join(deps.uploadsDir, 'enzy'), { recursive: true });
-    fs.writeFileSync(path.join(deps.uploadsDir, upRel), md);
+    fs.writeFileSync(path.join(deps.uploadsDir, upRel), mdFile);
 
     state.running.step = 'Chờ văn phòng rảnh để giao #analyst…';
     for (let i = 0; deps.isBusy() && i < 360; i++) await new Promise((r) => setTimeout(r, 5000));
     if (deps.isBusy()) throw new Error('Văn phòng bận quá 30 phút, chưa giao được việc phân tích.');
     state.running.step = '#analyst đang viết nhận định…';
     const { task, title } = buildTask(cfg, kind, d);
-    await deps.submit(task, [upRel], { label: `${title} [📎 số liệu tự động]`, appendix: [{ agent: 'Số liệu Enzy (tự động)', title: `${d.range} · ${d.period}`, status: 'done', text: md }] });
-    return { key, period: d.period, data: `reports/enzy/${kind}/${key}-so-lieu.md` };
+    await deps.submit(task, [upRel], { label: `${title} [📎 số liệu tự động]`, appendix: [{ agent: 'Số liệu Enzy (tự động)', title: `${d.range} · ${d.period}`, status: 'done', text: mdApp }], links: dashboard ? [{ label: '📈 Dashboard content: TRÂN · NGA · người còn lại', href: dashboard }] : [] });
+    return { key, period: d.period, data: `reports/enzy/${kind}/${key}-so-lieu.md`, dashboard };
   }
 
   async function pump() {
     if (working) return;
     working = true;
     while (queue.length) {
-      const { kind, reason } = queue.shift();
+      const { kind, reason, dashOnly } = queue.shift();
       const started = Date.now();
       try {
-        const r = await runOnce(kind, reason);
-        state.last[kind] = { ok: true, at: started, day: dayKey(new Date(started)), ...r };
-        deps.log(`Báo cáo Enzy (${KIND_LABEL[kind]}) xong: kỳ ${r.period}. Số liệu: ${r.data}`);
+        const r = await runOnce(kind, reason, dashOnly);
+        if (r.dashboard) { (state.dash ||= {})[kind] = { ok: true, at: started, period: r.period, path: r.dashboard }; }
+        if (dashOnly) deps.log(`Dashboard content (${KIND_LABEL[kind]}) xong: kỳ ${r.period}.`);
+        else {
+          state.last[kind] = { ok: true, at: started, day: dayKey(new Date(started)), ...r };
+          deps.log(`Báo cáo Enzy (${KIND_LABEL[kind]}) xong: kỳ ${r.period}. Số liệu: ${r.data}`);
+        }
       } catch (e) {
-        state.last[kind] = { ok: false, at: started, day: dayKey(new Date(started)), error: e.message };
-        deps.log(`Báo cáo Enzy (${KIND_LABEL[kind]}) lỗi: ${e.message}`);
+        if (dashOnly) { (state.dash ||= {})[kind] = { ok: false, at: started, error: e.message }; deps.log(`Dashboard content (${KIND_LABEL[kind]}) lỗi: ${e.message}`); }
+        else {
+          state.last[kind] = { ok: false, at: started, day: dayKey(new Date(started)), error: e.message };
+          deps.log(`Báo cáo Enzy (${KIND_LABEL[kind]}) lỗi: ${e.message}`);
+        }
       }
       state.running = null;
       save();
@@ -138,10 +230,10 @@ export function createEnzy(deps) {
     working = false;
   }
 
-  const enqueue = (kind, reason = 'chạy tay') => {
+  const enqueue = (kind, reason = 'chạy tay', dashOnly = false) => {
     if (!KINDS.includes(kind)) throw new Error('Loại báo cáo phải là daily, weekly hoặc monthly.');
-    if (state.running?.kind === kind || queue.some((q) => q.kind === kind)) return false;
-    queue.push({ kind, reason });
+    if ((state.running?.kind === kind && !!state.running.dashOnly === dashOnly) || queue.some((q) => q.kind === kind && !!q.dashOnly === dashOnly)) return false;
+    queue.push({ kind, reason, dashOnly });
     pump();
     return true;
   };
@@ -167,9 +259,26 @@ export function createEnzy(deps) {
     const cfg = loadConfig();
     return {
       configured: Boolean((process.env.ENZY_USER || cfg.USER) && (process.env.ENZY_PASS || cfg.PASS)),
-      accounts: cfg.ACCOUNTS, schedule: cfg.SCHEDULE, last: state.last, running: state.running, queued: queue.map((q) => q.kind),
+      accounts: cfg.ACCOUNTS, owners: cfg.OWNERS, schedule: cfg.SCHEDULE, last: state.last, running: state.running, queued: queue.map((q) => (q.dashOnly ? 'dash-' : '') + q.kind), dash: state.dash || {},
     };
   }
 
-  return { enqueue, status, due };
+  // Dựng lại dashboard từ dữ liệu từng quảng cáo đã lưu của kỳ gần nhất (vd sau khi đổi danh sách người thực hiện), không cần lấy lại từ trang.
+  function rebuildDashboards() {
+    const cfg = loadConfig(), out = [];
+    for (const kind of KINDS) {
+      try {
+        const files = fs.readdirSync(path.join(DATA, kind)).filter((f) => /^\d{8}-ads\.json$/.test(f)).sort();
+        const key = files.at(-1)?.slice(0, 8);
+        if (!key) continue;
+        const snap = readJson(path.join(DATA, kind, `${key}.json`), null) || readJson(path.join(DATA, kind, `${key}-meta.json`), {});
+        const rel = writeOwnerDashboard(cfg, kind, key, snap, readJson(path.join(DATA, kind, files.at(-1)), []))?.rel;
+        if (rel) { out.push(rel); if (state.last[kind]) state.last[kind].dashboard = rel; (state.dash ||= {})[kind] = { ok: true, at: Date.now(), period: snap.period, path: rel }; }
+      } catch { /* chưa có dữ liệu cho loại báo cáo này */ }
+    }
+    save();
+    return out;
+  }
+
+  return { enqueue, status, due, rebuildDashboards };
 }

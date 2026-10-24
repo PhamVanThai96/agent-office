@@ -21,15 +21,39 @@ npm install
 - `config.json`: chế độ MOCK/REAL, kết nối API (key) hoặc CLI (claude/codex đã đăng nhập).
 - `enzy.json`: tài khoản trang báo cáo Enzy (USER/PASS), danh sách tài khoản QC, lịch chạy báo cáo tự động. Báo cáo Enzy cần Google Chrome cài trên máy.
 
-## Chạy
+## Chạy nhanh trên Mac (không cần gõ lệnh)
+
+Mở thư mục dự án trong Finder rồi **bấm đúp `Khoi dong Agent Office.command`**. File này tự làm hết, không phụ thuộc đường dẫn nên chép thư mục sang Mac nào cũng chạy:
+
+1. Tìm Node.js trên máy (PATH, nvm, Homebrew, Volta, fnm); chưa có thì hiện hộp thoại mở trang tải (cần Node 20 trở lên, khuyên dùng bản mới nhất).
+2. Cài thư viện lần đầu (`npm install`, cần Internet); tự cài lại khi `package-lock.json` đổi hoặc khi chép từ Mac khác kiến trúc (Intel ↔ Apple Silicon).
+3. Nếu server đã chạy sẵn thì chỉ mở trình duyệt; cổng 3000 bận thì tự dùng cổng kế tiếp.
+4. Mở trình duyệt tới địa chỉ đúng và giữ máy không ngủ khi đang chạy (để báo cáo tự động chạy đúng giờ).
+
+Giữ cửa sổ Terminal mở khi dùng; đóng cửa sổ hoặc nhấn Ctrl+C để dừng. Các file khác:
+- `Dung Agent Office.command`: dừng server đang chạy từ thư mục này.
+- `Tao ung dung Agent Office.command`: tạo `Agent Office.app` ở `~/Applications` (hoặc thư mục bạn truyền vào) để kéo vào Dock; di chuyển thư mục dự án thì chạy lại file này.
+
+Lần đầu mở file tải từ Internet/AirDrop/zip, macOS có thể chặn: chuột phải file → **Mở** → Mở, hoặc chạy một lần `xattr -dr com.apple.quarantine "<thư mục dự án>"`. Nếu file mất quyền chạy: `chmod +x *.command`.
+
+Chạy bằng lệnh (cách cũ, mọi hệ điều hành):
 
 ```bash
-cd /home/worker/DEMO-agency-office
+cd <thư mục dự án>
 npm start            # chế độ MOCK (không cần API key)
-# mở http://localhost:3000
+# mở http://localhost:3000 (nếu cổng bận, xem địa chỉ in ra ở dòng "Agent Office: …")
 ```
 
 ## Dùng CLI đã đăng nhập (không cần API key) REAL MODE
+
+## Install claude cli command
+
+`curl -fsSL https://claude.ai/install.sh | bash`
+
+or command in MacOS
+
+`brew install --cask claude-code`
+
 
 Server gọi trực tiếp `claude` / `codex` / `gemini` đã đăng nhập trên máy bạn.
 

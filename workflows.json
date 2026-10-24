@@ -1,6 +1,53 @@
 {
-  "_ghi_chu": "Quy trình vận hành team content (01 tín hiệu → 02 backlog → 03 brief → 04 kịch bản → 05 duyệt 1 → 06 dựng → 07 duyệt 2 → 08 đo lường → 09 insight). Mỗi quy trình: keywords (không dấu, khớp theo thứ tự từ trên xuống) → steps (chạy lần lượt, mỗi bước nhận kết quả bước trước). Bước có thể là id agent hoặc {agent, when:[từ khoá]} (chỉ chạy nếu yêu cầu có từ khoá). Mảng lồng nhau = chạy song song. Agent có \"gate\": true là bước duyệt: YÊU CẦU SỬA sẽ trả việc về bước trước (tối đa 1 vòng). Không khớp quy trình nào thì Content Lead tự lập kế hoạch bằng AI.",
+  "_ghi_chu": "Quy trình vận hành team content (01 tín hiệu → 02 backlog → 03 brief → 04 kịch bản → 05 duyệt 1 → 06 dựng → 07 duyệt 2 → 08 đo lường → 09 insight). Mỗi quy trình: keywords (không dấu, khớp theo thứ tự từ trên xuống) → steps (chạy lần lượt, mỗi bước nhận kết quả bước trước). Bước có thể là id agent hoặc {agent, when:[từ khoá]} (chỉ chạy nếu yêu cầu có từ khoá). Mảng lồng nhau = chạy song song. Agent có \"gate\": true là bước duyệt: YÊU CẦU SỬA sẽ trả việc về bước trước (tối đa 1 vòng). Không khớp quy trình nào thì Content Lead tự lập kế hoạch bằng AI. Quy trình có \"unless\": [từ khoá] sẽ bị bỏ qua nếu yêu cầu chứa một trong các từ đó (dùng cho hỏi đáp ngoài quy trình). Quy trình có \"noSummary\": true (chỉ 1 agent) sẽ dùng thẳng câu trả lời của agent, không gọi Quản Lí tổng hợp.",
   "workflows": [
+    {
+      "id": "qa",
+      "name": "Hỏi đáp ngoài quy trình",
+      "when": "tra cứu giá vàng, tỷ giá, tin tức, thời tiết, kiến thức chung — không thuộc quy trình content",
+      "template": "Hôm nay có thông tin gì mới trên thế giới? ",
+      "keywords": [
+        "gia vang",
+        "gia bac",
+        "gia bitcoin",
+        "gia usd",
+        "ty gia",
+        "gia xang",
+        "gia dau",
+        "chung khoan",
+        "vn-index",
+        "thoi tiet",
+        "tin tuc the gioi",
+        "tin moi tren the gioi",
+        "tren the gioi",
+        "thong tin gi moi",
+        "co gi moi",
+        "tin nong"
+      ],
+      "steps": [
+        "assistant"
+      ],
+      "titles": {
+        "assistant": "Tra cứu và trả lời: {c}"
+      },
+      "unless": [
+        "kich ban",
+        "brief",
+        "video",
+        "thumbnail",
+        "banner",
+        "poster",
+        "quy trinh",
+        "backlog",
+        "noi dung",
+        "content",
+        "chi so",
+        "bao cao tuan",
+        "bao cao ngay",
+        "bao cao thang"
+      ],
+      "noSummary": true
+    },
     {
       "id": "full",
       "name": "Quy trình đầy đủ: từ ý tưởng đến video",
@@ -79,6 +126,48 @@
       "titles": {
         "analyst": "08-09 Đối chiếu chỉ số với mục tiêu, rút insight: {c}"
       }
+    },
+    {
+      "id": "trend",
+      "name": "Báo cáo trend & kế hoạch content",
+      "when": "nghiên cứu xu hướng/trend thời gian thực, đề xuất idea, lên lịch nội dung 2 tuần",
+      "template": "Làm báo cáo trend hiện nay và lên kế hoạch content 2 tuần cho: ",
+      "keywords": [
+        "bao cao trend",
+        "bao cao xu huong",
+        "trend hien nay",
+        "xu huong hien nay",
+        "trend moi nhat",
+        "trend tuan nay",
+        "trend thang nay",
+        "nghien cuu trend",
+        "nghien cuu xu huong",
+        "ke hoach content",
+        "ke hoach noi dung",
+        "lich content",
+        "lich noi dung",
+        "len ke hoach noi dung",
+        "content calendar",
+        "idea content",
+        "y tuong content",
+        "de xuat idea",
+        "de xuat y tuong"
+      ],
+      "steps": [
+        "signal",
+        "planner"
+      ],
+      "titles": {
+        "signal": "01 Quét trend thời gian thực & thu thập tín hiệu: {c}",
+        "planner": "02-03 Báo cáo trend: radar + 6-8 idea (mỗi idea 3 dòng, không viết brief đầy đủ) + lịch content 2 tuần: {c}"
+      },
+      "unless": [
+        "kich ban",
+        "thumbnail",
+        "thiet ke",
+        "dung video",
+        "viet bai"
+      ]
     },
     {
       "id": "signals",

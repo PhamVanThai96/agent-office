@@ -31,16 +31,16 @@ export function remember({ command, summary, items = [], artifacts = [] }) {
   save([...load(), entry].slice(-MAX_ENTRIES));
 }
 
-// Chọn tối đa 3 lần làm việc trước có liên quan (trùng từ khoá); lệnh ngắn kiểu "tiếp tục/cập nhật" thì lấy lần gần nhất.
+// Chọn tối đa 2 lần làm việc trước có liên quan (trùng từ khoá); lệnh ngắn kiểu "tiếp tục/cập nhật" thì lấy lần gần nhất.
 export function recall(command) {
   const list = load();
   if (!list.length) return '';
   const q = words(command);
   let picks = list.map((e, i) => ({ e, i, s: [...words(e.command)].filter((w) => q.has(w)).length }))
-    .filter((x) => x.s > 0).sort((a, b) => b.s - a.s || b.i - a.i).slice(0, 3).map((x) => x.e);
+    .filter((x) => x.s > 0).sort((a, b) => b.s - a.s || b.i - a.i).slice(0, 2).map((x) => x.e);
   if (!picks.length && q.size <= 4) picks = [list[list.length - 1]];
   if (!picks.length) return '';
-  const body = picks.map((e) => `• [${new Date(e.ts).toLocaleString('vi-VN')}] Lệnh: ${e.command}\n  Kết quả: ${e.summary}\n${e.notes.map((n) => `  - ${n.agent}: ${n.note}`).join('\n')}${e.files.length ? `\n  File: ${e.files.join(', ')}` : ''}`).join('\n');
+  const body = picks.map((e) => `• [${new Date(e.ts).toLocaleString('vi-VN')}] Lệnh: ${e.command}\n  Kết quả: ${clip(e.summary, 700)}\n${e.notes.map((n) => `  - ${n.agent}: ${clip(n.note, 300)}`).join('\n')}${e.files.length ? `\n  File: ${e.files.join(', ')}` : ''}`).join('\n');
   return `\n\nBỘ NHỚ CHUNG (kết quả các lần làm việc trước, mốc thời gian ghi ở từng mục): dùng lại phần bối cảnh, phương pháp, kết luận, nguồn và file đã có để khỏi tìm hiểu lại từ đầu. Số liệu thay đổi theo thời gian từ bộ nhớ có thể đã cũ: nếu cần số hiện tại thì vẫn phải cập nhật bằng web_search.\n${body}`;
 }
 

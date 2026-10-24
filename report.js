@@ -82,7 +82,7 @@ export function chartSvg(spec) {
 const inline = (s) => esc(s)
   .replace(/`([^`]+)`/g, '<code>$1</code>')
   .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-  .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|[\w./-]+\.html)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 
 const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
 const isSep = (line) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line) && line.includes('-');
@@ -199,7 +199,7 @@ export function mdPage(title, text) {
 }
 
 // ev: { text, tasks, details:[{agent,title,status,text}], artifacts:[đường dẫn file agent đã tạo] }
-export async function buildReport(ev, command, when) {
+export async function buildReport(ev, command, when, title = '') {
   const images = new Map(), used = new Set(), attach = [], tables = [];
   for (const f of [...new Set(ev.artifacts || [])]) {
     const ext = path.extname(f).toLowerCase();
@@ -213,9 +213,9 @@ export async function buildReport(ev, command, when) {
   const files = left.map((a) => `<figure><img src="${a.uri}" alt=""><figcaption>${esc(a.f)}</figcaption></figure>`).join('')
     + tables.filter((t) => t.rows.length > 1).map((t) => `<div class="meta">${esc(t.f)}</div>${tableHtml(t.rows[0], t.rows.slice(1))}`).join('');
   const rows = (ev.tasks || []).map((x) => `<tr><td>${esc(x.agent)}</td><td>${esc(x.title)}</td><td>${esc(x.status)}</td></tr>`).join('');
-  return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Báo cáo</title>
+  return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title || 'Báo cáo')}</title>
 <style>${CSS}</style>
-<h2>Báo cáo gửi CEO</h2><p class="meta"><b>Lệnh:</b> ${esc(command)}<br>${esc(when)}</p>
+<h2>${esc(title || 'Báo cáo gửi CEO')}</h2><p class="meta"><b>Lệnh:</b> ${esc(command)}<br>${esc(when)}</p>
 <div class="sum">${summary}</div>
 ${files ? `<h3>Hình ảnh &amp; dữ liệu đính kèm</h3>${files}` : ''}
 ${detail}

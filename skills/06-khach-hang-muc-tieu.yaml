@@ -1,0 +1,62 @@
+id: 06-khach-hang-muc-tieu
+title: "Khách hàng mục tiêu: Hạt nêm chay & Rắc cơm Enzy"
+summary: Chân dung nữ 40–60 tuổi, khó tính, thu nhập trung bình khá trở lên, nội trợ/ăn chay/quan tâm sức khoẻ; cách viết, hình ảnh và điều cần tránh để nhắm đúng.
+agents: [planner, writer, video, designer, script_review, video_review, signal]
+when: [kich ban, content, video, hook, caption, bai viet, quang cao, ads, idea, y tuong, brief, noi dung, backlog, review, reel, thiet ke, banner, thumbnail, livestream, khach hang]
+order: 6
+tags: [khách hàng, chân dung, persona, nữ 40-60, nội trợ, ăn chay, sức khoẻ, giọng văn]
+updated: 2026-10-24
+sections:
+  - id: chan-dung
+    title: Chân dung chính
+    tags: [nữ, 40-60, thu nhập, nội trợ]
+    text: |-
+      **Chân dung chính (Hạt nêm chay Enzy & Rắc cơm Enzy):** nữ, 40–60 tuổi; thu nhập trung bình khá trở lên (chịu trả giá cao hơn cho gia vị "sạch" nhưng đòi phải thấy xứng đáng); là nội trợ hoặc người thích nấu ăn, lo cho cả gia đình và thường là người quyết định mua thực phẩm trong nhà. Dùng Facebook và Zalo nhiều, xem video dọc trên điện thoại, đọc kỹ mô tả, hay hỏi inbox/bình luận trước khi mua và tin lời giới thiệu của người quen.
+      **Tính cách khi mua:** khó tính, kén chọn, hay đọc thành phần, hoài nghi quảng cáo, sợ hàng giả và sợ "nói một đằng làm một nẻo". Chỉ tin khi có bằng chứng cụ thể và người thật.
+  - id: phan-khuc
+    title: Ba nhóm trong tệp (thường chồng lấn)
+    tags: [phân khúc, ăn chay, sức khoẻ, gia đình]
+    text: |-
+      **Ba nhóm trong tệp (thường chồng lấn):**
+      - Nội trợ chăm lo gia đình: nấu bữa cơm hằng ngày, lo sức khoẻ chồng con và cha mẹ, muốn bữa cơm ngon mà lành.
+      - Người ăn chay trường / ăn chay thiếu chất: lo thiếu vi chất (B12, sắt, kẽm, omega-3), hay mệt; cần gia vị chay thật sự thuần chay mà vẫn đậm vị.
+      - Người quan tâm sức khoẻ: ăn sạch, giảm bột ngọt/muối, trong nhà có người cần ăn kiêng — chỉ nói hỗ trợ lối sống, KHÔNG hứa chữa bệnh.
+  - id: noi-lo
+    title: Nỗi lo & động lực mua
+    tags: [nỗi lo, động lực, bột ngọt, hàng giả]
+    text: |-
+      **Nỗi lo:** bột ngọt/phụ gia ăn lâu hại sức khoẻ; hàng giả, hàng nhái; giá cao hơn hạt nêm thường; ăn chay mà vẫn thiếu chất; sản phẩm có thật sự thuần chay không; vón cục, hạn dùng.
+      **Động lực:** bữa cơm ngon cho cả nhà, an tâm cho người thân, tiết kiệm thời gian (rắc cơm 1 thìa), được hiểu và được tôn trọng.
+  - id: phan-doi
+    title: Phản đối thường gặp & cách đáp
+    tags: [phản đối, đắt, hàng giả, bột ngọt]
+    text: |-
+      **Phản đối thường gặp & cách đáp (không hạ thấp đối thủ):**
+      - "Đắt quá": thành phần rau củ thật, quy trình, 420g dùng được bao lâu (xào 7g/500g, kho 10g, canh 15g/lít), giá trên mỗi bữa.
+      - "Hàng giả?": mua kênh chính hãng, được đồng kiểm khi nhận hàng, người làm xuất hiện thật.
+      - "Có bột ngọt không?": "4 KHÔNG" theo công bố của Enzy; nhắc muối biển hầm niêu đất, mật mía.
+      - "Vón cục": do không dùng chất chống đông vón, chỉ cần tán nhẹ.
+  - id: giong-van
+    title: Văn phong & xưng hô
+    tags: [văn phong, xưng hô, giọng điệu, caption]
+    text: "**Văn phong & xưng hô:** lịch sự, ấm áp, chân thành như con cháu nói chuyện với mẹ/cô — xưng \"Tiến\" (người sáng lập) hoặc \"Enzy\", gọi \"anh chị / cô / chị\" (đúng với các bài đã thắng). Câu ngắn, từ phổ thông, số liệu cụ thể, ví dụ bữa cơm gia đình. TRÁNH tiếng lóng/Gen Z, giật gân, doạ quá đà, \"bạn ơi\" kiểu trẻ, từ cường điệu (nhất, 100%, thần thánh). Kết bằng lời mời nhẹ: \"anh chị cứ nhắn Enzy để được tư vấn\"."
+  - id: video-hinh-anh
+    title: Video & hình ảnh
+    tags: [video, hình ảnh, phụ đề, thiết kế]
+    text: "**Video & hình ảnh cho tệp 40–60:** phụ đề to, tương phản cao, nói chậm rõ từng ý; cảnh bếp/bàn ăn gia đình, nấu thật, người thật (người trong nhà máy mặc đồng phục, người lớn tuổi hoặc người thân), nhạc nhẹ; nhịp vừa phải (45–110 giây đã thắng, mỗi cảnh không quá nhanh), không hiệu ứng rối; CTA đơn giản (nhắn tin). Thiết kế: chữ lớn, ít chi tiết, màu dịu, không quá nhiều khung chữ."
+  - id: hook-goi-y
+    title: Gợi ý hook theo nhóm
+    tags: [hook, mở đầu, caption]
+    text: "**Gợi ý hook theo nhóm:** Nội trợ — \"Nấu cho cả nhà mà vẫn lo bột ngọt?\", \"Hạt nêm gì mà đắt thế?\"; Ăn chay — \"Ăn chay lâu năm mà hay mệt, anh chị có bổ sung vi chất chưa?\" (chỉ nói bổ sung vi chất theo công bố, không chẩn đoán); Sức khoẻ — \"Ai cũng tưởng bỏ mì chính sang hạt nêm là tốt…\", \"Làm thật để giữ phước\"."
+  - id: rac-com
+    title: "Rắc cơm: điểm riêng"
+    tags: [rắc cơm, tiện lợi, thuần chay]
+    text: "**Rắc cơm Enzy (hũ 300g, thuần chay):** nhắm cùng tệp nữ 40–60 vừa mua cho mình vừa cho người nhà (chồng mang cơm đi làm, cha mẹ lớn tuổi, người ăn chay bận rộn): \"một thìa là có bữa ăn đủ chất\", giàu hạt và rong biển (theo công bố). Gia vị rắc cơm CHO BÉ (6 vị) KHÔNG thuần chay và không thuộc tệp này."
+  - id: kiem-tra
+    title: Checklist cho biên kịch & người duyệt
+    tags: [checklist, duyệt, kịch bản]
+    text: "**Checklist 6 câu trước khi nộp/duyệt:** (1) hook nói đúng nỗi lo của một nhóm trong tệp? (2) xưng hô lịch sự, không tiếng lóng? (3) có người thật/nhà máy/bằng chứng cụ thể? (4) chữ và nhịp đủ dễ đọc cho người 40–60? (5) không claim y tế, không số vi chất chưa kiểm chứng, không so sánh hạ thấp? (6) CTA một bước (nhắn tin) và giá/ưu đãi khớp enzy.vn?"
+  - id: kiem-chung
+    title: Lưu ý kiểm chứng
+    tags: [kiểm chứng, dữ liệu, giả định]
+    text: "**Lưu ý:** chân dung này là định hướng của CEO (24/10/2026), chưa đối chiếu với số liệu tệp thật. Khi có dữ liệu Meta Ads (tuổi, giới, vị trí) hoặc inbox khác chân dung, ghi \"Giả định/Khác biệt\" và báo lại. Tham khảo dữ liệu content win: chủ đề \"cho bé/ăn dặm\" chỉ thắng 5% (thấp nhất), phù hợp việc nhắm người lớn tuổi hơn là mẹ bỉm."

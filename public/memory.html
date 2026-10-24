@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trí nhớ &amp; kỹ năng agent · Agent Office</title>
+<style>
+:root{--bg:#f1efe8;--panel:#fff;--ink:#232834;--mute:#667085;--line:#e4e1d8;--soft:#f6f4ee;--accent:#34517a;--good:#14795f;--goodbg:#d9f1e9;--warn:#a15c00;--warnbg:#fbeccb;--bad:#8a3a37;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#12161c;--panel:#1b222b;--ink:#e8edf2;--mute:#9aa8b6;--line:#2b3541;--soft:#222b36;--accent:#7da2e0;--good:#5fd1b0;--goodbg:#14352c;--warn:#f0c463;--warnbg:#3a2e10;--bad:#ff9b92;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:20px 18px 40px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 18px;margin-bottom:12px}
+h1{margin:0;font-size:22px}.sub{color:var(--mute);font-size:13px;margin-top:2px;max-width:760px}
+.btn{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}.btn.danger{color:var(--bad)}.btn:disabled{opacity:.5;cursor:default}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:14px}
+.bar label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px}
+.bar input{width:17px;height:17px;accent-color:var(--accent)}
+.bar .sp{flex:1}
+.note{color:var(--mute);font-size:12.5px;margin:0 0 12px}
+.banner{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:8px 12px;font-size:12.5px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h3{margin:0;font-size:15.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 i{width:11px;height:11px;border-radius:50%;background:var(--c);display:inline-block;flex:none}
+.card h3 code{font-size:12px;color:var(--mute);font-weight:500}
+.role{color:var(--mute);font-size:12.5px;margin-top:-6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--mute)}
+.chip b{color:var(--ink)}.chip.good{background:var(--goodbg);color:var(--good);border-color:transparent}.chip.warn{background:var(--warnbg);color:var(--warn);border-color:transparent}
+h4{margin:0 0 4px;font-size:12px;color:var(--mute);font-weight:600;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+h4 .sp{flex:1}h4 button{all:unset;cursor:pointer;color:var(--accent);font-weight:500}
+.pb{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:44px}
+.pb.empty{color:var(--mute);font-style:italic}
+textarea,input[type=text]{width:100%;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:8px 10px}
+textarea{min-height:140px;resize:vertical}
+.les{display:flex;flex-direction:column;gap:4px}
+.l{display:flex;gap:8px;align-items:flex-start;background:var(--soft);border-radius:8px;padding:5px 8px;font-size:12.5px}
+.l span{flex:1;overflow-wrap:anywhere}
+.l em{font-style:normal;font-size:11px;padding:0 7px;border-radius:999px;background:var(--line);color:var(--mute);flex:none}
+.l em.ceo{background:var(--accent);color:#fff}
+.l button{all:unset;cursor:pointer;color:var(--mute);padding:0 4px}.l button:hover{color:var(--bad)}
+.add{display:flex;gap:6px}
+.dg{font-size:12px;color:var(--mute)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.rec{font-size:12px;color:var(--mute);overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Trí nhớ &amp; kỹ năng agent</h1>
+      <div class="sub">Mỗi agent có sổ tay kinh nghiệm riêng, luôn được nạp gọn vào prompt nên không phải học lại từ đầu. Sau mỗi lần làm việc, hệ thống tự ghi bài học (từ yêu cầu sửa của người duyệt và đánh giá của CEO) rồi hợp nhất theo lô để tiết kiệm token.</div>
+    </div>
+    <button class="btn" id="refresh" type="button">Làm mới</button>
+  </header>
+  <div class="bar">
+    <label><input type="checkbox" id="auto"> Tự học sau mỗi lần làm việc</label>
+    <label><input type="checkbox" id="digest"> Nén skill chung (tiết kiệm token, tạo một lần rồi dùng lại)</label>
+    <span class="sp"></span>
+    <button class="btn pri" id="all" type="button">Hợp nhất tất cả bài học ngay</button>
+  </div>
+  <div class="banner" id="mock" hidden>Đang ở chế độ MOCK: bài học vẫn được ghi, hợp nhất bằng quy tắc đơn giản; nén skill và hợp nhất bằng AI chỉ chạy ở chế độ REAL.</div>
+  <div class="grid" id="grid"></div>
+</main>
+<script src="admin.js"></script>
+<script>
+var $ = function (i) { return document.getElementById(i); };
+var data = null, editing = {};
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function compact(n) { n = n || 0; return n >= 1e6 ? (n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' tr' : n >= 1e3 ? (n / 1e3).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' k' : String(Math.round(n)); }
+function when(ts) { return ts ? new Date(ts).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'chưa có'; }
+function act(body) {
+  return adminFetch('learn/act', { method: 'POST', body: JSON.stringify(body) }).then(function (r) { return r.ok ? r.json() : r.text().then(function (t) { throw new Error(t); }); });
+}
+function fail(e) { alert(e.message || e); }
+
+function card(a) {
+  var c = el('div', 'card'); c.style.setProperty('--c', a.color || '#888');
+  var h = el('h3'); h.append(el('i'), document.createTextNode(a.name + ' '), el('code', '', '#' + a.id)); c.append(h);
+  if (a.role) c.append(el('div', 'role', a.role));
+  var chips = el('div', 'chips');
+  [['Lượt làm', a.runs, ''], ['Được duyệt', a.approvals, a.approvals ? 'good' : ''], ['Phải sửa', a.revisions, a.revisions ? 'warn' : '']].forEach(function (p) {
+    var s = el('span', 'chip ' + p[2]); s.append(document.createTextNode(p[0] + ' '), el('b', '', String(p[1]))); chips.append(s);
+  });
+  var u = a.usage || { tokens: 0, requests: 0 };
+  var tk = el('span', 'chip'); tk.append(document.createTextNode('Token TB/yêu cầu '), el('b', '', u.requests ? compact(u.tokens / u.requests) : '–')); chips.append(tk);
+  c.append(chips);
+
+  var box = el('div'), hd = el('h4'); hd.append(document.createTextNode('Sổ tay kinh nghiệm'), el('span', 'sp'));
+  var eb = el('button', '', editing[a.id] ? 'Huỷ sửa' : 'Sửa'); hd.append(eb); box.append(hd);
+  if (editing[a.id]) {
+    var ta = el('textarea'); ta.value = a.playbook; ta.placeholder = 'Mỗi dòng một quy tắc ngắn (tối đa ~14 dòng).'; box.append(ta);
+    var sv = el('button', 'btn pri', 'Lưu sổ tay'); sv.style.marginTop = '6px';
+    sv.onclick = function () { act({ action: 'edit', id: a.id, playbook: ta.value }).then(function () { editing[a.id] = false; load(); }, fail); };
+    box.append(sv);
+  } else box.append(el('div', 'pb' + (a.playbook ? '' : ' empty'), a.playbook || 'Chưa có kinh nghiệm nào. Sau vài lần làm việc và được duyệt/đánh giá, sổ tay sẽ tự hình thành.'));
+  eb.onclick = function () { editing[a.id] = !editing[a.id]; render(); };
+  c.append(box);
+
+  var pb = el('div'), ph = el('h4', '', 'Bài học chờ hợp nhất (' + a.pending.length + ')'); pb.append(ph);
+  var les = el('div', 'les');
+  a.pending.forEach(function (p, i) {
+    var r = el('div', 'l'); r.append(el('em', p.src === 'ceo' ? 'ceo' : '', p.src === 'ceo' ? 'CEO' : p.src === 'review' ? 'Duyệt' : 'Auto'), el('span', '', p.t + (p.n > 1 ? ' (×' + p.n + ')' : '')));
+    var x = el('button', '', '×'); x.title = 'Xoá bài học này'; x.onclick = function () { act({ action: 'remove', id: a.id, index: i }).then(load, fail); }; r.append(x); les.append(r);
+  });
+  if (!a.pending.length) les.append(el('div', 'dg', 'Không có bài học nào đang chờ.'));
+  pb.append(les);
+  var add = el('div', 'add'), inp = el('input'); inp.type = 'text'; inp.placeholder = 'Thêm bài học/quy tắc cho agent này…'; inp.maxLength = 240;
+  var ab = el('button', 'btn', 'Thêm');
+  function submit() { if (!inp.value.trim()) return; act({ action: 'lesson', id: a.id, text: inp.value }).then(load, fail); }
+  ab.onclick = submit; inp.onkeydown = function (e) { if (e.key === 'Enter') submit(); };
+  add.append(inp, ab); pb.append(add); c.append(pb);
+
+  if (a.recent.length) { var rc = el('div', 'rec'); rc.append(el('b', '', 'Việc gần đây: '), document.createTextNode(a.recent.map(function (r) { return r.title; }).join(' · '))); c.append(rc); }
+  var d = a.digest, dg = el('div', 'dg');
+  dg.textContent = !data.settings.digest ? 'Nén skill: đang tắt.' : !d.eligible ? 'Nén skill: không cần (skill ngắn).' : d.ready ? 'Nén skill: đã nén ' + compact(d.from) + ' → ' + compact(d.to) + ' ký tự, dùng lại ở mọi lượt.' : 'Nén skill: sẽ tự tạo khi agent đã làm ≥ ' + d.need + ' lượt (hiện ' + d.runs + ').';
+  c.append(dg, el('div', 'dg', 'Cập nhật gần nhất: ' + when(a.consolidated || a.updated)));
+  var ac = el('div', 'acts'), cb = el('button', 'btn', 'Hợp nhất ngay'), rb = el('button', 'btn danger', 'Xoá trí nhớ');
+  cb.disabled = !a.pending.length;
+  cb.onclick = function () { cb.disabled = true; cb.textContent = 'Đang hợp nhất…'; act({ action: 'consolidate', id: a.id }).then(load, fail); };
+  rb.onclick = function () { if (confirm('Xoá toàn bộ sổ tay, bài học và thống kê của #' + a.id + '?')) act({ action: 'reset', id: a.id }).then(load, fail); };
+  ac.append(cb, rb); c.append(ac);
+  return c;
+}
+
+function render() {
+  if (!data) return;
+  $('auto').checked = data.settings.auto; $('digest').checked = data.settings.digest; $('mock').hidden = data.live;
+  $('grid').replaceChildren.apply($('grid'), data.agents.map(card));
+}
+function load() { return fetch('learn', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) { data = d; render(); }); }
+$('refresh').onclick = load;
+$('auto').onchange = function () { act({ action: 'settings', auto: this.checked }).then(load, fail); };
+$('digest').onchange = function () { act({ action: 'settings', digest: this.checked }).then(load, fail); };
+$('all').onclick = function () { var b = this; b.disabled = true; b.textContent = 'Đang hợp nhất…'; act({ action: 'consolidate', id: 'all' }).then(function (r) { b.textContent = 'Đã hợp nhất ' + r.merged + ' bài học'; setTimeout(function () { b.textContent = 'Hợp nhất tất cả bài học ngay'; b.disabled = false; }, 1800); return load(); }, function (e) { b.disabled = false; b.textContent = 'Hợp nhất tất cả bài học ngay'; fail(e); }); };
+load();
+</script>
+</body>
+</html>

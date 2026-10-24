@@ -2,13 +2,16 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { record, estimate } from './usage.js';
 
 // Cầu nối tới các CLI đã đăng nhập sẵn trên máy (Claude Code, Codex, Gemini CLI).
 // Prompt đi qua stdin; CLI chạy trong thư mục tạm rỗng để không tự đọc/sửa file của bạn.
 // Mọi truy cập file của agent vẫn đi qua cơ chế xin quyền của ứng dụng.
 const WIN = process.platform === 'win32';
-const TIMEOUT_MS = 180000;
+const TIMEOUT_MS = 420000; // báo cáo dài (trend, kế hoạch content) có thể mất vài phút
 const MAX_STEPS = 6;
+const FINAL_NOTE = '\n\n[Hệ thống] Đã hết lượt gọi công cụ. KHÔNG gọi công cụ nữa: hãy trả lời NGAY bằng thông tin đã thu thập được (kể cả skill/đồng nghiệp), nêu rõ phần nào chưa xác thực và vì sao.';
 const SAFE_MODEL = /^[A-Za-z0-9][\w.:/-]*$/;
 const SECRET_ENV = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY'];
 
@@ -81,17 +84,98 @@ export function authStatus(provider, cmd) {
   });
 }
 
+// Đăng nhập CLI ngay từ giao diện: chạy `claude auth login` / `codex login` trên máy server.
+// CLI tự mở trình duyệt; ta chỉ bắt đường link (để mở lại nếu cần) và chuyển mã dán vào stdin.
+// Không trả stdout/stderr thô về giao diện — chỉ URL https và trạng thái.
+const LOGIN_TIMEOUT_MS = 5 * 60 * 1000;
+const ANSI = /\x1b\[[0-9;?]*[A-Za-z]/g;
+let login = null;
+
+export function loginStart(provider, cmd) {
+  if (login?.state === 'running') return loginInfo();
+  const executable = resolveCommand(cmd);
+  if (!executable) throw new Error(`Không tìm thấy CLI "${cmd}".`);
+  const args = provider === 'gpt' ? ['login'] : ['auth', 'login'];
+  const child = spawn(executable, args, { env: childEnv(), stdio: ['pipe', 'pipe', 'pipe'], shell: WIN });
+  const s = login = { provider, state: 'running', url: '', child };
+  const onData = (d) => {
+    if (s.url) return;
+    const m = d.toString().replace(ANSI, '').match(/https:\/\/[^\s"'<>]+/);
+    if (m) s.url = m[0];
+  };
+  child.stdout.on('data', onData);
+  child.stderr.on('data', onData);
+  child.stdin.on('error', () => { /* CLI đã thoát */ });
+  const timer = setTimeout(() => { if (s.state === 'running') { s.state = 'failed'; child.kill(); } }, LOGIN_TIMEOUT_MS);
+  child.on('error', () => { clearTimeout(timer); if (s.state === 'running') s.state = 'failed'; });
+  child.on('close', (code) => { clearTimeout(timer); if (s.state === 'running') s.state = code === 0 ? 'done' : 'failed'; });
+  return loginInfo();
+}
+
+export const loginInfo = () => (login ? { provider: login.provider, state: login.state, url: login.url } : { state: 'idle', url: '' });
+
+export function loginCode(code) {
+  if (login?.state !== 'running') throw new Error('Chưa có phiên đăng nhập đang chạy.');
+  if (!/^[\w#.~%=+\/-]{6,600}$/.test(code)) throw new Error('Mã không hợp lệ.');
+  login.child.stdin.write(code + '\n');
+}
+
+export function loginCancel() {
+  if (login?.state === 'running') { login.state = 'failed'; login.child.kill(); }
+}
+
+// Claude CLI trả JSON {result, modelUsage}: lấy văn bản trả lời và ghi nhớ model thật đã chạy để giao diện hiển thị.
+const MODEL_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data', 'cli-models.json');
+let usedModel = {};
+try { usedModel = JSON.parse(fs.readFileSync(MODEL_FILE, 'utf8')); } catch { /* chưa có */ }
+let onModel = () => {};
+export const onModelFound = (fn) => { onModel = fn; };
+export const lastModel = (provider) => usedModel[provider] || '';
+function rememberModel(provider, m) {
+  if (!m || usedModel[provider] === m) return;
+  usedModel[provider] = m;
+  try { fs.mkdirSync(path.dirname(MODEL_FILE), { recursive: true }); fs.writeFileSync(MODEL_FILE, JSON.stringify(usedModel)); } catch { /* chỉ là bộ nhớ đệm */ }
+  onModel();
+}
+// Gọi một lượt rất ngắn để biết CLI đang dùng model nào (chỉ khi chưa biết).
+export async function discoverModel(provider, cmd) {
+  if (provider !== 'claude' || usedModel.claude) return;
+  try { await run({ provider, cmd, model: '', system: 'Reply with one word.', prompt: 'ok' }); } catch { /* không sao, thử lại lần sau */ }
+}
+function claudeResult(out, rec) {
+  try {
+    const o = JSON.parse(out);
+    if (typeof o?.result !== 'string') return out;
+    const mu = Object.entries(o.modelUsage || {});
+    rememberModel('claude', mu[0]?.[0]);
+    for (const [model, u] of mu) {
+      rec({ model, input: (u.inputTokens || 0) + (u.cacheReadInputTokens || 0) + (u.cacheCreationInputTokens || 0), cached: u.cacheReadInputTokens, output: u.outputTokens });
+    }
+    if (!mu.length && o.usage) rec({ model: '', input: (o.usage.input_tokens || 0) + (o.usage.cache_read_input_tokens || 0) + (o.usage.cache_creation_input_tokens || 0), cached: o.usage.cache_read_input_tokens, output: o.usage.output_tokens });
+    return o.result.trim();
+  } catch { return out; }
+}
+
+// Codex/Gemini CLI không trả JSON: đọc dòng "tokens used N" nếu có, không thì ước tính theo độ dài (đánh dấu ước tính).
+function otherUsage(provider, model, text, err, input, rec) {
+  const all = `${err}\n${text}`;
+  const total = Number((all.match(/tokens used\D{0,10}([\d][\d,.]*)/i)?.[1] || '').replace(/[,.]/g, ''));
+  const m = model || all.match(/^model:\s*(\S+)/mi)?.[1] || '';
+  if (total > 0) rec({ model: m, other: total });
+  else rec({ model: m, input: estimate(input), output: estimate(text), estimated: true });
+}
+
 function buildArgs(provider, model, sysFile) {
   const m = model ? ['-m', model] : [];
   if (provider === 'claude') {
-    return ['-p', 'Follow the instructions given on stdin.', ...(model ? ['--model', model] : []),
+    return ['-p', 'Follow the instructions given on stdin.', '--output-format', 'json', ...(model ? ['--model', model] : []),
       '--system-prompt-file', sysFile, '--disallowedTools', '*'];
   }
   if (provider === 'gpt') return ['exec', '--skip-git-repo-check', '-s', 'read-only', ...m, '-'];
   return ['-p', 'Follow the instructions given on stdin.', ...m];
 }
 
-function run({ provider, cmd, model, system, prompt }) {
+function run({ provider, cmd, model, system, prompt, agentId }) {
   if (model && !SAFE_MODEL.test(model)) return Promise.reject(new Error(`Tên model "${model}" không hợp lệ.`));
   const executable = resolveCommand(cmd);
   if (!executable) return Promise.reject(new Error(`Không tìm thấy CLI "${cmd}" trong PATH của server.`));
@@ -116,7 +200,12 @@ function run({ provider, cmd, model, system, prompt }) {
     child.stderr.on('data', (d) => (err += d));
     child.on('error', (e) => finish(reject, new Error(`Không chạy được "${cmd}": ${e.message}`)));
     child.on('close', (code) => {
-      if (code === 0) finish(resolve, out.trim());
+      if (code === 0) {
+        const rec = (u) => record({ provider, via: 'cli', agent: agentId, ...u });
+        const text = provider === 'claude' ? claudeResult(out.trim(), rec) : out.trim();
+        if (provider !== 'claude') otherUsage(provider, model, text, err, `${system}\n${prompt}`, rec);
+        finish(resolve, text);
+      }
       else {
         const detail = (err || out).replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '').trim();
         const tail = detail.length > 1400 ? `…${detail.slice(-1400)}` : detail;
@@ -150,8 +239,11 @@ export async function cliComplete({ system, user, tools, handlers, ai }) {
   const sys = system + (tools.length ? toolGuide(tools) : '');
   let prompt = user;
   for (let i = 0; i < MAX_STEPS; i++) {
-    const out = await run({ provider: ai.provider, cmd: ai.cmd, model: ai.model, system: sys, prompt });
-    const call = tools.length ? parseToolCall(out, handlers) : null;
+    // Lượt cuối: buộc trả lời bằng thông tin đã có (trước đây hết lượt công cụ chỉ trả "Không hoàn tất" dù đã tốn rất nhiều token).
+    const last = i === MAX_STEPS - 1 && tools.length > 0;
+    const out = await run({ provider: ai.provider, cmd: ai.cmd, model: ai.model, system: sys, prompt: last ? prompt + FINAL_NOTE : prompt, agentId: ai.agentId });
+    const call = tools.length && !last ? parseToolCall(out, handlers) : null;
+    if (last && parseToolCall(out, handlers)) return 'Không hoàn tất được sau nhiều bước: agent vẫn cố gọi công cụ ở lượt cuối.';
     if (!call) return out;
     const result = await handlers[call.name](call.args);
     prompt += `\n\n[Bạn đã gọi ${call.name} với ${JSON.stringify(call.args)}]\n[Kết quả] ${JSON.stringify(result)}\n\nTiếp tục.`;

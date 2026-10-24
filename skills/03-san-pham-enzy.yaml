@@ -1,0 +1,65 @@
+id: 03-san-pham-enzy
+title: Sản phẩm Enzy (đã xác thực từ website)
+summary: "Nguồn: trang sản phẩm enzy.vn, lấy ngày 24/10/2026. Đây là thông tin WEBSITE CÔNG BỐ. Giá/ưu đãi hay đổi: trước khi đăng phải đối chiếu lại trên…"
+agents: [signal, planner, writer, script_review, video_review]
+order: 3
+tags: [tổng, quan, công, dòng, thuần, chay, gắn, nhãn, hạt, nêm, enzy, rau]
+updated: 2026-10-24
+sections:
+  - id: tong-quan
+    title: Tổng quan
+    tags: [tổng, quan]
+    text: "Nguồn: trang sản phẩm enzy.vn, lấy ngày 24/10/2026. Đây là thông tin WEBSITE CÔNG BỐ. Giá/ưu đãi hay đổi: trước khi đăng phải đối chiếu lại trên enzy.vn. Cần thông tin mới hơn thì làm theo skill \"Tra cứu website & sản phẩm\", không đoán."
+  - id: cong-ty
+    title: Công ty
+    tags: [công]
+    text: "**Công ty:** Công ty TNHH Enzy Food (nhà máy thực phẩm rau củ) — \"Enzy – Sống Biết Ơn\". Đặt hàng 0334 179 314. Kênh: Facebook HatNemChayEnzy, TikTok @enzyfood, YouTube @HatNemChayEnzy, Shopee enzy.vn, landing hatnemchay.enzy.vn. Freeship: banner ghi đơn từ 2 sản phẩm, chính sách ghi từ 400k; đồng kiểm khi nhận hàng; đổi trả nếu lỗi."
+  - id: dong-thuan-chay-duoc-gan-nhan-thuan-chay
+    title: Dòng THUẦN CHAY (được gắn nhãn "thuần chay")
+    tags: [dòng, thuần, chay, gắn, nhãn]
+    text: "**Dòng THUẦN CHAY (được gắn nhãn \"thuần chay\"):**"
+  - id: hat-nem-chay-enzy
+    title: Hạt nêm chay Enzy
+    tags: [hạt, nêm, chay, enzy]
+    text: "- Hạt nêm chay Enzy (hộp 420g) 220.000đ (2 hộp 440.000đ, freeship combo 2–5 hộp): ngưu bàng, nấm đông cô, cà rốt, củ cải đường, lá củ cải, dứa, lá nếp, chùm ngây, hạt sachi, rong biển, cỏ ngọt; muối biển hầm niêu đất, mật mía; tăng cường Sắt, Kẽm, Vitamin B12; \"4 KHÔNG\": bột ngọt E621, siêu ngọt E627/E631, phẩm màu/hương liệu, chất bảo quản & chống đông vón. 61 kcal/100g. Dùng: xào/ướp 7g/500g, kho 10g/500g, canh 15g/1 lít."
+  - id: hat-nem-rau-cu-enzy
+    title: Hạt nêm rau củ Enzy
+    tags: [hạt, nêm, rau, enzy]
+    text: "- Hạt nêm rau củ Enzy (gói 80g–900g) 26.000–150.000đ: dứa, củ cải đường, cỏ ngọt, nấm bào ngư, rong biển, muối, đường, chiết xuất nấm men, tinh bột sắn biến tính; \"3 KHÔNG\" (E621, E627/E631, phẩm màu/hương liệu/bảo quản). Dùng cho cả chay và mặn."
+  - id: bot-nem-an-dam-cho-be-tu-6-thang-55-000-
+    title: Bột nêm ăn dặm cho bé từ 6 tháng 55.000–85.000đ
+    tags: [bột, nêm, dặm, tháng, "000", 000đ]
+    text: "- Bột nêm ăn dặm cho bé từ 6 tháng 55.000–85.000đ: dứa, củ cải đường, cỏ ngọt, nấm hương, rong biển, maltodextrin, chiết xuất nấm men; website ghi không muối, không đường."
+  - id: rac-com-thuan-chay
+    title: Rắc cơm thuần chay
+    tags: [rắc, cơm, thuần, chay]
+    text: "- Rắc cơm thuần chay (hũ 300g) 320.000đ (niêm yết 330.000đ), 3 vị: siêu thực phẩm / rong biển & hạt / rong biển & củ; rong biển 5%, công nghệ Nhật Bản khử tanh."
+  - id: canh-duong-sinh-jcare
+    title: Canh dưỡng sinh Jcare
+    tags: [canh, dưỡng, sinh, jcare]
+    text: "- Canh dưỡng sinh Jcare (8 gói × 40g) 190.000đ: 5 loại rau củ, pha 1–3 phút; website ghi rõ \"không phải thuốc\"."
+  - id: enzy-slowcarb-goi-tron-nau-com-cham-250-
+    title: Enzy SlowCarb – gói trộn nấu cơm chậm 250.000đ
+    tags: [enzy, slowcarb, gói, trộn, nấu, cơm]
+    text: "- Enzy SlowCarb – gói trộn nấu cơm chậm 250.000đ (trang đang hiển thị lỗi giá 0đ, xác nhận lại): 100% thuần chay, tinh bột kháng RS3 từ bột mít xanh non + diêm mạch, kiều mạch, yến mạch, đậu đen, đậu xanh, khoai lang, hạt kê; mới ra mắt."
+  - id: banh-rau-cu-enzy
+    title: Bánh rau củ Enzy
+    tags: [bánh, rau, enzy]
+    text: "- Bánh rau củ Enzy (hộp 240g/20 gói) 250.000đ (mua 2 tặng 1 = 500.000đ; 3 tặng 2 = 750.000đ; 5 tặng 5 = 1.200.000đ): bột mì nguyên cám, dầu dừa, bột bắp, hạt lanh, 7 loại rau củ, đậu đen, tinh bột nghệ, mè đen; không bơ sữa, không chiên, không bột nở."
+  - id: khong-phai-thuan-chay
+    title: KHÔNG phải thuần chay
+    tags: [phải, thuần, chay]
+    text: "**KHÔNG phải thuần chay:** Gia vị rắc cơm cho bé 6 vị (58.000–270.000đ; có cá hồi, bò, tôm, mực, phô mai; từ 1 tuổi) — tuyệt đối không dùng trong nội dung \"thuần chay\"."
+  - id: usp-dung-duoc
+    title: USP dùng được
+    tags: [usp, dùng]
+    text: "**USP dùng được:** không bột ngọt/siêu ngọt, chiết xuất rau củ, vị umami từ ngưu bàng–nấm, bổ sung vi chất cho người ăn chay, tiện (rắc cơm 3 giây). Đối tượng: người ăn chay trường/dưỡng sinh, Eat Clean, gia đình có trẻ nhỏ, người \"say bột ngọt\"."
+  - id: can-trong-khi-viet-duyet
+    title: Cẩn trọng khi viết/duyệt
+    tags: [cẩn, trọng, viết/duyệt]
+    text: |-
+      **Cẩn trọng khi viết/duyệt:**
+      - Chứng nhận (ISO 22000:2018, "đạt chuẩn FDA Hoa Kỳ", "công nghệ Nhật Bản") chỉ là công bố của Enzy: viết "theo công bố của Enzy", không nói "được FDA chứng nhận"; cần giấy tờ trước khi dùng trong quảng cáo.
+      - Bảng dinh dưỡng hạt nêm chay trên web có số bất thường (Sắt 941 mg, Kẽm 226 mg, B12 69 µg, Natri 16.085 mg/100g, nghi sai đơn vị): KHÔNG trích số vi chất, chỉ nói "bổ sung Sắt, Kẽm, Vitamin B12".
+      - Hạt nêm chay và rắc cơm có muối biển/mật mía (hạt nêm rau củ có muối, đường): không nói "không muối/không đường" cho chúng.
+      - Không claim y tế (chữa bệnh, giải độc, giảm cân/đường huyết cam kết, thay thuốc); SlowCarb chỉ nói "phù hợp người quan tâm đường huyết".

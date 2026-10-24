@@ -1,0 +1,37 @@
+id: 11-tra-cuu-website
+title: Tra cứu website & sản phẩm
+summary: "Dùng khi cần thông tin sản phẩm/website (vd enzy.vn). Mục tiêu: có số liệu thật kèm nguồn + ngày, không bịa, không bỏ cuộc sau một lần lỗi."
+agents: [signal, planner, analyst]
+when: [website, trang web, san pham, tra cuu, review, thu thap, nghien cuu, enzy.vn]
+order: 11
+tags: [tổng, quan, xem, trước, skill, sản, phẩm, enzy, website, thể, chậm, giây]
+updated: 2026-10-24
+sections:
+  - id: tong-quan
+    title: Tổng quan
+    tags: [tổng, quan]
+    text: "Dùng khi cần thông tin sản phẩm/website (vd enzy.vn). Mục tiêu: có số liệu thật kèm nguồn + ngày, không bịa, không bỏ cuộc sau một lần lỗi."
+  - id: xem-truoc-skill-san-pham-enzy
+    title: Xem trước skill "Sản phẩm Enzy"
+    tags: [xem, trước, skill, sản, phẩm, enzy]
+    text: "1. Xem trước skill \"Sản phẩm Enzy\": đã có thông tin xác thực thì dùng luôn, chỉ tải lại để kiểm tra giá/ưu đãi hoặc sản phẩm mới."
+  - id: website-co-the-cham-10-20-giay
+    title: Website có thể chậm 10–20 giây
+    tags: [website, thể, chậm, giây]
+    text: "2. Website có thể chậm 10–20 giây: một lần báo lỗi hay \"quá thời gian\" KHÔNG phải là không truy cập được. Thử lại, và thử tên miền gốc (bỏ \"www.\")."
+  - id: dung-chi-tai-trang-chu
+    title: Đừng chỉ tải trang chủ
+    tags: [đừng, chỉ, tải, trang, chủ]
+    text: "3. Đừng chỉ tải trang chủ (phần chữ bị cắt ở ~6000 ký tự). Đi từ danh mục: /sitemap.xml hoặc /product-sitemap.xml → tải TỪNG trang sản phẩm (kết quả đã gồm tiêu đề, mô tả, giá, thành phần). Ví dụ enzy.vn: /san-pham/hat-nem-chay-enzy, /san-pham/hat-nem-rau-cu-enzy, /san-pham/rac-com-thuan-chay-enzy-tien-loi…"
+  - id: van-loi
+    title: Vẫn lỗi
+    tags: [vẫn, lỗi]
+    text: "4. Vẫn lỗi: web_search \"site:enzy.vn <từ khoá>\", rồi nguồn phụ (hatnemchay.enzy.vn, Shopee enzy.vn, fanpage chính thức); ghi rõ nguồn phụ."
+  - id: bao-cao-ket-qua
+    title: Báo cáo kết quả
+    tags: [báo, cáo, kết, quả]
+    text: "5. Báo cáo kết quả: nêu từng URL đã thử + mã lỗi, phần đã xác thực (kèm nguồn, ngày), phần CHƯA xác thực (gắn nhãn [CHƯA XÁC THỰC]). Đề nghị CEO gửi file/ảnh/PDF (kéo thả vào ô giao việc) chỉ khi đã thử hết các bước trên."
+  - id: planner
+    title: "#planner"
+    tags: [planner]
+    text: "6. #planner: không dựng backlog dựa trên thông tin sản phẩm giả định. Dùng skill \"Sản phẩm Enzy\"; thiếu gì thì ghi [CHƯA XÁC THỰC] và yêu cầu #signal thu thập bổ sung, không chặn cả quy trình."

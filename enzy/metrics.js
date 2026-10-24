@@ -72,6 +72,7 @@ export function parseEnzy(raw) {
 }
 
 const KIND_LABEL = { daily: 'Báo cáo ngày', weekly: 'Báo cáo tuần', monthly: 'Báo cáo tháng' };
+const KIND_TAG = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' };
 const delta = (cur, prev) => (cur == null || prev == null || !prev ? '–' : cur === prev ? '=' : `${cur > prev ? '▲' : '▼'} ${pct(Math.abs(cur - prev) / Math.abs(prev), 0)}`);
 const chart = (spec) => '```chart\n' + JSON.stringify(spec) + '\n```';
 
@@ -83,7 +84,7 @@ export function buildDataMarkdown(kind, d, history = []) {
   const t = d.totals, prev = history.at(-1)?.totals;
   const target = d.cpaTarget;
   const L = [];
-  L.push(`# ${KIND_LABEL[kind]} quảng cáo Enzy — ${d.period || d.range}`);
+  L.push(`# [${KIND_TAG[kind]}] ${KIND_LABEL[kind]} quảng cáo Enzy — ${d.period || d.range}`);
   L.push(`Nguồn: enzyfood.streamlit.app · Khoảng: ${d.range} · Cập nhật lúc ${d.updated || '–'} · Tài khoản: ${d.selected.join(', ') || '–'}`);
   if (d.missing.length) L.push(`⚠️ Không chọn được tài khoản: ${d.missing.join(', ')} (không có trong danh sách của trang).`);
   if (d.notes) L.push(`⚠️ ${d.notes}`);

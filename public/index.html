@@ -22,18 +22,30 @@
 </main>
 <div id="split" title="Kéo để đổi độ rộng"></div>
 <aside id="side">
+  <div id="tools">
+    <button id="openOffice" type="button" class="main" title="Thêm agent, cấu hình AI, dữ liệu Enzy"><i>⚙</i><b>Cấu hình</b></button>
+    <button id="openUsage" type="button" title="Giám sát token đã dùng theo model, theo yêu cầu, theo tháng"><i>🪙</i><b>Giám sát token</b></button>
+  </div>
   <div id="mode"></div>
-  <button id="addAgent" type="button">+ Thêm agent</button>
+  <div id="tkn" class="tk" role="button" tabindex="0" title="Bấm để mở dashboard giám sát token" hidden></div>
   <div id="perm"></div>
   <div id="allowed"></div>
   <section id="final" hidden>
-    <h4><span>Báo cáo gửi CEO</span><a id="finalLink" href="#" target="_blank" hidden>Mở file</a><button id="finalToggle" type="button" class="mini" title="Thu gọn / mở rộng">▾</button></h4>
+    <h4><span id="finalTitle">Báo cáo gửi CEO</span><a id="finalLink" href="#" target="_blank" hidden>Mở file</a><button id="finalToggle" type="button" class="mini" title="Thu gọn / mở rộng">▾</button></h4>
     <div id="finalText"></div>
+    <div id="finalLinks"></div>
+    <div id="fb" class="fb">
+      <span>Kết quả thế nào? Agent sẽ học từ đánh giá của bạn:</span>
+      <div class="fbr"><button id="fbGood" type="button" class="mini fbb">👍 Tốt</button><button id="fbBad" type="button" class="mini fbb bad">👎 Chưa tốt</button></div>
+      <div class="fbr"><input id="fbText" type="text" maxlength="200" placeholder="Nhận xét ngắn (tuỳ chọn): cần sửa gì?"><button id="fbSend" type="button" class="mini">Gửi</button></div>
+      <div id="fbMsg" class="fbm"></div>
+    </div>
   </section>
   <section id="enzy" hidden>
-    <h4><span>Báo cáo quảng cáo Enzy tự động</span><button id="enzyCfg" type="button" class="mini" title="Lịch chạy">⏰</button></h4>
+    <h4><span>Báo cáo quảng cáo Enzy tự động</span><button id="enzyCfg" type="button" class="mini" title="Lịch chạy">⏰</button><button id="enzyCfg2" type="button" class="mini" title="Cấu hình dữ liệu Enzy">⚙</button></h4>
     <div id="enzyStatus"></div>
     <div class="enzyBtns"><button type="button" data-kind="daily">Chạy báo cáo ngày</button><button type="button" data-kind="weekly">Tuần</button><button type="button" data-kind="monthly">Tháng</button></div>
+    <div class="enzyBtns dashBtns"><span>📈 Dashboard content (không dùng AI):</span><button type="button" data-dash="daily" class="sec">Ngày</button><button type="button" data-dash="weekly" class="sec">Tuần</button><button type="button" data-dash="monthly" class="sec">Tháng</button></div>
     <form id="enzySched" hidden>
       <label class="chk"><input id="esOn" type="checkbox"> Tự động chạy theo lịch (server phải đang bật)</label>
       <div class="esRow"><span>Ngày</span><input id="esDaily" type="time"></div>
@@ -75,9 +87,55 @@
     <label id="cfKeyRow">API key <input id="cfKey" type="password" autocomplete="off" placeholder=""></label>
     <label id="cfClearRow"><input id="cfClear" type="checkbox"> Xoá key đã lưu của provider này</label>
     <div class="row2"><span id="cfAuthNote">Kết nối bằng CLI sẽ dùng tài khoản đã đăng nhập trên máy chạy server.</span><button id="cfAuth" type="button" class="ghost">Đăng nhập / xác thực</button></div>
+    <div id="cfLogin" hidden>
+      <div id="cfLoginMsg"></div>
+      <a id="cfLoginUrl" target="_blank" rel="noopener" hidden>Mở lại trang đăng nhập</a>
+      <div class="row2"><input id="cfLoginCode" type="text" autocomplete="off" placeholder="Nếu trang hiện mã, dán vào đây"><button id="cfLoginSend" type="button" class="ghost">Gửi mã</button></div>
+      <button id="cfLoginCancel" type="button" class="ghost">Dừng đăng nhập</button>
+    </div>
     <div id="cfNote"></div>
     <div id="cfErr"></div>
     <div class="edBtns"><span></span><button id="cfCancel" type="button" class="ghost">Huỷ</button><button id="cfSave" type="submit">Lưu</button></div>
+  </form>
+</dialog>
+<dialog id="offDlg">
+  <div class="offHead"><h3>Cấu hình Office</h3><button id="offClose" type="button" class="ghost">Đóng</button></div>
+  <div class="offGrid" id="offGrid">
+    <button id="addAgent" type="button"><i>＋</i><span><b>Thêm agent</b><small>Tạo agent mới cho team, chọn phòng, prompt và AI riêng</small></span></button>
+    <button id="openCfg" type="button"><i>⚙</i><span><b>Cấu hình AI</b><small>Chọn nhà cung cấp, model, kết nối API hoặc CLI, đăng nhập CLI</small></span></button>
+    <button id="openAdmin" type="button"><i>🔐</i><span><b>Quản trị (Admin)</b><small>Admin ID &amp; mật khẩu bảo vệ việc sửa/xoá agent và đổi cấu hình; đổi mật khẩu, đăng xuất</small></span></button>
+    <button id="openMemory" type="button"><i>🧠</i><span><b>Trí nhớ &amp; kỹ năng agent</b><small>Sổ tay kinh nghiệm tự cập nhật của từng agent, bài học, nén skill</small></span></button>
+    <button id="openEnzy" type="button"><i>📊</i><span><b>Dữ liệu Enzy</b><small>Tài khoản đăng nhập, tài khoản quảng cáo, người thực hiện, prompt báo cáo</small></span></button>
+  </div>
+</dialog>
+<dialog id="memDlg">
+  <div class="usHead"><b>Trí nhớ &amp; kỹ năng agent</b><span></span><a id="memOpen" href="memory.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="memClose" type="button" class="ghost">Đóng</button></div>
+  <iframe id="memFrame" title="Trí nhớ và kỹ năng agent"></iframe>
+</dialog>
+<dialog id="usDlg">
+  <div class="usHead"><b>Giám sát token</b><span></span><a id="usOpen" href="usage.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="usClose" type="button" class="ghost">Đóng</button></div>
+  <iframe id="usFrame" title="Giám sát token"></iframe>
+</dialog>
+<dialog id="ezDlg">
+  <form id="ezForm" method="dialog">
+    <h3>Cấu hình dữ liệu Enzy</h3>
+    <label>URL trang báo cáo <input id="ezUrl" required placeholder="https://…"></label>
+    <div class="row2">
+      <label>Tài khoản đăng nhập <input id="ezUser" autocomplete="off"></label>
+      <label>Mật khẩu <input id="ezPass" type="password" autocomplete="new-password"></label>
+    </div>
+    <label id="ezClearRow" class="chk"><input id="ezClear" type="checkbox"> Xoá mật khẩu đã lưu</label>
+    <div class="row2">
+      <label>Thương hiệu <input id="ezBrand" required></label>
+      <label>Hệ thống quảng cáo <input id="ezSystem" required></label>
+    </div>
+    <label>Cửa hàng <input id="ezStore" required></label>
+    <label>Tài khoản quảng cáo (mỗi dòng một tên, tối đa 5, gõ đúng tên trên trang) <textarea id="ezAccounts" rows="5" required></textarea></label>
+    <label>Người thực hiện cho dashboard content (cách nhau dấu phẩy; tên nằm cuối tên quảng cáo, vd "… (TRÂN)"; để trống = không tạo) <input id="ezOwners" placeholder="TRÂN, NGA"></label>
+    <label>File prompt cho #analyst (trong thư mục dự án, .md/.txt) <input id="ezPrompt" required></label>
+    <div id="ezNote"></div>
+    <div id="ezErr"></div>
+    <div class="edBtns"><span></span><button id="ezCancel" type="button" class="ghost">Huỷ</button><button id="ezSave" type="submit">Lưu</button></div>
   </form>
 </dialog>
 <dialog id="ed">
@@ -93,6 +151,7 @@
     <label>Skill (cách nhau bằng dấu phẩy) <input id="edSkills" placeholder="Viết code, Sửa lỗi"></label>
     <label>Prompt (chỉ dẫn cho AI) <textarea id="edPrompt" rows="4" required></textarea></label>
     <label>File skill (đường dẫn file .md/.txt, để trống = không dùng) <input id="edSkillFile" placeholder="vd: /home/worker/agency-agents/engineering/engineering-senior-developer.md"></label>
+    <div class="toolsBox"><span>Công cụ agent được dùng (bỏ chọn bớt để tiết kiệm token; chọn hết = không giới hạn)</span><div id="edTools"></div></div>
     <label class="chk"><input id="edGate" type="checkbox"> Là bước duyệt (gate): kết luận "YÊU CẦU SỬA" sẽ trả việc về bước trước, tối đa 1 vòng</label>
     <label>Được hỏi đồng nghiệp (id, cách nhau dấu phẩy; để trống = không giới hạn, gõ - = không được hỏi ai) <input id="edAsk" placeholder="vd: rag, dev"></label>
     <div class="row2">
@@ -109,6 +168,7 @@
   </form>
 </dialog>
 <div id="dropzone"><div>Thả file để đính kèm vào việc giao<small>Ảnh, kịch bản, brief, CSV chỉ số… tối đa 20MB/file, 10 file/lần</small></div></div>
+<script src="admin.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

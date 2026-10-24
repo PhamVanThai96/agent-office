@@ -1,0 +1,37 @@
+id: 16-thu-nghiem-tang-truong
+title: Thiết kế thử nghiệm (test A/B nội dung & quảng cáo)
+summary: "Giả thuyết: \"Nếu [đổi gì] thì [chỉ số nào] tốt hơn [bao nhiêu] vì [lý do từ insight]\". Mỗi lần chỉ đổi 1 biến (hook, thumbnail, CTA, tệp khách,…"
+agents: [planner, analyst]
+when: [test, thu nghiem, a/b, toi uu, gia thuyet, thang thua]
+order: 16
+tags: [giả, thuyết, thiết, lập, kpi, chính, sau, thắng, bảng, thử, nghiệm, đặt]
+updated: 2026-10-24
+sections:
+  - id: gia-thuyet
+    title: Giả thuyết
+    tags: [giả, thuyết]
+    text: "- **Giả thuyết:** \"Nếu [đổi gì] thì [chỉ số nào] tốt hơn [bao nhiêu] vì [lý do từ insight]\". Mỗi lần chỉ đổi 1 biến (hook, thumbnail, CTA, tệp khách, định dạng)."
+  - id: thiet-lap
+    title: Thiết lập
+    tags: [thiết, lập]
+    text: "- **Thiết lập:** các biến thể cùng ngân sách, cùng thời gian, cùng tệp; chạy tối thiểu 3 ngày; chưa kết luận khi mỗi biến thể chưa đạt khoảng 20–30 sự kiện chuyển đổi (lead/đơn) — mẫu nhỏ chỉ là \"tín hiệu\", không phải kết luận."
+  - id: kpi-chinh
+    title: KPI chính
+    tags: [kpi, chính]
+    text: "- **KPI chính:** CPA/CPL và tỷ lệ chốt (không chỉ CTR). Quy tắc quyết định đặt trước: thắng khi CPA thấp hơn ≥15% và đủ mẫu; hoà → giữ bản rẻ/dễ làm hơn."
+  - id: sau-khi-thang
+    title: Sau khi thắng
+    tags: [sau, thắng]
+    text: "- **Sau khi thắng:** nhân bản sang kênh khác, tăng ngân sách từng bước (≤20% mỗi lần) và theo dõi CPA; thua → ghi bài học."
+  - id: bang-thu-nghiem
+    title: Bảng thử nghiệm
+    tags: [bảng, thử, nghiệm]
+    text: "- **Bảng thử nghiệm:** ID | Giả thuyết | Biến | KPI | Mẫu tối thiểu | Ngày bắt đầu | Kết quả | Quyết định | Bài học."
+  - id: dat-ten-quang-cao-theo-quy-uoc-cua-team
+    title: Đặt tên quảng cáo theo quy ước của team
+    tags: [đặt, tên, quảng, cáo, quy, ước]
+    text: "- **Đặt tên quảng cáo** theo quy ước của team: \"ngày – kênh – mục tiêu – tên test – content (NGƯỜI THỰC HIỆN)\" để lọc dashboard theo người."
+  - id: bao-cao-ket-qua-test-cho-ceo-bai-hoc-qua
+    title: Báo cáo kết quả test cho CEO, bài học quan trọng được ghi và
+    tags: [báo, cáo, kết, quả, test, ceo]
+    text: "- Báo cáo kết quả test cho CEO, bài học quan trọng được ghi vào sổ tay agent."

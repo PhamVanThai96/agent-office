@@ -1,4 +1,6 @@
+import fs from 'node:fs';
 import { chromium } from 'playwright-core';
+import { readXlsxObjects } from './xlsx.js';
 
 // Lấy số liệu từ trang báo cáo Streamlit của Enzy bằng Google Chrome có sẵn trên máy (chạy ẩn).
 // Thao tác giống người dùng: đăng nhập → chọn thương hiệu/hệ thống → khoảng thời gian → bật so sánh nhiều tài khoản
@@ -76,11 +78,18 @@ async function login(page, cfg) {
   await Promise.race([user.waitFor({ timeout: 90000 }), appReady.waitFor({ timeout: 90000 })]);
   if (!(await user.count())) return;
   if (!cfg.user || !cfg.pass) throw new Error('Chưa có tài khoản đăng nhập Enzy: điền USER/PASS trong enzy.json (hoặc biến môi trường ENZY_USER/ENZY_PASS).');
+  const pass = page.locator('input[type="password"]');
+  const submitted = async (ms) => { await page.waitForTimeout(ms); return !(await pass.count()); };
   await user.fill(cfg.user);
-  await page.locator('input[type="password"]').fill(cfg.pass);
-  await page.getByRole('button', { name: 'Đăng nhập' }).click();
-  await settle(page, 1500);
-  if (await page.locator('input[type="password"]').count()) throw new Error('Đăng nhập Enzy thất bại: kiểm tra USER/PASS trong enzy.json.');
+  await user.press('Tab'); // Streamlit chỉ ghi nhận giá trị ô nhập khi rời ô / nhấn Enter; bấm nút ngay sau fill sẽ gửi giá trị cũ (rỗng).
+  await settle(page, 400);
+  await pass.fill(cfg.pass);
+  await pass.press('Enter');
+  if (!(await submitted(2500))) {
+    await page.getByRole('button', { name: 'Đăng nhập' }).click().catch(() => {});
+    for (let i = 0; i < 8 && !(await submitted(1500)); i++);
+  }
+  if (await pass.count()) throw new Error('Đăng nhập Enzy thất bại: kiểm tra USER/PASS (trang không chấp nhận hoặc không phản hồi).');
 }
 
 async function toggleCompare(page) {
@@ -106,6 +115,16 @@ async function accountGrid(page) {
     const total = [...document.querySelectorAll('.ag-floating-bottom-container .ag-row')].map((r) => [...r.querySelectorAll('.ag-cell')].map((c) => c.innerText.trim()))[0] || null;
     return { head, left, center, total };
   });
+}
+
+// Nút "Tải về file Excel" của trang: bảng từng quảng cáo (tên đầy đủ, hiển thị, nhấp, lead, đơn, doanh thu) — dùng cho dashboard theo người thực hiện.
+async function adsExcel(page) {
+  const btn = page.locator('[data-testid="stDownloadButton"] button').first();
+  await btn.waitFor({ timeout: STEP_MS });
+  await btn.scrollIntoViewIfNeeded();
+  const [download] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), btn.click()]);
+  const file = await download.path();
+  return readXlsxObjects(fs.readFileSync(file));
 }
 
 /**
@@ -141,7 +160,9 @@ export async function fetchEnzy(opts) {
       };
     });
     const grid = await accountGrid(page).catch((e) => ({ error: e.message }));
-    return { range: opts.range, accounts, grid, ...info };
+    let adsRows = null, adsError = '';
+    if (opts.wantAds !== false) { try { adsRows = await adsExcel(page); } catch (e) { adsError = e.message; } }
+    return { range: opts.range, accounts, grid, adsRows, adsError, ...info };
   } finally {
     await browser.close();
   }

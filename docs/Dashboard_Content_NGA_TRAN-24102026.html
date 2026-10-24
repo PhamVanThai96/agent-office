@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard content NGA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f8;--panel:#fff;--ink:#16202b;--mute:#5d6b7a;--line:#dde3ea;--spend:#8aa1b8;--rev:#1f5fbf;--good:#14795f;--goodbg:#d9f1e9;--bad:#b3261e;--badbg:#fbe0dd;--warn:#8a5a00;--warnbg:#fbeccb;--mid:#a15c00;--midbg:#fde4cc;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151b;--panel:#1a222b;--ink:#e8edf2;--mute:#9aa8b6;--line:#2c3743;--spend:#5f7893;--rev:#6ea2f0;--good:#5fd1b0;--goodbg:#14352c;--bad:#ff9b92;--badbg:#3d1d1b;--warn:#f0c463;--warnbg:#3a2e10;--mid:#ffb867;--midbg:#3b2a12;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10151b;--panel:#1a222b;--ink:#e8edf2;--mute:#9aa8b6;--line:#2c3743;--spend:#5f7893;--rev:#6ea2f0;--good:#5fd1b0;--goodbg:#14352c;--bad:#ff9b92;--badbg:#3d1d1b;--warn:#f0c463;--warnbg:#3a2e10;--mid:#ffb867;--midbg:#3b2a12;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:1080px;margin:0 auto;padding:28px 18px 48px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:14px}
+h1{font-size:20px;font-weight:700;margin:0}
+.sub{color:var(--mute);font-size:13px}
+.hero{padding:30px 0 22px}
+.hero p{font-size:clamp(26px,5vw,40px);line-height:1.15;font-weight:700;margin:0;max-width:20em;letter-spacing:-.01em}
+.hero .n{color:var(--rev)}
+.hero small{display:block;margin-top:10px;font-size:14px;color:var(--mute);font-weight:400}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));border:1px solid var(--line);background:var(--panel);border-radius:8px}
+.kpi{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.kpi b{display:block;font-size:21px;font-weight:600}
+.kpi span{font-size:12.5px;color:var(--mute)}
+h2{font-size:16px;margin:34px 0 4px;font-weight:600}
+.note{color:var(--mute);font-size:13px;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip:focus-visible,th button:focus-visible{outline:2px solid var(--rev);outline-offset:2px}
+.row{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:8px 22px}
+.row h3{margin:0 0 8px;font-size:14.5px;font-weight:600;overflow-wrap:anywhere}
+.bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12.5px}
+.bar i{display:block;height:12px;border-radius:2px;min-width:2px}
+.bar .sp{background:var(--spend)}.bar .rv{background:var(--rev)}
+.bar em{font-style:normal;color:var(--mute);white-space:nowrap}
+.side{font-size:13px;display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-content:start}
+.side span{color:var(--mute)}.side b{text-align:right}
+.hi{color:var(--bad)}.lo{color:var(--good)}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;margin-left:8px;vertical-align:1px}
+.b0{background:var(--goodbg);color:var(--good)}.b1{background:var(--warnbg);color:var(--warn)}.b2{background:var(--midbg);color:var(--mid)}.b3{background:var(--badbg);color:var(--bad)}
+.legend{display:flex;gap:16px;font-size:12.5px;color:var(--mute);margin-bottom:10px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:980px;font-size:13px}
+th,td{padding:9px 11px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:210px}
+th{font-weight:600;color:var(--mute)}
+th button{all:unset;cursor:pointer}
+th button:hover{color:var(--ink)}
+tfoot td{font-weight:600;border-bottom:0;background:var(--bg)}
+td.c{text-align:center}
+.foot{margin-top:26px;color:var(--mute);font-size:12.5px}
+.foot p{margin:4px 0}
+@media (max-width:640px){.row{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .5s ease}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>Content NGA – theo dõi hiệu quả quảng cáo</h1><span class="sub">Kỳ 19/10 – 20/10 · 6 quảng cáo, 4 content</span></header>
+<section class="hero"><p id="hero"></p></section>
+<div class="kpis" id="kpis"></div>
+
+<h2>Chi tiêu và doanh thu theo content</h2>
+<p class="note">Lọc theo nhóm. Phân loại là so sánh tương đối giữa các content NGA, chưa có KPI mục tiêu.</p>
+<div class="chips" id="chips"></div>
+<div class="legend"><span><i style="background:var(--spend)"></i>Chi tiêu</span><span><i style="background:var(--rev)"></i>Doanh thu</span></div>
+<div id="rows"></div>
+
+<h2>Bảng chỉ số đầy đủ</h2>
+<p class="note">Bấm tiêu đề cột để sắp xếp. Dòng tổng tính theo các content đang hiển thị.</p>
+<div class="tw"><table><thead id="thead"></thead><tbody id="tbody"></tbody><tfoot id="tfoot"></tfoot></table></div>
+
+<div class="foot">
+<p>Phân loại: chi tiêu dưới mức trung vị của các content → Cần theo dõi. Đủ chi tiêu: so với mặt bằng NGA, đếm số tín hiệu xấu (CPA cao hơn, NS/DT cao hơn, tỷ lệ đơn/lead thấp hơn): 0 → Hiệu quả, 1–2 → Cần tối ưu, 3 → Chưa hiệu quả.</p>
+<p>Mặt bằng NGA bị content 12.10 chi phối (khoảng 67% chi tiêu). Kỳ chỉ 2 ngày, 33 đơn nên chỉ mang tính tham khảo.</p>
+<p>CTR = nhấp ÷ hiển thị, CTR link = nhấp link ÷ hiển thị, CPA = chi tiêu ÷ lượt mua, CPL = chi tiêu ÷ lead, NS/DT = chi tiêu ÷ doanh thu. Tất cả tính từ tổng.</p>
+</div>
+</main>
+<script>
+var D=[
+{n:"12.10_HNC ƯU ĐÃI CHỊ ĐẸP_20.10",sp:4496865,im:35588,ck:615,lk:214,od:24,ld:64,rv:15975000,ad:2},
+{n:"15.09_HNC SALE NHẦM_M2T1",sp:1431560,im:7153,ck:197,lk:60,od:6,ld:20,rv:3994000,ad:2},
+{n:"13.10_HNC SALE SỐC_20.10",sp:378648,im:2453,ck:61,lk:21,od:2,ld:3,rv:998000,ad:1},
+{n:"22.09_HNC FIX_M2T1",sp:452071,im:2525,ck:82,lk:20,od:1,ld:9,rv:749000,ad:1}];
+var NA="N/A",$=function(i){return document.getElementById(i)};
+function sum(a,k){return a.reduce(function(s,x){return s+x[k]},0)}
+function div(a,b){return b>0?a/b:null}
+function num(n){return n==null?NA:Math.round(n).toLocaleString("vi-VN")}
+function pct(n,d){return n==null?NA:(n*100).toLocaleString("vi-VN",{minimumFractionDigits:d,maximumFractionDigits:d})+"%"}
+function mil(n){return (n/1e6).toLocaleString("vi-VN",{minimumFractionDigits:2,maximumFractionDigits:2})+" tr"}
+function calc(x){x.ctr=div(x.ck,x.im);x.ctl=div(x.lk,x.im);x.cpa=div(x.sp,x.od);x.cpl=div(x.sp,x.ld);x.ns=div(x.sp,x.rv);x.cv=div(x.od,x.ld);return x}
+var T=calc({sp:sum(D,"sp"),im:sum(D,"im"),ck:sum(D,"ck"),lk:sum(D,"lk"),od:sum(D,"od"),ld:sum(D,"ld"),rv:sum(D,"rv"),ad:sum(D,"ad")});
+D.forEach(calc);
+var sp=D.map(function(x){return x.sp}).sort(function(a,b){return a-b}),h=sp.length>>1,MED=sp.length%2?sp[h]:(sp[h-1]+sp[h])/2;
+var LAB=["Content hiệu quả","Cần theo dõi","Cần tối ưu","Chưa hiệu quả"],CL=["b0","b1","b2","b3"];
+D.forEach(function(x){
+  var s=(x.cpa!=null&&x.cpa>T.cpa?1:0)+(x.ns!=null&&x.ns>T.ns?1:0)+(x.cv!=null&&x.cv<T.cv?1:0);
+  x.sig=s;x.k=x.sp<MED?1:(x.od==0?3:(s==0?0:(s>=3?3:2)));
+});
+$("hero").innerHTML='Cứ 100đ doanh thu, NGA chi <span class="n">'+Math.round(T.ns*100)+'đ</span>.<small>Chi '+mil(T.sp)+' cho doanh thu '+mil(T.rv)+', được '+T.od+' đơn và '+T.ld+' lead.</small>';
+var K=[["Ngân sách đã chi",mil(T.sp)],["Doanh thu",mil(T.rv)],["Ngân sách/Doanh thu",pct(T.ns,1)],["CPA",num(T.cpa)+"đ"],["CPL",num(T.cpl)+"đ"],["CTR",pct(T.ctr,2)],["CTR link",pct(T.ctl,2)],["Lượt mua / Lead",T.od+" / "+T.ld]];
+$("kpis").innerHTML=K.map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join("");
+var flt=-1;
+var CH=[["Tất cả",-1]].concat(LAB.map(function(l,i){return [l,i]}));
+function chips(){$("chips").innerHTML=CH.map(function(c){var n=c[1]<0?D.length:D.filter(function(x){return x.k==c[1]}).length;return '<button class="chip" data-k="'+c[1]+'" aria-pressed="'+(flt==c[1])+'">'+c[0]+' ('+n+')</button>'}).join("")}
+$("chips").onclick=function(e){var b=e.target.closest(".chip");if(!b)return;flt=+b.dataset.k;chips();draw()};
+var sortK="rv",asc=false;
+var COLS=[["n","Content"],["sp","Chi tiêu"],["im","Hiển thị"],["ck","Nhấp"],["ctr","CTR"],["lk","Nhấp link"],["ctl","CTR link"],["od","Lượt mua"],["cpa","CPA"],["ld","Lead"],["cpl","CPL"],["rv","Doanh thu"],["ns","NS/DT"],["k","Phân loại"]];
+function cell(k,x){return k=="n"?x.n:k=="ctr"||k=="ctl"?pct(x[k],2):k=="ns"?pct(x[k],1):k=="k"?'<span class="badge '+CL[x.k]+'" style="margin:0">'+LAB[x.k]+'</span>':num(x[k])}
+function draw(){
+  var L=D.filter(function(x){return flt<0||x.k==flt}).sort(function(a,b){var u=a[sortK],v=b[sortK];if(u==null)return 1;if(v==null)return -1;var r=typeof u=="string"?u.localeCompare(v):u-v;return asc?r:-r});
+  var mx=Math.max.apply(null,D.map(function(x){return Math.max(x.sp,x.rv)}));
+  $("rows").innerHTML=L.map(function(x){
+    var cp=x.cpa==null?"":(x.cpa>T.cpa?"hi":"lo"),nn=x.ns==null?"":(x.ns>T.ns?"hi":"lo");
+    return '<div class="row"><div><h3>'+x.n+'<span class="badge '+CL[x.k]+'">'+LAB[x.k]+'</span></h3>'+
+    '<div class="bar"><i class="sp" style="width:'+(x.sp/mx*100*.72)+'%"></i><em>'+mil(x.sp)+'</em></div>'+
+    '<div class="bar"><i class="rv" style="width:'+(x.rv/mx*100*.72)+'%"></i><em>'+mil(x.rv)+'</em></div></div>'+
+    '<div class="side"><span>NS/DT</span><b class="'+nn+'">'+pct(x.ns,1)+'</b><span>CPA</span><b class="'+cp+'">'+(x.cpa==null?NA:num(x.cpa)+"đ")+'</b><span>CPL</span><b>'+(x.cpl==null?NA:num(x.cpl)+"đ")+'</b><span>Đơn / lead</span><b>'+x.od+" / "+x.ld+'</b></div></div>';
+  }).join("")||'<p class="note">Không có content nào trong nhóm này.</p>';
+  $("thead").innerHTML='<tr>'+COLS.map(function(c){return '<th aria-sort="'+(c[0]==sortK?(asc?"ascending":"descending"):"none")+'"><button data-k="'+c[0]+'">'+c[1]+(c[0]==sortK?(asc?" ▲":" ▼"):"")+'</button></th>'}).join("")+'</tr>';
+  $("tbody").innerHTML=L.map(function(x){return '<tr>'+COLS.map(function(c,i){return '<td'+(c[0]=="k"?' class="c"':"")+'>'+cell(c[0],x)+'</td>'}).join("")+'</tr>'}).join("");
+  var t=calc({sp:sum(L,"sp"),im:sum(L,"im"),ck:sum(L,"ck"),lk:sum(L,"lk"),od:sum(L,"od"),ld:sum(L,"ld"),rv:sum(L,"rv"),n:"Tổng ("+L.length+" content)",k:-1});
+  $("tfoot").innerHTML='<tr>'+COLS.map(function(c){return '<td>'+(c[0]=="k"?"":cell(c[0],t))+'</td>'}).join("")+'</tr>';
+}
+$("thead").onclick=function(e){var b=e.target.closest("button");if(!b)return;var k=b.dataset.k;if(k==sortK)asc=!asc;else{sortK=k;asc=(k=="n"||k=="cpa"||k=="cpl"||k=="ns")}draw()};
+chips();draw();
+</script>
+</body>
+</html>

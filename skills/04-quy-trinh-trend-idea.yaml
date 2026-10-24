@@ -1,0 +1,41 @@
+id: 04-quy-trinh-trend-idea
+title: Quy trình Trend → Idea → Kế hoạch content
+summary: Làm đúng thứ tự; mọi dữ liệu thời gian thực phải ghi nguồn + giờ lấy. Không đoán trend từ trí nhớ.
+agents: [signal, planner, analyst]
+when: [trend, xu huong, y tuong, idea, ke hoach, lich content, content calendar, nghien cuu, noi dung tuan, noi dung thang, dip le]
+order: 4
+tags: [tổng, quan, quét, thời, gian, thực, signal, lọc, chấm, điểm, trend, insight]
+updated: 2026-10-24
+sections:
+  - id: tong-quan
+    title: Tổng quan
+    tags: [tổng, quan]
+    text: Làm đúng thứ tự; mọi dữ liệu thời gian thực phải ghi nguồn + giờ lấy. Không đoán trend từ trí nhớ.
+  - id: 1-quet-thoi-gian-thuc-signal
+    title: 1. Quét thời gian thực (#signal)
+    tags: [quét, thời, gian, thực, signal]
+    text: "**1. Quét thời gian thực (#signal).** Gọi `trend_scan` ĐẦU TIÊN (Google Trends VN, tin theo chủ đề, báo VnExpress/Tuổi Trẻ/Dân Trí, kèm \"mới nổi so với lần quét trước\"). Với TikTok/Facebook (công cụ không đọc được) dùng tối đa 2 lần web_search (\"trend TikTok tuần này\", \"âm thanh/hashtag thịnh hành Việt Nam\") và ghi rõ nguồn. Kết hợp dữ liệu nội bộ nếu có: comment, inbox, báo cáo Enzy ngày/tuần/tháng (content nào đang thắng)."
+  - id: 2-loc-cham-diem-trend
+    title: 2. Lọc & chấm điểm trend
+    tags: [lọc, chấm, điểm, trend]
+    text: "**2. Lọc & chấm điểm trend** (1–5 mỗi tiêu chí, tối đa 25): Độ tươi (≤3 ngày=5, ≤7=4, ≤14=3, cũ=1); Độ lan (≥2 nguồn độc lập=5, 1 nguồn=2); Liên quan (sản phẩm Enzy, người ăn chay, mẹ ăn dặm, healthy, bếp nhà — hoặc \"mượn\" được); An toàn thương hiệu (LOẠI tai nạn, chính trị, thiên tai, bệnh nặng, tôn giáo, drama cá nhân); Làm kịp trong 48h. Quyết định: NHẢY VÀO (≥20 và an toàn) / THEO DÕI / BỎ. Trend chỉ 1 nguồn hoặc quá 14 ngày → ghi \"chưa kiểm chứng\", không gọi là đang hot."
+  - id: 3-insight-khach-hang
+    title: 3. Insight khách hàng
+    tags: [insight, khách, hàng]
+    text: "**3. Insight khách hàng:** 3–5 câu hỏi/nỗi lo lặp lại (giá, thành phần, hàng giả, cách dùng, trẻ nhỏ…) kèm nguồn (inbox, comment, báo cáo)."
+  - id: 4-sinh-idea-planner
+    title: 4. Sinh idea (#planner)
+    tags: [sinh, idea, planner]
+    text: "**4. Sinh idea (#planner):** (báo cáo trend KHÔNG viết brief đầy đủ: mỗi idea chỉ 3 dòng — mục tiêu/thông điệp, hook, CTA; brief đầy đủ làm sau khi Leader chốt idea.) Trend (hoặc dịp) × sản phẩm thuần chay Enzy (skill Sản phẩm) × insight khách. Mỗi idea: tên, hook 3 giây, góc kể chuyện, sản phẩm, kênh chính + kênh nhân bản, định dạng, CTA (nhắn tin), độ khó 1–5, điểm ICE, rủi ro/claim cần tránh. Cân bằng nội dung: 40% mẹo/giáo dục, 30% giải trí–trend, 20% niềm tin (nhà máy, thành phần, khách thật), 10% bán hàng trực tiếp."
+  - id: 5-lich-2-tuan
+    title: 5. Lịch 2 tuần
+    tags: [lịch, tuần]
+    text: "**5. Lịch 2 tuần:** bảng Ngày | Kênh | Idea | Định dạng | Hook | Người làm | Hạn | KPI. Tối đa 1 trend-jacking \"nóng\" mỗi tuần (làm trong 48h) + 3–4 nội dung dùng lâu dài; chừa ngày dự phòng."
+  - id: 6-do-lap-analyst
+    title: 6. Đo & lặp (#analyst)
+    tags: [lặp, analyst]
+    text: "**6. Đo & lặp (#analyst):** KPI mỗi idea (xem 3 giây, xem hết, tin nhắn, đơn); đánh giá sau 3 và 7 ngày; idea thắng → nhân bản, thua → ghi bài học; trend hết nóng → rút khỏi lịch."
+  - id: khung-bao-cao
+    title: Khung báo cáo
+    tags: [khung, báo, cáo]
+    text: "**Khung báo cáo:** (1) Tóm tắt 5 dòng + việc cần làm ngay; (2) Radar trend: Trend | Nguồn + giờ | Điểm | Quyết định | Lý do; (3) Insight khách hàng; (4) Top 6–8 idea; (5) Lịch 2 tuần; (6) KPI & cách đo; (7) Rủi ro & claim cần tránh; (8) Nguồn, thời điểm lấy dữ liệu, hạn chế dữ liệu. Tách rõ \"dữ liệu thật\" và \"đề xuất\"."

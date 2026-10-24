@@ -7,7 +7,9 @@ import { complete, resolveAI } from './llm.js';
 import { classify, planFor, routeGuide } from './routing.js';
 import { stripData } from './report.js';
 import { webSearch, webFetch } from './web.js';
-import { skillsText } from './skills.js';
+import { scanTrends } from './trends.js';
+import { learnedText, digestFor } from './learn.js';
+import { skillsText, contextSkillsText, searchSkills } from './skills.js';
 
 // Danh sách agent đọc từ agents.json. Quản Lí (#manager) là agent điều phối; người dùng là CEO.
 const ROOM_CAPACITY = 3;
@@ -30,6 +32,8 @@ const skillCache = new Map();
 
 // Skill của agent = skill dùng chung trong thư mục skills/ (theo khai báo trong từng file) + "file-skill" riêng nếu có.
 export const skillDoc = (agent, max) => skillsText(agent, max) + fileSkillDoc(agent);
+// Bản dùng khi làm việc: skill đã nén (nếu có, tạo một lần rồi dùng lại) + kinh nghiệm riêng agent đã tự học.
+const workDoc = (agent, command) => (digestFor(agent) ?? skillsText(agent)) + fileSkillDoc(agent) + contextSkillsText(agent, command) + learnedText(agent, command);
 
 // Nội dung "skill file" riêng của agent ("file-skill" trong agents.json): bỏ phần YAML đầu file, cắt tối đa SKILL_MAX ký tự, đọc lại khi file đổi.
 function fileSkillDoc(agent) {
@@ -78,6 +82,9 @@ function normalize(list, strict = false) {
     // gate: agent duyệt; kết luận "YÊU CẦU SỬA" sẽ trả việc về agent trước đó (tối đa 1 vòng).
     return {
       id, name, role: String(a.role ?? '').trim(), room, skills, basePrompt, canAsk, fileSkill: fileSkill || undefined, gate: a.gate === true || undefined,
+      // lean: agent hỏi đáp gọn (prompt ngắn, ít công cụ, tra cứu web sẵn bằng code) để tiết kiệm token; tools: danh sách công cụ được dùng (bỏ trống = tất cả).
+      lean: a.lean === true || undefined, research: a.research === true || undefined, memory: a.memory === false ? false : undefined,
+      tools: Array.isArray(a.tools) ? [...new Set(a.tools.map((x) => String(x).trim()).filter(Boolean))] : undefined,
       color: /^#[0-9a-f]{6}$/i.test(a.color) ? a.color : '#8a8f98',
       prompt: basePrompt + (skills.length ? ` Kỹ năng của bạn: ${skills.join(', ')}.` : ''),
       provider: a.provider ? String(a.provider) : undefined, model: a.model ? String(a.model) : undefined,
@@ -99,8 +106,8 @@ function readFileAgents() {
 export const AGENTS = readFileAgents();
 export const IDS = AGENTS.map((a) => a.id);
 
-const toRaw = ({ id, name, role, room, color, skills, basePrompt, canAsk, fileSkill, gate, provider, model }) =>
-  ({ id, name, role, room, color, skills, canAsk, gate, 'file-skill': fileSkill, prompt: basePrompt, provider, model });
+const toRaw = ({ id, name, role, room, color, skills, basePrompt, canAsk, fileSkill, gate, lean, research, memory, tools, provider, model }) =>
+  ({ id, name, role, room, color, skills, canAsk, gate, lean, research, memory, tools, 'file-skill': fileSkill, prompt: basePrompt, provider, model });
 export const rawAgents = () => AGENTS.map(toRaw);
 
 // Kiểm tra danh sách mới, ghi agents.json rồi áp dụng ngay. Sai thì ném lỗi và giữ nguyên danh sách cũ.
@@ -126,6 +133,7 @@ export function templatePlan(command) {
   const w = classify(command) || FALLBACK;
   const tasks = planFor(w, command, IDS);
   tasks.route = w.name;
+  if (w.noSummary) tasks.noSummary = true; // hỏi đáp một agent: dùng thẳng câu trả lời, bỏ lượt Quản Lí tổng hợp (tiết kiệm token)
   return tasks;
 }
 
@@ -153,7 +161,7 @@ const MOCK_ANSWER = (agent, q) => {
   return 'Đã nhận câu hỏi, tôi sẽ phản hồi chi tiết sau.';
 };
 
-const toolDefs = (agent) => TOOL_DEFS.filter((t) => t.name !== 'ask_colleague' || agent.canAsk?.length !== 0)
+const toolDefs = (agent, names) => TOOL_DEFS.filter((t) => !names || names.includes(t.name)).filter((t) => t.name !== 'ask_colleague' || agent.canAsk?.length !== 0)
   .map((t) => (t.name === 'ask_colleague' && agent.canAsk
     ? { ...t, description: `Hỏi nhanh một đồng nghiệp (chỉ khi thật cần). Được hỏi: ${agent.canAsk.join(', ')}.`, parameters: { ...t.parameters, properties: { ...t.parameters.properties, to: { type: 'string', enum: agent.canAsk } } } }
     : t));
@@ -190,9 +198,15 @@ const TOOL_DEFS = [
       title: { type: 'string', description: 'Tiêu đề lớn đầu tài liệu (tuỳ chọn)' },
       content: { type: 'string', description: 'Toàn bộ nội dung tài liệu dạng markdown' },
     }, required: ['output', 'content'] } },
+  { name: 'run_command', description: 'Chạy lệnh shell trong thư mục dự án để đọc/tìm file, kiểm tra và chẩn đoán lỗi (ls, cat, grep, find, git status/diff, node --check…) hoặc tạo file/thư mục MỚI (mkdir, touch, cp sang đường dẫn chưa có). Lệnh chỉ đọc/tạo mới chạy ngay; lệnh có thể sửa/xoá file có sẵn, cài gói… cần người dùng cho phép. Kết quả: exitCode, stdout, stderr và hints (chẩn đoán lỗi + gợi ý sửa).',
+    parameters: { type: 'object', properties: { command: { type: 'string', description: 'Một lệnh, hoặc nhiều lệnh nối bằng |' }, cwd: { type: 'string', description: 'Thư mục chạy trong dự án (mặc định: thư mục dự án)' }, timeout_s: { type: 'number', description: 'Giới hạn giây (mặc định 15, tối đa 60)' } }, required: ['command'] } },
+  { name: 'skill_search', description: 'Tra cứu nhanh kho kỹ năng của team (skills dạng YAML): trả về tối đa 3 mục khớp từ khoá (tên skill, mục, nội dung). Dùng khi cần quy tắc/số liệu cụ thể (giá sản phẩm, hook thắng, checklist duyệt, quy chuẩn kênh, quy trình trend…) mà không nằm sẵn trong prompt.',
+    parameters: { type: 'object', properties: { query: { type: 'string', description: 'Từ khoá cần tra, vd "giá hạt nêm chay", "hook video thắng"' }, limit: { type: 'number', description: 'Số mục tối đa (1-5, mặc định 3)' } }, required: ['query'] } },
+  { name: 'trend_scan', description: 'Quét xu hướng THỜI GIAN THỰC tại Việt Nam: từ khoá đang tăng trên Google Trends (kèm lượt tìm và tin liên quan, có "mới nổi so với lần quét trước"), tin mới theo chủ đề (Google News), tiêu đề mới của VnExpress/Tuổi Trẻ/Dân Trí. Gọi ĐẦU TIÊN cho mọi việc về trend, ý tưởng, kế hoạch content; kết quả có giờ đăng và nguồn.',
+    parameters: { type: 'object', properties: { topics: { type: 'array', items: { type: 'string' }, description: 'Tối đa 6 chủ đề cần tìm tin (mặc định: ăn chay, thực phẩm sạch, gia vị nấu ăn, eat clean, bột ngọt, ăn dặm cho bé)' }, days: { type: 'number', description: 'Chỉ lấy tin trong N ngày gần nhất (mặc định 14)' } } } },
   { name: 'web_search', description: 'Tìm trên Internet để lấy thông tin/số liệu MỚI NHẤT (giá, tỷ giá, tin tức, sự kiện, thống kê...). Bắt buộc dùng cho mọi số liệu thay đổi theo thời gian; trả về tiêu đề, URL, đoạn trích.',
     parameters: { type: 'object', properties: { query: { type: 'string', description: 'Từ khoá, nên kèm năm/tháng hiện tại' } }, required: ['query'] } },
-  { name: 'web_fetch', description: 'Tải nội dung văn bản của một trang web (URL từ web_search) để đọc số liệu chi tiết, kèm thời điểm lấy.',
+  { name: 'web_fetch', description: 'Tải một trang web: trả về tiêu đề, mô tả, giá/thông tin sản phẩm có cấu trúc và phần nội dung chính (khoảng 6000 ký tự đầu, có totalChars). Website chậm thì tự thử lại; nên tải từng trang sản phẩm thay vì trang chủ.',
     parameters: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
   { name: 'ask_colleague', description: 'Hỏi nhanh một đồng nghiệp và nhận câu trả lời.',
     parameters: { type: 'object', properties: { to: { type: 'string', enum: IDS }, question: { type: 'string' } }, required: ['to', 'question'] } },
@@ -203,12 +217,12 @@ const words = (t) => Math.round((t * 0.45) / 10) * 10;
 const style = () => CONFIG.detail === 'brief'
   ? { work: 'phần văn bản tối đa 3 câu, không lặp lại đề bài.', sum: 'tối đa 5 câu.' }
   : {
-      work: 'trình bày chi tiết, có cấu trúc bằng markdown (### tiêu đề, danh sách), không lặp lại đề bài. Gồm: (1) kết quả/kết luận chính trước; (2) giải thích cách làm, căn cứ, công thức hoặc số liệu dùng và vì sao chọn như vậy; (3) các giả định, hạn chế, rủi ro; (4) đề xuất bước tiếp theo nếu có. Việc đơn giản (hỏi nhanh một thông tin) thì gọn lại, chỉ đủ ý, không độn chữ.',
+      work: 'có cấu trúc bằng markdown (### tiêu đề, danh sách), không lặp lại đề bài: đưa kết quả/sản phẩm chính trước; sau đó chỉ nêu căn cứ, giả định, rủi ro bằng gạch đầu dòng ngắn và bước tiếp theo nếu có, không giải thích dài dòng cách làm. Việc đơn giản thì chỉ đủ ý, không độn chữ.',
       sum: 'mở đầu bằng "### Kết luận" (2-3 câu trả lời thẳng vào yêu cầu), sau đó "### Diễn giải" giải thích đầy đủ lý do, căn cứ và cách các agent đi đến kết quả (có thể dùng danh sách), rồi "### Lưu ý & bước tiếp theo". Với yêu cầu đơn giản thì viết ngắn hơn.',
     };
-const DATA_RULES = 'Báo cáo được dựng tự động từ câu trả lời của bạn nên hãy tự quyết định cần bảng/biểu đồ/ảnh nào: (1) số liệu từ 2 mục trở lên thì trình bày bằng bảng markdown (| Cột | Cột | rồi dòng |---|---|); (2) từ 3 giá trị cần so sánh/xu hướng/tỷ trọng thì thêm biểu đồ bằng khối ```chart {"type":"bar|line|pie","title":"…","labels":["…"],"series":[{"name":"…","data":[số thuần]}],"unit":"…"} ```; (3) ảnh tạo bằng make_image tự được chèn vào báo cáo. Bảng/biểu đồ không tính vào giới hạn số câu. Chỉ dùng số liệu thật từ yêu cầu, đồng nghiệp hoặc công cụ; không có số liệu thì không bịa để vẽ.';
+const DATA_RULES = 'Báo cáo tự dựng từ câu trả lời của bạn: số liệu từ 2 mục trở lên → bảng markdown; từ 3 giá trị cần so sánh/xu hướng/tỷ trọng → thêm biểu đồ bằng khối ```chart {"type":"bar|line|pie","title":"…","labels":["…"],"series":[{"name":"…","data":[số]}],"unit":"…"} ```. Bảng/biểu đồ không tính vào giới hạn số câu. Chỉ dùng số liệu thật (từ yêu cầu, đồng nghiệp, công cụ); không có thì không bịa để vẽ.';
 
-const claude = ({ agent, system, user, handlers = {}, max = 400 }) => complete({ agent, system, user, tools: toolDefs(agent), handlers, max });
+const claude = ({ agent, system, user, handlers = {}, max = 400, tools }) => complete({ agent, system, user, tools: toolDefs(agent, tools ?? agent.tools), handlers, max });
 
 // Quản Lí tạo kế hoạch. Yêu cầu khớp quy trình thì dùng luôn (không gọi AI); không khớp mới nhờ AI chia task theo hướng dẫn quy trình.
 export async function makePlan(command) {
@@ -250,9 +264,11 @@ const wantsWord = (ctx) => (!WORD_RE.test(ctx.command.normalize('NFD').replace(/
     : ' Yêu cầu có xuất file Word (.docx): bạn là agent cuối chuỗi nên hãy gọi make_docx với TOÀN BỘ nội dung báo cáo cuối (gộp kết quả đồng nghiệp, giữ nguyên bảng và khối ```chart, chèn ảnh đã tạo bằng ![chú thích](đường dẫn)), lưu vào reports/. Chỉ báo hoàn thành khi make_docx trả ok.');
 
 // Mốc thời gian thật để AI không dùng số liệu cũ trong dữ liệu huấn luyện.
-const nowText = () => {
-  const d = new Date();
-  return `Hôm nay là ${d.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric' })} (năm ${d.getFullYear()}). Dữ liệu huấn luyện của bạn đã cũ: với số liệu thay đổi theo thời gian (giá vàng, tỷ giá, chứng khoán, tin tức, thống kê...) PHẢI dùng web_search/web_fetch để lấy số liệu mới nhất, chỉ dùng số liệu của năm ${d.getFullYear()} làm mốc hiện tại, ghi rõ nguồn và ngày của từng số liệu; nếu không tìm được số liệu mới thì nói rõ, tuyệt đối không dùng số cũ rồi coi là hiện tại.`;
+const nowText = (web = true) => {
+  const d = new Date(), day = d.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric' });
+  return web
+    ? `Hôm nay là ${day}. Số liệu thay đổi theo thời gian (giá, tỷ giá, tin tức, thống kê...) PHẢI lấy bằng web_search/web_fetch, ghi nguồn + ngày; không tìm được thì nói rõ, không dùng số cũ coi là hiện tại.`
+    : `Hôm nay là ${day}. Không khẳng định số liệu thời sự từ trí nhớ.`;
 };
 
 // File CEO kéo thả khi giao việc: liệt kê đường dẫn (agent đã được cấp quyền đọc), kèm trích đoạn file văn bản để khỏi tốn một lượt gọi công cụ.
@@ -262,21 +278,68 @@ function attachText(files) {
     `- ${f.name} (${f.path}, ${Math.ceil(f.size / 1024)}KB)${f.preview ? `\n  Trích đoạn:\n${f.preview.replace(/^/gm, '  > ')}` : ''}`).join('\n');
 }
 
+// Agent hỏi đáp gọn: tra cứu web bằng code (không tốn lượt AI), rồi chỉ một lượt AI để trả lời. Không nạp bộ nhớ, skill team, luật file/biểu đồ.
+async function leanWork(agent, ctx) {
+  const d = new Date();
+  let found = '';
+  if (agent.research) {
+    ctx.think?.(`Tra cứu web: ${short(ctx.command, 80)}`);
+    try {
+      const r = await webSearch(`${ctx.command} ${d.getMonth() + 1}/${d.getFullYear()}`);
+      const list = (r.results || []).slice(0, 5);
+      if (list.length) {
+        found = '\n\nKết quả tìm kiếm (retrievedAt ' + r.retrievedAt + '):\n' + list.map((x, i) => `${i + 1}. ${x.title} — ${x.url}\n   ${short(x.snippet, 220)}`).join('\n');
+        ctx.think?.(`Đọc trang: ${list[0].url}`);
+        const pg = await webFetch(list[0].url, 3000);
+        if (pg.content) found += `\n\nNội dung trang đầu (${pg.url}, rút gọn):\n${pg.content}`;
+      } else found = `\n\n(Tra cứu web tự động không có kết quả: ${r.error || 'rỗng'}. Có thể thử web_search/web_fetch.)`;
+    } catch (e) { found = `\n\n(Tra cứu web tự động lỗi: ${e.message})`; }
+  }
+  return claude({
+    agent,
+    system: `${agent.prompt}${learnedText(agent, ctx.command)} Hôm nay là ${d.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric' })}. Trả lời tiếng Việt, kết luận ngay dòng đầu, tối đa khoảng 200 từ (bảng ngắn nếu so sánh), ghi nguồn + ngày của số liệu. Dùng dữ liệu tra cứu bên dưới; chỉ gọi công cụ nếu còn thiếu số liệu quan trọng, tối đa 1 lần. Không bịa số liệu.`,
+    user: `Câu hỏi của CEO: ${ctx.command}${attachText(ctx.attachments)}${found}`,
+    max: Math.min(CONFIG.workMax, 900),
+    handlers: {
+      web_search: async (i) => { ctx.think?.(`Tìm web: ${i.query}`); const r = await webSearch(i.query); return r.results ? { ...r, results: r.results.slice(0, 5).map((x) => ({ ...x, snippet: short(x.snippet, 220) })) } : r; },
+      web_fetch: async (i) => { ctx.think?.(`Đọc trang: ${i.url}`); return webFetch(i.url, 3000); },
+      read_file: (i) => ctx.tools.readFile(String(i.path)),
+      run_command: (i) => ctx.tools.runCommand(i),
+    },
+  });
+}
+
 export async function work(agent, ctx) {
+  if (LIVE && agent.lean) return leanWork(agent, ctx);
   if (LIVE) {
     const inputs = ctx.inputs.map((i) => `[${i.from}] ${i.text}`).join('\n') || '(chưa có)';
     const feedback = ctx.feedback ? `\n\nPhản hồi YÊU CẦU SỬA từ ${ctx.feedback.from} (sửa đúng các điểm này, giữ phần đã đạt):\n${ctx.feedback.text}` : '';
+    // Chỉ đưa công cụ agent thật sự dùng (mỗi công cụ tốn ~0,5k token ở MỌI lượt gọi): theo agent.tools, make_docx chỉ khi yêu cầu xuất Word và agent là bước cuối.
+    const wordRule = wantsWord(ctx);
+    const base = agent.tools || TOOL_DEFS.map((t) => t.name);
+    const names = [...new Set([...base.filter((n) => n !== 'make_docx'), ...(wordRule && ctx.isLast !== false ? ['make_docx'] : [])])];
+    const has = (n) => names.includes(n);
+    const files = ['write_file', 'make_image', 'make_docx'].filter(has);
+    const fileRule = files.length
+      ? ` Chỉ dùng ${files.join('/')} khi task yêu cầu${has('make_docx') ? ' (make_docx: nội dung markdown đầy đủ, không tự ghi .docx bằng write_file)' : ''}; báo rõ đường dẫn tạo/sửa; không chỉ định nơi lưu thì lưu vào reports/. Công cụ lỗi/bị từ chối thì nói rõ chưa làm được, không báo đã xong.` : '';
+    const cmdRule = has('run_command') ? ' run_command là công cụ chung: mọi việc đọc/tìm file, kiểm tra và chẩn đoán lỗi (kể cả lỗi mã/dữ liệu) bạn được tự làm bằng công cụ này, không coi là ngoài vai trò. Lệnh lỗi thì đọc hints/stderr, nêu nguyên nhân và gợi ý cách sửa ngắn gọn; muốn thay đổi file CÓ SẴN thì chỉ đề xuất hoặc gọi công cụ ghi/lệnh tương ứng (hệ thống sẽ xin quyền người dùng, đừng cố né); không đọc file bí mật.' : '';
+    const budgetRule = has('web_search') || has('web_fetch') ? ' Ngân sách công cụ: tối đa 4 lượt gọi công cụ cho mỗi việc, ưu tiên dữ liệu đã có (skill, đồng nghiệp) rồi trả lời; không tìm lan man (review, xu hướng, video) khi task chỉ cần thông tin sản phẩm.' : '';
+    const askRule = has('ask_colleague') ? ' Chỉ dùng ask_colleague khi thiếu thông tin không thể tự xử lý.' : '';
     return claude({
       agent,
-      system: `${agent.prompt}${skillDoc(agent)} ${nowText()} Chỉ làm đúng phần việc thuộc vai trò của bạn; việc ngoài vai trò thì nói ngắn gọn cần agent nào, đừng tự làm. Trả lời tiếng Việt, ${style().work} Giữ phần văn bản trong khoảng ${words(CONFIG.workMax)} từ. ${DATA_RULES}${wantsWord(ctx)} Cần file/thư mục thì dùng công cụ (nếu bị từ chối thì báo lại, đừng thử lại). Chỉ ghi file (write_file), tạo ảnh (make_image) hoặc tạo file Word .docx (make_docx, viết toàn bộ nội dung markdown đầy đủ kèm bảng/biểu đồ cần thiết; không tự ghi .docx bằng write_file) khi task yêu cầu, báo rõ đường dẫn đã tạo/sửa. Báo cáo/tài liệu/ảnh đầu ra (.md, .csv, .html, .png...) mà người dùng không chỉ định nơi lưu thì lưu vào thư mục reports/ (vd reports/ten-bao-cao.md) để xem được trên trang báo cáo; không ghi file tài liệu vào thư mục gốc mã nguồn. Nếu công cụ báo lỗi hoặc bị từ chối thì nói rõ chưa làm được, tuyệt đối không báo đã hoàn thành. Không bịa đã làm điều gì mà bạn chưa thực sự làm. Chỉ dùng ask_colleague khi thiếu thông tin mà không thể tự xử lý.`,
-      user: `Yêu cầu gốc của CEO: ${ctx.command}\nTask của bạn: ${ctx.task.title}${attachText(ctx.attachments)}\n\nKết quả từ đồng nghiệp:\n${inputs}${feedback}${ctx.memory || ''}`,
+      tools: names,
+      system: `${agent.prompt}${workDoc(agent, `${ctx.command} ${ctx.task.title}`)} ${nowText(has('web_search'))} Chỉ làm đúng phần việc của vai trò mình; việc ngoài vai trò thì nói ngắn gọn cần agent nào. Trả lời tiếng Việt, ${style().work} Giữ phần văn bản trong khoảng ${words(CONFIG.workMax)} từ. ${DATA_RULES}${wordRule}${fileRule}${cmdRule}${budgetRule}${askRule} Không bịa đã làm điều chưa làm.`,
+      user: `Yêu cầu gốc của CEO: ${ctx.command}\nTask của bạn: ${ctx.task.title}${attachText(ctx.attachments)}\n\nKết quả từ đồng nghiệp:\n${inputs}${feedback}${agent.memory === false ? '' : ctx.memory || ''}`,
       max: CONFIG.workMax,
       handlers: {
         read_file: (i) => ctx.tools.readFile(String(i.path)),
+        run_command: (i) => ctx.tools.runCommand(i),
         list_dir: (i) => ctx.tools.listDir(String(i.path)),
         write_file: (i) => ctx.tools.writeFile(String(i.path ?? ''), i.content),
         make_image: (i) => ctx.tools.makeImage(i),
         make_docx: (i) => ctx.tools.makeDocx(i),
+        skill_search: async (i) => { ctx.think?.(`Tra kỹ năng: ${i?.query}`); const r = searchSkills(agent, i?.query, i?.limit); return r.length ? { results: r.map(({ score, ...x }) => x) } : { results: [], note: 'Không có mục khớp, thử từ khoá khác.' }; },
+        trend_scan: async (i) => { ctx.think?.(`Quét trend thời gian thực${i?.topics?.length ? `: ${i.topics.join(', ')}` : ''}`); return scanTrends(i); },
         web_search: async (i) => { ctx.think?.(`Tìm web: ${i.query}`); return webSearch(i.query); },
         web_fetch: async (i) => { ctx.think?.(`Đọc trang: ${i.url}`); return webFetch(i.url); },
         ask_colleague: async (i) => ({ answer: await ctx.ask(String(i.to), String(i.question)) }),
@@ -328,7 +391,7 @@ export async function answer(agent, question, command) {
 
 // items: [{ agent, title, status, text }]
 export async function summarize(command, items) {
-  const lines = items.map((i) => `- [${i.status}] ${i.agent}: ${i.title} → ${stripData(i.text)}`).join('\n');
+  const lines = items.map((i) => `- [${i.status}] ${i.agent}: ${i.title} → ${short(stripData(i.text), 1500)}`).join('\n');
   if (!LIVE) {
     await sleep(800);
     const done = items.filter((i) => i.status === 'done').length;

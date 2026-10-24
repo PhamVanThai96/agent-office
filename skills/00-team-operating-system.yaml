@@ -1,0 +1,43 @@
+id: 00-team-operating-system
+title: Quy trình vận hành team content
+summary: "Mục tiêu: đi từ tín hiệu thị trường đến nội dung tốt hơn, có mục tiêu, tiêu chí duyệt và vòng lặp học hỏi."
+agents: [manager, planner, script_review, video_review]
+exclude: [assistant]
+order: 0
+tags: [tổng, quan, làm, đúng, bước, mình, thiếu, đầu, luôn, mang, sợi, chỉ]
+updated: 2026-10-24
+sections:
+  - id: tong-quan
+    title: Tổng quan
+    tags: [tổng, quan]
+    text: |-
+      Mục tiêu: đi từ tín hiệu thị trường đến nội dung tốt hơn, có mục tiêu, tiêu chí duyệt và vòng lặp học hỏi.
+      | Bước | Ai | Đầu ra bắt buộc | Điều kiện bàn giao |
+      |---|---|---|---|
+      | 01 Thu thập tín hiệu | #signal | Bảng tín hiệu (khách hàng · kênh · xu hướng · câu hỏi thường gặp · kết quả cũ) | Mỗi dòng có **nguồn + bối cảnh** |
+      | 02 Backlog & ưu tiên | #planner | Bảng chủ đề · mục tiêu · độ phù hợp · nguồn ý tưởng · ưu tiên | Đề xuất danh sách tuần để **Leader chốt** |
+      | 03 Chốt mục tiêu & brief | #planner | Brief: mục tiêu · đối tượng · kênh · thông điệp · format · CTA | Có **tham khảo + hạn hoàn thành** |
+      | 04 Viết kịch bản | #writer | Mở đầu · diễn tiến · thông tin chính · CTA · chỉ dẫn hình ảnh | Viết **theo brief đã chốt** |
+      | 05 Duyệt 1 (Leader) | #script_review | KẾT LUẬN: DUYỆT / YÊU CẦU SỬA | Phản hồi đúng hạn, **nêu lý do sửa** |
+      | 06 Dựng video | #video, #designer | Quay · dựng · phụ đề · âm thanh; thumbnail | **Bám kịch bản đã duyệt**, đúng format & nhận diện |
+      | 07 Duyệt 2 (người phụ trách) | #video_review | KẾT LUẬN: DUYỆT / YÊU CẦU SỬA + checklist phân phối | Phản hồi đúng hạn, **nêu lý do sửa** |
+      | 08 Phân phối & đo lường | #analyst | Chỉ số nhận biết (xem, giữ chân) & bán hàng (nhấp, tin nhắn, chuyển đổi) | **Đối chiếu với mục tiêu** trong brief |
+      | 09 Rút insight → tối ưu → idea mới | #analyst → #planner | Giả thuyết tốt/kém, thử nghiệm tiếp theo, idea mới | Thử nghiệm **đưa trở lại backlog** |
+      Nhịp báo cáo: **Ngày** = phát hiện vấn đề · **Tuần** = tìm xu hướng · **Tháng** = điều chỉnh định hướng.
+      Quy tắc phối hợp:
+  - id: lam-dung-buoc-cua-minh-thieu-dau-vao-tu-
+    title: "Làm đúng bước của mình; thiếu đầu vào từ bước trước thì nói "
+    tags: [làm, đúng, bước, mình, thiếu, đầu]
+    text: "- Làm đúng bước của mình; thiếu đầu vào từ bước trước thì nói rõ thiếu gì, đặt giả định hợp lý và ghi \"Giả định:\" thay vì tự làm bước của người khác."
+  - id: luon-mang-theo-soi-chi-muc-tieu
+    title: Luôn mang theo "sợi chỉ" mục tiêu
+    tags: [luôn, mang, sợi, chỉ, mục, tiêu]
+    text: "- Luôn mang theo \"sợi chỉ\" mục tiêu: mọi đầu ra nhắc lại mục tiêu (nhận biết hay bán hàng) và CTA đã chốt."
+  - id: file-ceo-dinh-kem-la-nguon-uu-tien-cao-n
+    title: File CEO đính kèm là nguồn ưu tiên cao nhất
+    tags: [file, ceo, đính, kèm, nguồn, tiên]
+    text: "- File CEO đính kèm là nguồn ưu tiên cao nhất (brief, kịch bản, số liệu, logo); dùng trước khi tự suy đoán."
+  - id: dat-ten-file-dau-ra-de-tim
+    title: Đặt tên file đầu ra dễ tìm
+    tags: [đặt, tên, file, đầu, tìm]
+    text: "- Đặt tên file đầu ra dễ tìm: `reports/<yyyymmdd>-<chu-de>-<loai>.md` (vd `20261024-kem-chong-nang-kich-ban.md`)."

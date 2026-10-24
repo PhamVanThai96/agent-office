@@ -135,7 +135,7 @@ function unit(id, name, color, boss) {
   u.style.setProperty('--c', color);
   u.innerHTML = `<div class="monitor"></div><div class="desk"></div><div class="chair"></div>` +
     `<div class="avatar">${faceSvg(id, color)}</div><div class="tag"></div>` +
-    (boss ? '' : '<div class="meta"><code></code><span class="badge"></span></div>') + '<div class="talk"></div><div class="think" hidden></div>';
+    (boss ? '' : '<div class="meta"><code></code><span class="badge"></span></div>') + '<div class="talk"></div><div class="think" hidden><div class="th"><span class="ti">💬 Suy nghĩ</span><span class="pill"></span><span class="car">⌄</span></div><div class="tlog"></div></div>';
   u.querySelector('.tag').textContent = name;
   if (!boss) u.querySelector('code').textContent = '#' + id;
   world.insertBefore(u, svg);
@@ -163,7 +163,7 @@ function build(agents, state) {
     agentData[a.id] = a;
     const u = unit(a.id, a.name, a.color, false);
     els[a.id] = { root: u, talk: u.querySelector('.talk'), badge: u.querySelector('.badge'), think: u.querySelector('.think') };
-    u.querySelector('.think').onclick = (e) => e.stopPropagation();
+    u.querySelector('.think').onclick = (e) => { e.stopPropagation(); toggleThink(a.id); };
     u.onclick = (e) => { e.stopPropagation(); showPop(a.id); };
     setAgent(a.id, state[a.id].status, state[a.id].report);
   }
@@ -175,11 +175,12 @@ function setAgent(id, status, report) {
   if (!el) return;
   const prev = info[id]?.status;
   info[id] = { status, report: report || info[id]?.report || '' };
-  if (status === 'working' && prev !== 'working' && el.think) { el.think.replaceChildren(); thinkHide(id, false); }
+  if (status === 'working' && prev !== 'working' && el.think) { el.think.querySelector('.tlog').replaceChildren(); el.think.classList.remove('open'); el.root.classList.remove('thinkOpen'); thinkHide(id, false); }
   if (status !== 'working' && status !== 'waiting' && el.think && prev) thinkHide(id, true);
   for (const s of Object.keys(STATUS)) el.root.classList.toggle(s, s === status);
   el.badge.className = 'badge st-' + status;
   el.badge.textContent = STATUS[status] || status;
+  if (el.think) { const pl = el.think.querySelector('.pill'); pl.textContent = STATUS[status] || status; pl.className = 'pill st-' + status; }
   if (selected === id) showPop(id);
 }
 
@@ -220,31 +221,58 @@ function showPop(id) {
   pop.hidden = false;
   fitPop(uy);
 }
-// ---- Dòng suy nghĩ / log hoạt động trên đầu agent ----
+// ---- Hộp suy nghĩ trên đầu agent: gọn (2 dòng mới nhất), bấm vào để xem log đầy đủ ----
 const thinkTimers = {};
 function thinkHide(id, delay) {
   clearTimeout(thinkTimers[id]);
   const el = els[id]?.think;
   if (!el) return;
-  if (delay) thinkTimers[id] = setTimeout(() => { el.hidden = true; }, 4000);
-  else el.hidden = !el.childElementCount;
+  // Đang mở xem log đầy đủ thì giữ nguyên, người dùng tự bấm để đóng.
+  if (delay) thinkTimers[id] = setTimeout(() => { if (!el.classList.contains('open')) el.hidden = true; }, 4000);
+  else el.hidden = !el.querySelector('.tlog').childElementCount;
 }
-function addThink(id, text) {
+// Giữ hộp suy nghĩ trong khung bản đồ (agent sát mép trái/phải).
+function clampThink(el) {
+  el.style.left = '';
+  const world = $('world'), wr = world.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const k = wr.width / world.offsetWidth || 1, base = parseFloat(getComputedStyle(el).left) || 0;
+  let dx = 0;
+  if (r.left < wr.left + 6) dx = wr.left + 6 - r.left;
+  else if (r.right > wr.right - 6) dx = wr.right - 6 - r.right;
+  if (dx) el.style.left = (base + dx / k) + 'px';
+}
+function toggleThink(id) {
+  const el = els[id]?.think;
+  if (!el) return;
+  const open = el.classList.toggle('open');
+  el.querySelector('.car').textContent = open ? '⌃' : '⌄';
+  const world = el.closest('.unit');
+  world?.classList.toggle('thinkOpen', open); // gần mép trên bản đồ thì mở xuống dưới để không bị cắt
+  el.classList.toggle('down', open && world && world.offsetTop < 250);
+  clampThink(el);
+  clearTimeout(thinkTimers[id]);
+  const log = el.querySelector('.tlog');
+  if (open) log.scrollTop = log.scrollHeight;
+  else if (!['working', 'waiting'].includes(info[id]?.status)) thinkHide(id, true);
+}
+function addThink(id, text, detail) {
   const el = els[id]?.think;
   if (!el) return;
   clearTimeout(thinkTimers[id]);
-  const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 12;
+  const log = el.querySelector('.tlog');
+  const atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 12;
   const line = document.createElement('div');
-  const t = new Date();
   line.className = 'tl';
-  const ts = document.createElement('time'); ts.textContent = t.toTimeString().slice(0, 8);
-  line.append(ts, document.createTextNode(text));
-  el.append(line);
-  while (el.childElementCount > 40) el.firstChild.remove();
-  el.hidden = false;
-  if (atEnd) el.scrollTop = el.scrollHeight;
-  el.querySelectorAll('.tl.last').forEach((n) => n.classList.remove('last'));
+  const ts = document.createElement('time'); ts.textContent = new Date().toTimeString().slice(0, 8);
+  const tx = document.createElement('span'); tx.textContent = text;
+  line.append(ts, tx);
+  if (detail) { const dt = document.createElement('div'); dt.className = 'dt'; dt.textContent = detail; line.append(dt); line.classList.add('has'); }
+  log.append(line);
+  while (log.childElementCount > 120) log.firstChild.remove();
+  if (el.hidden) { el.hidden = false; clampThink(el); }
+  log.querySelectorAll('.tl.last').forEach((n) => n.classList.remove('last'));
   line.classList.add('last');
+  if (atEnd || !el.classList.contains('open')) log.scrollTop = log.scrollHeight;
 }
 
 function showUserPop() {
@@ -257,9 +285,7 @@ function showUserPop() {
   const h = document.createElement('h5'); h.textContent = 'CEO';
   const r = document.createElement('div'); r.className = 'r'; r.textContent = 'Người ra lệnh · nhận báo cáo';
   const rep = document.createElement('a'); rep.className = 'pbtn'; rep.href = 'reports/'; rep.target = '_blank'; rep.textContent = 'Xem báo cáo';
-  const cb = document.createElement('button'); cb.textContent = 'Cấu hình AI'; cb.className = 'pbtn sec';
-  cb.onclick = () => { closePop(); openConfig(); };
-  const box = document.createElement('div'); box.className = 'pbtns col'; box.append(rep, cb);
+  const box = document.createElement('div'); box.className = 'pbtns col'; box.append(rep);
   pop.append(x, h, r, box);
   const [ux, uy] = POS.user;
   pop.style.left = (ux - 260) + 'px';
@@ -391,7 +417,7 @@ function renderPlan(tasks) {
 function handle(m) {
   switch (m.type) {
     case 'status': setAgent(m.id, m.status, m.report); break;
-    case 'think': if (!replaying) addThink(m.id, m.text); break;
+    case 'think': if (!replaying) addThink(m.id, m.text, m.detail); break;
     case 'log': addSys(`${m.from}: ${m.text}`); break;
     case 'msg':
       if (m.kind === 'command') { $('final').hidden = true; $('tasks').replaceChildren(); }
@@ -406,7 +432,10 @@ function handle(m) {
       break;
     case 'final':
       $('final').hidden = false; $('final').classList.remove('min'); $('finalText').textContent = m.text;
+      fbPick(''); $('fbMsg').textContent = ''; $('fbText').value = '';
+      $('finalTitle').textContent = m.title ? `Báo cáo: ${m.title}` : 'Báo cáo gửi CEO';
       $('finalLink').hidden = !m.file;
+      $('finalLinks').replaceChildren(...(m.links || []).map((l) => { const a = document.createElement('a'); a.href = l.href; a.target = '_blank'; a.rel = 'noopener'; a.className = 'flink'; a.textContent = l.label; return a; }));
       if (m.file) $('finalLink').href = 'reports/' + encodeURIComponent(m.file);
       break;
     case 'done': go.dataset.idle = '1'; go.disabled = uploading > 0; break;
@@ -414,7 +443,8 @@ function handle(m) {
 }
 
 // ---- Quyền truy cập ----
-const post = (url, body) => fetch(url, { method: 'POST', body: JSON.stringify(body) });
+// Mọi POST đi qua adminFetch: thao tác cần Admin (sửa/xoá agent, đổi cấu hình…) sẽ tự hỏi Admin ID + mật khẩu rồi thử lại.
+const post = (url, body) => adminFetch(url, { method: 'POST', body: JSON.stringify(body) });
 let permKey = '';
 function renderPerm(pending, allowed) {
   const key = JSON.stringify([pending.map((p) => p.id), allowed]);
@@ -425,20 +455,34 @@ function renderPerm(pending, allowed) {
   for (const p of pending) {
     const d = document.createElement('div'); d.className = 'req';
     const t = document.createElement('div');
-    t.append(document.createTextNode(`${p.mode === 'write' ? '✎' : '🔒'} ${p.agent} xin quyền ${p.action}: `));
-    const c = document.createElement('code'); c.textContent = p.path; t.append(c);
+    const exec = p.mode === 'exec';
+    t.append(document.createTextNode(`${exec ? '⌨' : p.mode === 'write' ? '✎' : '🔒'} ${p.agent} xin quyền ${p.action}: `));
+    const c = document.createElement('code'); c.textContent = exec ? p.command : p.path; t.append(c);
+    if (exec) {
+      const w = document.createElement('div'); w.className = 'why';
+      w.textContent = `${p.risky ? '⚠ Có thể thay đổi/xoá file hoặc hệ thống. ' : ''}${p.reason || ''} Thư mục chạy: ${p.path}`; t.append(w);
+    }
     const btns = document.createElement('div'); btns.className = 'btns';
-    const yes = document.createElement('button'); yes.textContent = 'Cho phép & ghi nhớ';
     const no = document.createElement('button'); no.textContent = 'Từ chối'; no.className = 'no';
-    yes.onclick = () => post('permission', { id: p.id, allow: true });
     no.onclick = () => post('permission', { id: p.id, allow: false });
-    btns.append(yes, no); d.append(t, btns); box.append(d);
+    if (exec) {
+      const once = document.createElement('button'); once.textContent = 'Cho phép lần này';
+      const always = document.createElement('button'); always.textContent = 'Luôn cho phép lệnh này'; always.className = 'alt';
+      once.onclick = () => post('permission', { id: p.id, allow: true, remember: false });
+      always.onclick = () => post('permission', { id: p.id, allow: true, remember: true });
+      btns.append(once, always, no);
+    } else {
+      const yes = document.createElement('button'); yes.textContent = 'Cho phép & ghi nhớ';
+      yes.onclick = () => post('permission', { id: p.id, allow: true });
+      btns.append(yes, no);
+    }
+    d.append(t, btns); box.append(d);
   }
   const al = $('allowed');
   al.replaceChildren();
   if (allowed.length) al.append(document.createTextNode('Đã cho phép: '));
   for (const a of allowed) {
-    const s = document.createElement('div'); s.textContent = (a.mode === 'write' ? '[ghi] ' : '[đọc] ') + a.path;
+    const s = document.createElement('div'); s.textContent = (a.mode === 'write' ? '[ghi] ' : a.mode === 'exec' ? '[lệnh] ' : '[đọc] ') + a.path;
     const x = document.createElement('button'); x.textContent = 'thu hồi';
     x.onclick = () => post('revoke', { path: a.path, mode: a.mode });
     s.append(x); al.append(s);
@@ -455,7 +499,8 @@ async function poll() {
       renderTemplates(d.templates || []);
       agentsVer = d.agentsVer;
       build(d.agents, d.state);
-      $('mode').textContent = `MODE: ${d.mode}` + (d.mode === 'MOCK' ? ' (phản hồi giả lập)' : '') + ` · Kết nối: ${d.connection} · AI: ${d.provider}/${d.model || 'mặc định'} · Thư mục: ${d.sourceDir}` + (d.modeNote ? ` — ${d.modeNote}` : '');
+      renderMode(d);
+      renderTokens(d.usage);
     }
     renderEnzy(d.enzy);
     d.events.forEach(handle);
@@ -481,10 +526,11 @@ function renderEnzy(e) {
   const box = $('enzyStatus');
   box.replaceChildren();
   const line = (text, cls) => { const d = document.createElement('div'); d.textContent = text; if (cls) d.className = cls; box.append(d); return d; };
-  if (!e.configured) line('Chưa có tài khoản đăng nhập trang báo cáo: điền USER và PASS trong file enzy.json (không cần khởi động lại server).', 'warn');
+  if (!e.configured) line('Chưa có tài khoản đăng nhập trang báo cáo: bấm ⚙ (hoặc nút 📊 Cấu hình Enzy) để nhập, không cần sửa code hay khởi động lại server.', 'warn');
   const s = e.schedule;
   line(s.enabled ? `Lịch: ngày ${s.daily} · tuần ${WDAY[s.weekly.day]} ${s.weekly.time} · tháng ngày ${s.monthly.day} ${s.monthly.time}` : 'Lịch tự động: đang tắt (bấm ⏰ để bật)', 'muted');
   line(`Tài khoản: ${e.accounts.join(', ')}`, 'muted');
+  if (e.owners?.length) line(`Dashboard content: ${e.owners.join(', ')}`, 'muted');
   if (e.running) line(`⏳ ${KIND_VI[e.running.kind]}: ${e.running.step}`, 'run');
   if (e.queued.length) line(`Đang chờ: ${e.queued.map((k) => KIND_VI[k]).join(', ')}`, 'muted');
   for (const k of ['daily', 'weekly', 'monthly']) {
@@ -494,9 +540,20 @@ function renderEnzy(e) {
     const d = line(`${l.ok ? '✅' : '⚠️'} ${KIND_VI[k]} (${when}): ${l.ok ? `kỳ ${l.period}` : l.error}`, l.ok ? '' : 'warn');
     if (l.ok && l.data) { const a = document.createElement('a'); a.href = l.data; a.target = '_blank'; a.textContent = ' số liệu'; d.append(a); }
   }
-  document.querySelectorAll('#enzy .enzyBtns button').forEach((b) => { b.disabled = !e.configured || e.running?.kind === b.dataset.kind || e.queued.includes(b.dataset.kind); });
+  for (const k of ['daily', 'weekly', 'monthly']) {
+    const p = e.dash?.[k];
+    if (!p) continue;
+    const when = new Date(p.at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+    const d = line(`${p.ok ? '📈' : '⚠️'} Dashboard ${KIND_VI[k]} (${when}): ${p.ok ? `kỳ ${(p.period || '').replace(/^.*?(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})$/, '$1 – $2')}` : p.error}`, p.ok ? '' : 'warn');
+    if (p.ok && p.path) { const a = document.createElement('a'); a.href = p.path; a.target = '_blank'; a.textContent = ' mở'; d.append(a); }
+  }
+  document.querySelectorAll('#enzy .enzyBtns button[data-kind]').forEach((b) => { b.disabled = !e.configured || (e.running?.kind === b.dataset.kind && !e.running.dashOnly) || e.queued.includes(b.dataset.kind); });
+  document.querySelectorAll('#enzy .enzyBtns button[data-dash]').forEach((b) => { b.disabled = !e.configured || !(e.owners || []).length || (e.running?.kind === b.dataset.dash && e.running.dashOnly) || e.queued.includes('dash-' + b.dataset.dash); });
 }
-document.querySelectorAll('#enzy .enzyBtns button').forEach((b) => {
+document.querySelectorAll('#enzy .enzyBtns button[data-dash]').forEach((b) => {
+  b.onclick = async () => { b.disabled = true; const r = await post('enzy/run', { kind: b.dataset.dash, dashboard: true }); const t = await r.text(); if (t !== 'ok') addSys(t); };
+});
+document.querySelectorAll('#enzy .enzyBtns button[data-kind]').forEach((b) => {
   b.onclick = async () => { b.disabled = true; const r = await post('enzy/run', { kind: b.dataset.kind }); const t = await r.text(); if (t !== 'ok') addSys(t); };
 });
 $('esMDay').replaceChildren(...Array.from({ length: 28 }, (_, i) => new Option(`Ngày ${i + 1}`, i + 1)));
@@ -513,6 +570,61 @@ $('enzySched').onsubmit = async (ev) => {
   ev.preventDefault();
   const r = await post('enzy/schedule', { enabled: $('esOn').checked, daily: $('esDaily').value, weeklyDay: $('esWDay').value, weeklyTime: $('esWTime').value, monthlyDay: $('esMDay').value, monthlyTime: $('esMTime').value });
   if (r.ok) $('enzySched').hidden = true; else addSys(await r.text());
+};
+
+// Bảng "Cấu hình Office": gom Thêm agent / Cấu hình AI / Dữ liệu Enzy; bấm một mục thì đóng bảng rồi mở mục đó.
+$('openOffice').onclick = () => $('offDlg').showModal();
+$('openAdmin').onclick = () => adminPanel();
+$('offClose').onclick = () => $('offDlg').close();
+$('offGrid').addEventListener('click', (e) => { if (e.target.closest('button')) $('offDlg').close(); }, true);
+
+// Trí nhớ & kỹ năng agent: hộp thoại nhúng memory.html.
+$('openMemory').onclick = () => { $('memFrame').src = 'memory.html'; $('memDlg').showModal(); };
+$('memClose').onclick = () => $('memDlg').close();
+$('memDlg').addEventListener('close', () => { $('memFrame').removeAttribute('src'); });
+
+// Đánh giá của CEO cho kết quả vừa xong → bài học cho các agent đã tham gia.
+let fbRating = '';
+const fbPick = (r) => { fbRating = r; $('fbGood').classList.toggle('on', r === 'good'); $('fbBad').classList.toggle('on', r === 'bad'); };
+$('fbGood').onclick = () => fbPick('good');
+$('fbBad').onclick = () => fbPick('bad');
+$('fbSend').onclick = async () => {
+  if (!fbRating) { $('fbMsg').textContent = 'Chọn 👍 Tốt hoặc 👎 Chưa tốt trước.'; return; }
+  const r = await post('learn/act', { action: 'feedback', rating: fbRating, text: $('fbText').value });
+  if (r.ok) { const j = await r.json(); $('fbMsg').textContent = `Đã ghi nhớ cho ${j.agents.map((x) => '#' + x).join(', ')}. Các agent sẽ tự cập nhật kỹ năng.`; $('fbText').value = ''; fbPick(''); }
+  else $('fbMsg').textContent = await r.text();
+};
+
+// Dashboard giám sát token: hộp thoại lớn nhúng usage.html (nạp lại mỗi lần mở, dừng tự cập nhật khi đóng).
+$('openUsage').onclick = () => { $('usFrame').src = 'usage.html'; $('usDlg').showModal(); };
+$('usClose').onclick = () => $('usDlg').close();
+$('usDlg').addEventListener('close', () => { $('usFrame').removeAttribute('src'); });
+
+// Cấu hình dữ liệu Enzy ngay trên GUI (ghi vào enzy.json, áp dụng cho lần chạy kế tiếp).
+const ezDlg = $('ezDlg');
+async function openEnzyCfg() {
+  $('ezErr').textContent = '';
+  const r = await post('enzy/config/get', {});
+  if (!r.ok) { addSys(await r.text()); return; }
+  const c = await r.json();
+  $('ezUrl').value = c.URL; $('ezUser').value = c.USER; $('ezPass').value = ''; $('ezClear').checked = false;
+  $('ezPass').placeholder = c.hasPass ? 'Đã lưu — để trống = giữ nguyên' : 'Nhập mật khẩu';
+  $('ezClearRow').hidden = !c.hasPass;
+  $('ezBrand').value = c.BRAND; $('ezSystem').value = c.SYSTEM; $('ezStore').value = c.STORE;
+  $('ezAccounts').value = c.ACCOUNTS.join('\n'); $('ezPrompt').value = c.PROMPT; $('ezOwners').value = (c.OWNERS || []).join(', ');
+  $('ezNote').textContent = (c.envCreds ? 'Đang có biến môi trường ENZY_USER/ENZY_PASS: biến này được ưu tiên hơn giá trị ở đây. ' : '') + 'Mật khẩu lưu trong enzy.json (quyền 600), không gửi lại về trình duyệt.';
+  ezDlg.showModal();
+}
+$('enzyCfg2').onclick = $('openEnzy').onclick = openEnzyCfg;
+$('openCfg').onclick = () => openConfig();
+$('ezCancel').onclick = () => ezDlg.close();
+$('ezForm').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const r = await post('enzy/config/save', {
+    URL: $('ezUrl').value, USER: $('ezUser').value, PASS: $('ezPass').value, clearPass: $('ezClear').checked,
+    BRAND: $('ezBrand').value, SYSTEM: $('ezSystem').value, STORE: $('ezStore').value, ACCOUNTS: $('ezAccounts').value, OWNERS: $('ezOwners').value, PROMPT: $('ezPrompt').value,
+  });
+  if (r.ok) { const t = await r.text(); $('ezPass').value = ''; ezDlg.close(); addSys('Đã lưu cấu hình Enzy. Áp dụng từ lần chạy báo cáo kế tiếp.' + (t.startsWith('ok:') ? ' ' + t.slice(4) + '.' : '')); } else $('ezErr').textContent = await r.text();
 };
 
 // ---- Ô giao việc: nhiều dòng, mẫu quy trình, đính kèm file (kéo thả / dán / chọn) ----
@@ -607,6 +719,7 @@ function openEditor(id) {
   $('edPrompt').value = a.prompt || '';
   $('edSkillFile').value = a.fileSkill || '';
   $('edAsk').value = a.canAsk ? (a.canAsk.length ? a.canAsk.join(', ') : '-') : '';
+  fillTools(a.tools);
   $('edGate').checked = Boolean(a.gate);
   $('edProvider').replaceChildren(new Option('Mặc định (config.json)', ''),
     ...Object.entries(PROVIDER_LABEL).map(([k, v]) => new Option(v + (cfg.keys[k] ? '' : ' (chưa dùng được)'), k)));
@@ -623,6 +736,15 @@ async function sendAgent(url, body) {
   $('edErr').textContent = await r.text();
 }
 
+const TOOL_LABELS = [['read_file', 'Đọc file'], ['write_file', 'Ghi file'], ['run_command', 'Chạy lệnh (đọc/chẩn đoán/tạo mới)'], ['list_dir', 'Xem thư mục'], ['skill_search', 'Tra cứu nhanh kỹ năng (skills)'], ['trend_scan', 'Quét trend thời gian thực'], ['web_search', 'Tìm web'], ['web_fetch', 'Đọc trang web'], ['make_image', 'Tạo ảnh'], ['make_docx', 'Tạo Word'], ['ask_colleague', 'Hỏi đồng nghiệp']];
+function fillTools(tools) {
+  $('edTools').replaceChildren(...TOOL_LABELS.map(([id, label]) => {
+    const l = document.createElement('label'); l.className = 'tl2';
+    const c = document.createElement('input'); c.type = 'checkbox'; c.value = id; c.checked = !tools || tools.includes(id);
+    l.append(c, document.createTextNode(' ' + label)); return l;
+  }));
+}
+const pickedTools = () => { const all = [...$('edTools').querySelectorAll('input')]; const on = all.filter((c) => c.checked).map((c) => c.value); return on.length === all.length ? null : on; };
 $('addAgent').onclick = () => openEditor();
 $('edCancel').onclick = () => ed.close();
 $('edDel').onclick = () => {
@@ -635,7 +757,7 @@ $('edForm').onsubmit = (e) => {
     room: $('edRoom').value, color: $('edColor').value, prompt: $('edPrompt').value,
     skills: $('edSkills').value.split(',').map((x) => x.trim()).filter(Boolean),
     canAsk: $('edAsk').value.trim() === '' ? null : $('edAsk').value.split(',').map((x) => x.trim()).filter((x) => x && x !== '-'),
-    'file-skill': $('edSkillFile').value.trim(), gate: $('edGate').checked,
+    'file-skill': $('edSkillFile').value.trim(), gate: $('edGate').checked, tools: pickedTools(),
     provider: $('edProvider').value || undefined, model: $('edModel').value.trim() || undefined,
   };
   sendAgent('agent/save', { agent, isNew: !editingId });
@@ -675,11 +797,49 @@ const LS = {
   };
 }
 
+// Bảng trạng thái: xanh lá khi REAL (AI thật), đỏ nhạt khi MOCK (giả lập).
+function renderMode(d) {
+  const box = $('mode'), real = d.mode === 'REAL';
+  box.className = 'mp ' + (real ? 'real' : 'mock');
+  const row = (k, v) => { const r = document.createElement('div'); r.className = 'mr'; const a = document.createElement('span'); a.textContent = k; const b = document.createElement('b'); b.textContent = v; r.append(a, b); return r; };
+  const h = document.createElement('div'); h.className = 'mh';
+  const dot = document.createElement('i'); dot.className = 'dot';
+  const t = document.createElement('b'); t.textContent = real ? 'REAL' : 'MOCK';
+  const sub = document.createElement('span'); sub.textContent = real ? 'đang chạy AI thật' : 'phản hồi giả lập, không gọi AI';
+  h.append(dot, t, sub);
+  box.replaceChildren(h, row('Kết nối', d.connection), row('AI', `${d.provider}/${d.modelLabel || d.model}`), row('Thư mục', d.sourceDir));
+  if (d.modeNote) { const n = document.createElement('div'); n.className = 'mn'; n.textContent = d.modeNote; box.append(n); }
+}
+// Thanh token còn lại của tháng (hạn mức do người dùng tự đặt trong dashboard giám sát token).
+const cmp = (n) => (n >= 1e6 ? (n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' tr' : n >= 1e3 ? (n / 1e3).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' k' : String(Math.round(n)));
+function renderTokens(u) {
+  const box = $('tkn');
+  if (!u) return;
+  box.hidden = false;
+  const lim = u.limit || 0, ratio = lim ? u.used / lim : 0;
+  box.className = 'tk' + (lim ? (ratio >= 0.9 ? ' bad' : ratio >= 0.7 ? ' warn' : ' ok') : '');
+  const head = document.createElement('div'); head.className = 'th2';
+  const a = document.createElement('b'); a.textContent = '🪙 Token tháng ' + u.month.slice(5) + '/' + u.month.slice(0, 4);
+  const c = document.createElement('span'); c.textContent = lim ? `còn ${cmp(u.remaining)}` : `đã dùng ${cmp(u.used)}`;
+  head.append(a, c);
+  const sub = document.createElement('div'); sub.className = 'ts';
+  sub.textContent = lim ? `Đã dùng ${cmp(u.used)} / ${cmp(lim)} (${Math.round(ratio * 100)}%)${u.projected > lim ? ' · dự kiến vượt hạn mức' : ''}` : 'Chưa đặt hạn mức tháng — bấm để đặt';
+  const kids = [head];
+  if (lim) { const m = document.createElement('div'); m.className = 'tm'; const i = document.createElement('i'); i.style.width = Math.min(100, ratio * 100) + '%'; m.append(i); kids.push(m); }
+  kids.push(sub);
+  box.replaceChildren(...kids);
+}
+$('tkn').onclick = () => $('openUsage').click();
+$('tkn').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('openUsage').click(); } };
+
 // ---- Cấu hình AI (CEO) ----
 const cd = $('cfgDlg');
 function fillProvider() {
   const S = cfg.settings, p = S.providers[$('cfProvider').value], cli = $('cfConn').value === 'CLI';
-  $('cfModel').value = cli ? p.cliModel : p.model;
+  // CLI để trống model: hiển thị model CLI thực sự đang dùng (nếu đã biết) thay vì ô rỗng.
+  $('cfModel').value = cli ? (p.cliModel || p.cliDetected || '') : p.model;
+  $('cfModel').dataset.auto = cli && !p.cliModel && p.cliDetected ? p.cliDetected : '';
+  $('cfModel').placeholder = cli ? `Đang dùng: ${p.cliDefault}` : '';
   $('cfKeyRow').hidden = $('cfClearRow').hidden = cli;
   $('cfKey').value = ''; $('cfClear').checked = false;
   $('cfKey').placeholder = p.hasKey ? `Đã lưu (${p.keyHint}) — để trống = giữ nguyên` : `Dán ${p.keyName}`;
@@ -707,18 +867,49 @@ $('cfAuth').onclick = async () => {
   try {
     const r = await post('auth/connect', { provider });
     const message = await r.text();
+    if (r.status === 401) { await startLogin(provider); return; }
     if (!r.ok) { $('cfErr').textContent = message; return; }
     $('cfErr').textContent = JSON.parse(message).message;
     setTimeout(() => cd.close(), 1200);
   } catch { $('cfErr').textContent = 'Không kết nối được tới server.'; }
   finally { button.disabled = false; }
 };
+// Đăng nhập CLI từ giao diện: server chạy lệnh login, CLI tự mở trình duyệt; ở đây chỉ theo dõi và chuyển mã dán.
+let loginTimer = null;
+const loginUi = (show, msg = '', url = '') => {
+  $('cfLogin').hidden = !show; $('cfLoginMsg').textContent = msg;
+  $('cfLoginUrl').hidden = !url; if (url) $('cfLoginUrl').href = url;
+  if (!show) $('cfLoginCode').value = '';
+};
+async function startLogin(provider) {
+  clearInterval(loginTimer);
+  const r = await post('auth/login/start', { provider });
+  if (!r.ok) { $('cfErr').textContent = await r.text(); return; }
+  $('cfErr').textContent = '';
+  loginUi(true, 'Đang mở trang đăng nhập trên máy chạy server… hãy đăng nhập trong cửa sổ trình duyệt vừa mở.');
+  loginTimer = setInterval(async () => {
+    try {
+      const s = await (await post('auth/login/status', { provider })).json();
+      if (s.connected) { clearInterval(loginTimer); loginUi(false); $('cfErr').textContent = s.message; setTimeout(() => cd.close(), 1200); }
+      else if (s.state === 'failed') { clearInterval(loginTimer); loginUi(false); $('cfErr').textContent = 'Đăng nhập chưa thành công hoặc đã hết thời gian. Bấm "Đăng nhập / xác thực" để thử lại.'; }
+      else if (s.state === 'done') loginUi(true, 'Đang xác nhận phiên đăng nhập…');
+      else loginUi(true, 'Đăng nhập trong trình duyệt. Nếu trang hiện mã xác thực, dán vào ô bên dưới.', s.url);
+    } catch { /* thử lại ở lượt sau */ }
+  }, 1500);
+}
+$('cfLoginSend').onclick = async () => {
+  const r = await post('auth/login/code', { code: $('cfLoginCode').value.trim() });
+  if (r.ok) { $('cfLoginCode').value = ''; $('cfErr').textContent = 'Đã gửi mã, đang xác nhận…'; } else $('cfErr').textContent = await r.text();
+};
+$('cfLoginCancel').onclick = async () => {
+  clearInterval(loginTimer); await post('auth/login/cancel', {}); loginUi(false); $('cfErr').textContent = 'Đã dừng đăng nhập.';
+};
 $('cfCancel').onclick = () => cd.close();
 $('cfgForm').onsubmit = async (e) => {
   e.preventDefault();
   const r = await post('config/save', {
     provider: $('cfProvider').value, connection: $('cfConn').value, mode: $('cfMode').value,
-    model: $('cfModel').value, detail: $('cfDetail').value, workMax: $('cfWorkMax').value, sumMax: $('cfSumMax').value, apiKey: $('cfKey').value, clearKey: $('cfClear').checked,
+    model: $('cfModel').value === $('cfModel').dataset.auto ? '' : $('cfModel').value, detail: $('cfDetail').value, workMax: $('cfWorkMax').value, sumMax: $('cfSumMax').value, apiKey: $('cfKey').value, clearKey: $('cfClear').checked,
   });
   if (r.ok) { $('cfKey').value = ''; cd.close(); } else $('cfErr').textContent = await r.text();
 };

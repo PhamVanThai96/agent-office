@@ -5,7 +5,7 @@ Ghi chú ngắn để phiên Claude sau nắm bối cảnh nhanh. Chi tiết: [P
 ## Dự án là gì
 App Node.js (ESM, không framework, không build) mô phỏng **văn phòng AI cho team content marketing**. CEO (người dùng) giao việc → Content Lead (`#manager`) chia task theo quy trình trong ảnh `images/quy-trinh-van-hanh-team-content.png` → các agent làm, duyệt, sửa → báo cáo HTML vào `reports/`.
 
-Quy trình 9 bước ↔ agent:
+Quy trình 9 bước ↔ agent (thêm `assistant` = Trợ lý hỏi đáp: câu hỏi ngoài quy trình, workflow `qa` có `unless` để không chặn việc content; skill `exclude: [assistant]`):
 | Bước | Agent | Phòng |
 |---|---|---|
 | 01 Thu thập tín hiệu | `signal` | Phòng insight |
@@ -15,6 +15,7 @@ Quy trình 9 bước ↔ agent:
 | 06 Dựng video / thiết kế | `video`, `designer` | Phòng sản xuất |
 | 07 Duyệt 2 (người phụ trách) | `video_review` (gate) | Phòng kiểm duyệt |
 | 08-09 Đo lường, insight, idea mới | `analyst` | Phòng insight |
+| Ngoài quy trình: hỏi đáp (giá vàng, tin tức, kiến thức chung) | `assistant` | Ban điều hành |
 
 ## Chạy
 - Node 24 qua nvm: shell của Claude có thể không có `node` → `PATH=~/.nvm/versions/node/v24.22.1/bin:$PATH`.
@@ -49,6 +50,10 @@ Quy trình 9 bước ↔ agent:
 - Kỳ: ngày = "Hôm qua (trọn ngày)", tuần = "7 ngày gần nhất (không gồm hôm nay)", tháng = "30 ngày gần nhất (không gồm hôm nay)".
 - `enzy/metrics.js`: **số liệu do code tính** (NS/DT = Chi ÷ DT, so với kỳ trước, bảng theo tài khoản, biểu đồ, top/bottom chiến dịch); AI chỉ diễn giải. `enzy/index.js`: lịch (kiểm tra mỗi 30s, mỗi loại tối đa 1 lần/ngày, lỗi thì thử lại sau 1 giờ, server bật muộn vẫn chạy bù), hàng đợi, lưu `data/enzy/<kỳ>/<yyyymmdd>.json` (+ `-raw.txt`), `reports/enzy/<kỳ>/<yyyymmdd>-so-lieu.md`, rồi giao `/analyst` với prompt + file số liệu; số liệu được gắn vào báo cáo HTML qua `opts.appendix` của orchestrator.
 - `enzy.json` (quyền 600): URL, **USER/PASS (người dùng tự điền; Claude không nhập mật khẩu)**, BRAND, SYSTEM, STORE, ACCOUNTS, PROMPT, SCHEDULE. Có thể dùng biến môi trường `ENZY_USER`/`ENZY_PASS`. Agent bị chặn đọc/ghi `enzy.json`, `config.json`, `permissions.json`.
+- **Dashboard content theo người thực hiện**: `fetch.js` bấm "Tải về file Excel" của trang (từng quảng cáo: tên đầy đủ, hiển thị, nhấp, lead, đơn, doanh thu; đọc bằng `enzy/xlsx.js`, lưu `data/enzy/<kỳ>/<yyyymmdd>-ads.json`). `enzy/owners.js` lọc quảng cáo có tên người ở cuối tên ("… 13.08_HNC TẠI SAO ĐẮT (TRÂN)"), gom theo content (`dd.mm_TÊN`), dựng `reports/enzy/<kỳ>/<yyyymmdd>-dashboard-content.html` (HTML độc lập, mẫu: `docs/Dashboard_Content_NGA_TRAN-24102026.html`). Danh sách người = `OWNERS` trong enzy.json, sửa trên GUI (📊 Dữ liệu Enzy); lưu xong tự dựng lại từ dữ liệu đã tải. Chỉ file khớp `enzy/*/<8 số>-dashboard-content.html` được chạy script (CSP `sandbox allow-scripts`, không cùng origin).
+- Báo cáo ngày/tuần/tháng tự có thêm mục "So sánh người thực hiện" (bảng TRÂN · NGA · Người còn lại · Toàn bộ, `ownerSummaryMarkdown`) trong `…-so-lieu.md`, phần số liệu đính kèm báo cáo cuối và file đưa cho #analyst; event `final` có `links` → nút "📈 Dashboard content" dưới báo cáo cuối.
+- Dashboard có 3 kỳ (ngày/tuần/tháng): chạy báo cáo đầy đủ cũng dựng dashboard; hoặc nút "📈 Dashboard content" trong khung Enzy (`POST /enzy/run {kind, dashboard:true}`) chỉ tải Excel + dựng dashboard, không giao #analyst, không tốn token AI. Người không nằm trong `OWNERS` (và ads chưa gắn tên) gộp thành nhóm `KHÁC`, hiện cạnh TRÂN/NGA ở phần so sánh và có chip lọc riêng.
+- Trang Báo cáo (`public/reports.html`): nhóm theo tháng (ngày lấy từ tên file, không có thì ngày sửa), lọc tháng, checkbox chọn nhiều/cả tháng/tất cả; tải nhiều = `POST /reports/zip` (zip.js), xoá nhiều = `POST /reports/delete` (xoá thật, có confirm; cần cùng Origin, chỉ file thường trong `reports/`).
 - API: `POST /enzy/run {kind}`, `POST /enzy/schedule`, trạng thái nằm trong `/poll` (`enzy`). UI: khung "Báo cáo quảng cáo Enzy tự động" ở cột phải (nút chạy ngay, ⏰ lịch).
 - Thử không cần trang thật: `ENZY_FAKE_RAW=<file json dữ liệu thô> ENZY_USER=x ENZY_PASS=x node server.js` trên bản sao MOCK.
 - Trang thay đổi giao diện → sửa selector trong `enzy/fetch.js`; lỗi hiện ở khung Enzy và nhật ký.
@@ -68,10 +73,36 @@ Quy trình 9 bước ↔ agent:
 - `SOURCE_DIR` trong `config.json` và đường dẫn trong `permissions.json` trỏ tới `/Users/phamvannam/...` (máy khác).
 - Chưa thử bộ agent mới với AI thật (mới test MOCK). Báo cáo Enzy: chưa chạy với trang thật vì chưa có USER/PASS trong `enzy.json`; lịch tự động đang tắt. `skills/01-brand-voice.md` chưa được điền thông tin thương hiệu. Đề xuất harness còn lại: xem `HARNESS_REVIEW.md`.
 
+- Hộp suy nghĩ (`.think`): hiện 2 dòng mới nhất; bấm vào mở log đầy đủ (event `think` có `detail`). Báo cáo có tiêu đề = dòng đầu của lệnh (tên file `bao-cao-<ngày>-<slug>.html`).
+
+- **Giám sát token** (`usage.js`, `public/usage.html`, nút 🪙 Token): mọi lượt gọi AI (API: đọc `usage` trong phản hồi; Claude CLI: `modelUsage` của JSON; Codex/Gemini CLI: dòng "tokens used" hoặc ước tính chars/4, đánh dấu ước tính) được ghi theo model/yêu cầu/agent/ngày vào `data/usage/YYYY-MM.json` (mỗi tháng một file → sang tháng tự reset, tháng cũ xem lại được). `GET /usage?month=YYYY-MM`. Yêu cầu = `withRequest()` bọc `run()` trong server.js (AsyncLocalStorage). MOCK không tính token.
+
+- Cột phải: 2 nút đầu trang — ⚙ Cấu hình (mở bảng "Cấu hình Office" gồm Thêm agent / Cấu hình AI / Dữ liệu Enzy) và 🪙 Giám sát token; bảng trạng thái `#mode` xanh lá khi REAL, đỏ nhạt khi MOCK (`renderMode` trong app.js).
+
+- **Tiết kiệm token**: agent có `"lean": true` (hiện là `assistant`) dùng prompt ngắn, chỉ các công cụ trong `tools`, bỏ bộ nhớ/skill team; `"research": true` = code tự `webSearch` + `webFetch` trang đầu rồi chỉ 1 lượt AI. Workflow có `"noSummary": true` (qa) dùng thẳng câu trả lời, bỏ lượt Quản Lí tổng hợp. Đo thực tế: "giá dầu hôm nay" 40k → ~5k token. Agent team content: `tools` theo vai trò trong agents.json (make_docx chỉ khi cần xuất Word ở bước cuối), `memory:false` cho agent không cần bộ nhớ, skill chung (00/01/02/70) giới hạn theo `agents:` trong frontmatter, kết quả gửi Quản Lí tổng hợp cắt 1500 ký tự/task. Đo kích thước prompt không tốn token: `AO_DRYRUN=1` (llm.js ghi vào `globalThis.__ao`). Hạn mức tháng do người dùng đặt trong dashboard token (`data/usage/settings.json`, `POST /usage/limit`), thanh "còn lại" ở cột phải (`renderTokens`).
+
+- **Trí nhớ dài hạn & kỹ năng tự cập nhật** (`learn.js`, `public/memory.html`, thẻ 🧠 trong Cấu hình Office): mỗi agent có `data/agents/<id>.json` = sổ tay (`playbook` ≤10 gạch đầu dòng, luôn nạp vào prompt qua `learnedText`), `pending` (bài học mới), `recent` (gist việc gần đây, chỉ nạp việc liên quan), thống kê (lượt làm/được duyệt/phải sửa) và `digest` (skill chung đã nén, tạo một lần). Bài học tự ghi khi người duyệt YÊU CẦU SỬA (orchestrator) hoặc CEO bấm 👍/👎 + nhận xét dưới báo cáo cuối (`POST /learn/act {action:'feedback'}`); sau mỗi yêu cầu `scheduleLearn()` chạy nền `learn.flush`: hợp nhất khi đủ 3 bài học (hoặc có bài của CEO / ≥8 lượt) bằng 1 lượt AI nhỏ (~1,7k token; MOCK dùng quy tắc), nén skill khi agent ≥3 lượt và skill ≥3k ký tự (~12k token một lần). Tắt/bật trong trang Trí nhớ. `data/agents` agent không ghi được (access.js).
+
+- **Công cụ lệnh `run_command`** (`cmd.js`, `access.js`): phân loại từng lệnh — `safe` (chỉ đọc như ls/cat/grep/find/git status/node --check, hoặc chỉ tạo mới như mkdir/touch/cp sang đường dẫn chưa có; kiểm tra token, dựng lại câu lệnh, chạy không env bí mật) chạy ngay; `ask` (mọi lệnh khác, hoặc có `; && > $()`…) hiện thẻ xin quyền đúng câu lệnh (cho lần này / luôn cho phép, lưu `allowedCmd` trong permissions.json); `deny` (sudo, rm -rf /, env, file cấu hình/bí mật, skills, data/agents) không bao giờ chạy. Kết quả có `hints` chẩn đoán lỗi bằng quy tắc (kèm đoạn mã quanh dòng lỗi). Gán công cụ cho từng agent ở ô "Công cụ" trong form sửa agent (`tools` trong agents.json).
+
+- **Kiến thức sản phẩm & tra cứu web**: `skills/03-san-pham-enzy.md` (8 sản phẩm Enzy đã xác thực từ enzy.vn ngày 24/10/2026: giá, thành phần, nhãn thuần chay/không thuần chay, điểm cần cẩn trọng về chứng nhận/dinh dưỡng/claim y tế; cập nhật bằng cách tải lại /product-sitemap.xml + từng trang) và `skills/11-tra-cuu-website.md` (quy trình tra cứu khi web lỗi). `web.js`: timeout 40s + thử lại, bỏ "www." khi lỗi TLS, lấy `<main>` + tiêu đề/mô tả/JSON-LD giá, giải mã entity; hết lượt công cụ thì buộc trả lời bằng thông tin đã có (cli.js/llm.js) thay vì "Không hoàn tất".
+
+- **Trend thời gian thực & kỹ năng marketing VN**: công cụ `trend_scan` (`trends.js`; signal/planner/analyst) quét Google Trends VN (+ "mới nổi so với lần quét trước", lưu `data/trends/<ngày>.json`), Google News theo chủ đề và RSS VnExpress/Tuổi Trẻ/Dân Trí; TikTok/Facebook/YouTube không đọc được → dùng web_search và ghi rõ. Workflow `trend` (signal → planner; chip mẫu "Làm báo cáo trend hiện nay và lên kế hoạch content 2 tuần cho…") theo skill `04-quy-trinh-trend-idea.md` (quét → chấm điểm → insight → idea → lịch 2 tuần → đo). Skill chuyên môn chọn lọc từ `agency-agents/marketing` và Việt hóa (12 TikTok & video ngắn, 13 livestream bán hàng, 14 inbox/Zalo/cộng đồng, 15 SEO enzy.vn, 16 thử nghiệm A/B) dùng `when: [từ khoá]` trong frontmatter: chỉ nạp khi yêu cầu nhắc tới từ khoá (`contextSkillsText`), nên không tốn token khi không liên quan. CLI timeout 420s vì báo cáo trend dài.
+
+- **Đào tạo từ content win**: skill `skills/05-content-win-enzy.md` (đợt 1/4) + ghi chú/sub-tasks còn lại ở `docs/TRAINING_BACKLOG.md` (dữ liệu `data/win-training/`, script `scripts/win-training/`). Đọc file backlog trước khi tiếp tục đào tạo.
+
+- **Skills dạng YAML** (`skills/*.yaml`, đọc bằng `yamlmini.js` + `skills.js`): mỗi skill có `summary`, `tags` và `sections` (id/tiêu đề/thẻ/nội dung); prompt nhận nội dung ghép các mục như cũ (đã kiểm tra giống hệt bản .md với cả 10 agent), công cụ `skill_search` tra nhanh các mục khớp. Định dạng ở `skills/README.md`; chuyển file .md cũ bằng `node scripts/convert-skills.mjs` (bản gốc ở `backups/skills-md-20261024/`).
+
+- **Admin ID & mật khẩu** (`adminauth.js`, `public/admin.js`, thẻ 🔐 Quản trị trong Cấu hình Office): các thao tác sửa/xoá agent, đổi cấu hình (config, Enzy, hạn mức token, đăng nhập CLI), trí nhớ agent (trừ đánh giá của CEO), thu hồi quyền và xoá báo cáo đều cần phiên Admin (`needsAdmin`); chưa đăng nhập → 401 `admin_required`/`admin_setup_required`, giao diện tự hiện hộp thoại rồi thử lại (`adminFetch`). Mật khẩu chỉ lưu băm scrypt ở `data/admin.json` (quyền 600, agent không đọc/ghi được); thiết lập lần đầu chỉ từ localhost; hoặc đặt `ADMIN_ID` + `ADMIN_PASSWORD` trong môi trường. Phiên cookie HttpOnly/SameSite=Strict, hết hạn sau 30 phút không hoạt động; sai 5 lần khoá 5 phút theo IP. Quên mật khẩu: xoá `data/admin.json` rồi thiết lập lại trên máy chạy server.
+
+- **Tệp khách hàng mục tiêu**: `skills/06-khach-hang-muc-tieu.yaml` (nữ 40–60 tuổi, khó tính, thu nhập TB khá+, nội trợ / ăn chay thiếu chất / quan tâm sức khoẻ; văn phong, hình ảnh, phản đối, checklist) nạp theo từ khoá nội dung cho planner, writer, video, designer, 2 agent duyệt, signal; phần "Khách hàng mục tiêu" của skill thương hiệu đã điền. Skill theo ngữ cảnh (`when`) có ngân sách 8.500 ký tự, skill không vừa thì bỏ qua và thử skill nhỏ hơn.
+
+- **Khởi động bằng bấm đúp** (macOS): `Khoi dong Agent Office.command` (tìm Node, cài thư viện, chọn cổng, mở trình duyệt, `caffeinate`), `Dung Agent Office.command`, `Tao ung dung Agent Office.command` (tạo .app bằng osacompile); server tự thử cổng kế tiếp khi cổng bận (`listen()` trong server.js). Không file nào cố định đường dẫn.
+
 ## Quy ước
 - `config.json` chứa API key (quyền 600): **không bao giờ** in nguyên file; chỉ đọc trường không bí mật hoặc che key. Không in/dán OAuth token, mã đăng nhập.
 - Giữ tách bạch model API (`MODELS`) và model CLI (`CLI_MODELS`).
-- Giữ cơ chế xin quyền file của `access.js`; hỏi trước khi nới lỏng.
+- Quyền file (`access.js`): trong thư mục dự án (SOURCE_DIR) agent tự ĐỌC và TẠO MỚI file; ghi đè file có sẵn, đọc/ghi ngoài thư mục dự án và lệnh có thể sửa/xoá phải xin quyền người dùng (ghi đè luôn sao lưu `.bak`); file bí mật/được bảo vệ không bao giờ. Hỏi trước khi nới lỏng thêm.
 - Không phải git repo: sao lưu file vào `backups/<mô-tả>-<ngày>/` trước khi sửa lớn.
 - Code/comment theo phong cách hiện có: comment tiếng Việt, ngắn; prompt agent tiếng Việt.
 - Sau khi sửa: chạy `node --check`, test MOCK ở cổng riêng, nói rõ đã thử AI thật hay chưa.

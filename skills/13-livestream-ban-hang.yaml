@@ -1,0 +1,33 @@
+id: 13-livestream-ban-hang
+title: Livestream bán hàng (TikTok Shop, Shopee Live, Facebook Live)
+summary: "Nguyên tắc: nền tảng chấm theo hành vi trong phòng live: thời gian xem > tương tác > bấm sản phẩm > chuyển đổi (mục tiêu tham khảo: xem >60s,…"
+agents: [planner, writer]
+when: [livestream, live, tiktok shop, shopee live, phien live, len song]
+order: 13
+tags: [nguyên, tắc, kịch, bản, phút/sản, phẩm, giữ, người, xem, chuẩn, báo, cáo]
+updated: 2026-10-24
+sections:
+  - id: nguyen-tac
+    title: Nguyên tắc
+    tags: [nguyên, tắc]
+    text: "**Nguyên tắc:** nền tảng chấm theo hành vi trong phòng live: thời gian xem > tương tác > bấm sản phẩm > chuyển đổi (mục tiêu tham khảo: xem >60s, tương tác >5%, chuyển đổi >3%). ~30 phiên đầu đừng chạy theo doanh thu: xây dữ liệu xem và tương tác để thuật toán hiểu tệp khách."
+  - id: kich-ban-5-phut-san-pham
+    title: Kịch bản 5 phút/sản phẩm
+    tags: [kịch, bản, phút/sản, phẩm]
+    text: "**Kịch bản 5 phút/sản phẩm:** (1) 0–1' giữ chân + nỗi đau, kêu gọi gõ \"1\" (\"ai hay nấu ăn mà sợ bột ngọt?\"); (2) 1–3' giới thiệu: thành phần (skill Sản phẩm), điểm khác, DEMO nêm nếm/nấu thật, bằng chứng (đánh giá, nhà máy); (3) 4' chốt: giá niêm yết → quà/combo → giá live, số lượng có hạn, đếm ngược; (4) 5' đọc tên người mua, trả lời bình luận, chuyển sản phẩm kế."
+  - id: giu-nguoi-xem
+    title: Giữ người xem
+    tags: [giữ, người, xem]
+    text: "**Giữ người xem:** bốc thăm 15–20 phút/lần (follow + bình luận), câu hỏi chọn A/B, úp mở \"sản phẩm giá tốt nhất lát nữa\", gọi tên người vào phòng."
+  - id: chuan-bi
+    title: Chuẩn bị
+    tags: [chuẩn]
+    text: "**Chuẩn bị:** kịch bản + bảng giá khớp enzy.vn, bàn bếp demo, ánh sáng/âm thanh, 1 người trực inbox + 1 người ghim sản phẩm, mã giảm giá, hàng đủ kho."
+  - id: bao-cao-cuoi-phien
+    title: Báo cáo cuối phiên
+    tags: [báo, cáo, cuối, phiên]
+    text: "**Báo cáo cuối phiên:** đỉnh người xem, thời gian xem TB, tương tác, lượt bấm sản phẩm, đơn, doanh thu, top sản phẩm, điểm rớt (phút nào người xem giảm), 3 việc sửa cho phiên sau."
+  - id: tuan-thu
+    title: Tuân thủ
+    tags: [tuân, thủ]
+    text: "**Tuân thủ:** không \"rẻ nhất/số 1\", không claim chữa bệnh hay thay thuốc, không bịa số lượng/khan hàng, không dẫn giao dịch ra ngoài sàn nếu sàn cấm, không so sánh hạ thấp đối thủ."

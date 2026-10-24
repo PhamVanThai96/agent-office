@@ -1,10 +1,13 @@
 import { CONFIG } from './config.js';
 import { cliComplete } from './cli.js';
+import { record } from './usage.js';
 
 // Giao diện chung cho Claude / GPT / Gemini: gửi system + user, hỗ trợ vòng lặp gọi công cụ.
 // tools: [{ name, description, parameters (JSON Schema) }]; handlers: { [name]: async (args) => kết quả }
 const MAX_STEPS = 6;
 const LIMIT_MSG = 'Không hoàn tất được sau nhiều bước.';
+const FINAL_NOTE = '[Hệ thống] Đây là lượt cuối được gọi công cụ. Sau lượt này hãy trả lời NGAY bằng thông tin đã thu thập, nêu rõ phần nào chưa xác thực.';
+const track = (ai, u) => record({ provider: ai.provider, model: ai.model, via: 'api', agent: ai.agentId, ...u });
 
 async function post(url, headers, body, provider) {
   const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
@@ -19,12 +22,15 @@ async function claude({ system, user, tools, handlers, max, ai }) {
     const data = await post('https://api.anthropic.com/v1/messages',
       { 'x-api-key': ai.apiKey, 'anthropic-version': '2023-06-01' },
       { model: ai.model, max_tokens: max, system, messages, ...(defs.length ? { tools: defs } : {}) }, ai.provider);
+    const us = data.usage || {};
+    track(ai, { input: (us.input_tokens || 0) + (us.cache_creation_input_tokens || 0) + (us.cache_read_input_tokens || 0), cached: us.cache_read_input_tokens, output: us.output_tokens });
     if (data.stop_reason !== 'tool_use') return data.content?.map((c) => c.text || '').join('') || '';
     messages.push({ role: 'assistant', content: data.content });
     const results = [];
     for (const b of data.content.filter((c) => c.type === 'tool_use')) {
       results.push({ type: 'tool_result', tool_use_id: b.id, content: JSON.stringify(await handlers[b.name](b.input)) });
     }
+    if (i === MAX_STEPS - 2) results.push({ type: 'text', text: FINAL_NOTE });
     messages.push({ role: 'user', content: results });
   }
   return LIMIT_MSG;
@@ -37,6 +43,7 @@ async function gpt({ system, user, tools, handlers, max, ai }) {
     const data = await post('https://api.openai.com/v1/chat/completions',
       { authorization: `Bearer ${ai.apiKey}` },
       { model: ai.model, max_completion_tokens: max, messages, ...(defs.length ? { tools: defs } : {}) }, ai.provider);
+    track(ai, { input: data.usage?.prompt_tokens, cached: data.usage?.prompt_tokens_details?.cached_tokens, output: data.usage?.completion_tokens });
     const msg = data.choices?.[0]?.message;
     if (!msg) return '';
     if (!msg.tool_calls?.length) return msg.content || '';
@@ -46,6 +53,7 @@ async function gpt({ system, user, tools, handlers, max, ai }) {
       try { args = JSON.parse(c.function.arguments || '{}'); } catch { /* tham số lỗi, để trống */ }
       messages.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify(await handlers[c.function.name](args)) });
     }
+    if (i === MAX_STEPS - 2) messages.push({ role: 'user', content: FINAL_NOTE });
   }
   return LIMIT_MSG;
 }
@@ -68,6 +76,8 @@ async function gemini({ system, user, tools, handlers, max, ai }) {
         generationConfig: { maxOutputTokens: Math.max(max * 4, 1024) },
         ...(decl.length ? { tools: [{ functionDeclarations: decl }] } : {}),
       }, ai.provider);
+    const gu = data.usageMetadata || {};
+    track(ai, { input: gu.promptTokenCount, cached: gu.cachedContentTokenCount, output: (gu.candidatesTokenCount || 0) + (gu.thoughtsTokenCount || 0) });
     const content = data.candidates?.[0]?.content;
     const parts = content?.parts || [];
     const calls = parts.filter((p) => p.functionCall);
@@ -77,6 +87,7 @@ async function gemini({ system, user, tools, handlers, max, ai }) {
     for (const { functionCall: f } of calls) {
       replies.push({ functionResponse: { name: f.name, response: { result: await handlers[f.name](f.args || {}) } } });
     }
+    if (i === MAX_STEPS - 2) replies.push({ text: FINAL_NOTE });
     contents.push({ role: 'user', parts: replies });
   }
   return LIMIT_MSG;
@@ -100,8 +111,10 @@ export function resolveAI(agent = {}) {
 }
 
 export function complete({ agent, system, user, tools = [], handlers = {}, max = 400 }) {
-  const ai = resolveAI(agent);
+  const ai = { ...resolveAI(agent), agentId: agent?.id };
   const active = tools.filter((t) => handlers[t.name]);
+  // AO_DRYRUN=1: không gọi AI, chỉ ghi lại kích thước prompt/công cụ (globalThis.__ao) để đo token từng agent mà không tốn token.
+  if (process.env.AO_DRYRUN) { (globalThis.__ao ||= []).push({ agent: agent?.id, system, user, tools: active }); return Promise.resolve('ok'); }
   if (ai.via === 'cli') return cliComplete({ system, user, tools: active, handlers, ai });
   return PROVIDERS[ai.provider]({ system, user, tools: active, handlers, max, ai });
 }
