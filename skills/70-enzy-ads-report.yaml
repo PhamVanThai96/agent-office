@@ -9,7 +9,7 @@ sections:
   - id: tong-quan
     title: Tổng quan
     tags: [tổng, quan]
-    text: "Nguồn: trang báo cáo nội bộ enzyfood.streamlit.app (hệ thống tự lấy, CEO không cần tải tay). Lịch chạy tự động: ngày (hôm qua), tuần (7 ngày), tháng (30 ngày). Số liệu đã tính sẵn nằm ở `reports/enzy/<kỳ>/<yyyymmdd>-so-lieu.md`, lịch sử ở `data/enzy/<kỳ>/`."
+    text: "Nguồn: trang báo cáo nội bộ enzyfood.streamlit.app (hệ thống tự lấy, CEO không cần tải tay). Lịch chạy tự động: ngày (hôm qua), tuần (7 ngày), tháng (30 ngày). Số liệu đã tính sẵn nằm trong file đính kèm và được gắn làm phụ lục của báo cáo cuối; lịch sử (snapshot, bản số liệu) ở `data/enzy/<kỳ>/`."
   - id: dinh-nghia-dung-theo-trang-bao-cao
     title: Định nghĩa (đúng theo trang báo cáo)
     tags: [định, nghĩa, đúng, trang, báo, cáo]

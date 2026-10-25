@@ -1,0 +1,42 @@
+id: 80-len-idea-insight
+title: Lên idea từ insight khách hàng (hỏi lại CEO, không giả định)
+summary: Khi lên idea phải đủ thông tin CEO xác nhận + dùng kho insight (ý kiến khách thật); thiếu thì hỏi lại, không giả định, không bịa trích dẫn.
+agents: [signal, planner, writer, analyst]
+exclude: [assistant]
+when: [idea, y tuong, insight, diem cham, y kien khach hang, khach hang dang]
+order: 80
+tags: [idea, insight, khách hàng, điểm chạm, phễu, hỏi lại]
+updated: 2026-10-25
+sections:
+  - id: nguyen-tac
+    title: Nguyên tắc: đủ thông tin mới lên idea
+    tags: [hỏi lại, giả định, brief]
+    text: |-
+      **Không tự giả định hay fake dữ liệu.** Hệ thống đã hỏi CEO các mục bắt buộc trước khi giao việc cho bạn: sản phẩm · mục tiêu · giai đoạn phễu · đối tượng · kênh/định dạng (tuỳ chọn: thời gian, ràng buộc). Chỉ dùng phần "THÔNG TIN CEO ĐÃ XÁC NHẬN" trong yêu cầu.
+      - Mục ghi "CHƯA CÓ" hoặc "CEO chưa xác định": nêu rõ ở đầu kết quả, đề xuất phương án theo từng khả năng thay vì chọn thay CEO.
+      - Thiếu thông tin quan trọng mà không nằm trong yêu cầu: dừng và nêu đúng câu cần hỏi, không đoán.
+      - Ví dụ yêu cầu mơ hồ "Lên idea cho chiến dịch marketing sắp tới" → phải hỏi: sản phẩm nào, mục tiêu gì, đang ở giai đoạn nào của phễu, đối tượng là ai, chạy kênh/định dạng nào.
+  - id: dung-kho-insight
+    title: Dùng kho insight khách hàng
+    tags: [insight_search, kho, số khách]
+    text: |-
+      Bản tóm tắt insight đã nằm sẵn trong prompt. Cần chi tiết thì gọi `insight_search` (từ khoá như "hạn dùng", "hàng giả", "bé ăn dặm"; bỏ trống = chủ đề nổi bật).
+      - Con số là SỐ KHÁCH nhắc tới trong dữ liệu đã cào, không phải toàn bộ khách. Chủ đề dưới 3 khách = "tín hiệu yếu", đừng khái quát.
+      - Ký hiệu: ↑ đang tăng tuần gần nhất · ↓ giảm · 🆕 mới xuất hiện.
+      - Chỉ trích dẫn câu khách có trong kho (đã ẩn danh); không tự viết "khách nói rằng…".
+      - Luôn nêu khoảng ngày dữ liệu. Dữ liệu cũ hơn 7 ngày hoặc chưa có thì nói rõ giới hạn đó.
+  - id: cham-diem-cham-theo-phieu
+    title: Chạm đúng điểm chạm theo giai đoạn phễu
+    tags: [phễu, TOFU, MOFU, BOFU, điểm chạm]
+    text: |-
+      - **Nhận biết (TOFU):** mượn điều nhiều khách tò mò/lo (thành phần, bột ngọt, ăn chay, bé ăn dặm) làm hook; chưa bán, chưa nhắc giá.
+      - **Cân nhắc (MOFU):** trả lời đúng phản đối và nỗi lo đang lặp lại (hàng giả, hạn dùng, an toàn, vị) bằng bằng chứng thật (nhà máy, thành phần, đồng kiểm).
+      - **Chuyển đổi (BOFU):** giải quyết rào cản mua: giá, combo, freeship, cách đặt; CTA một bước (nhắn tin).
+      - **Sau mua:** cách dùng, công thức, liều lượng, mẹo bảo quản; khuyến khích chia sẻ.
+      Dùng đúng cách khách nói (mục "Cách khách hay nói") trong hook và lời thoại.
+  - id: khung-idea
+    title: Khung một idea
+    tags: [idea, khung, kpi]
+    text: |-
+      Mỗi idea gồm: **Tên** · **Insight gốc** (chủ đề + số khách + khoảng ngày) · **Điểm chạm** · **Hook 3 giây** · **Kênh/định dạng** · **CTA** hợp giai đoạn phễu · **KPI** kiểm tra · **Rủi ro/claim cần tránh** (theo skill tuân thủ).
+      Xếp idea theo (số khách × độ mới × khả năng làm nhanh). Idea không có insight gốc thì ghi "chưa có insight hỗ trợ" thay vì bịa.

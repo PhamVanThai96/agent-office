@@ -513,7 +513,9 @@ async function poll() {
       renderMode(d);
       renderTokens(d.usage);
     }
-    renderEnzy(d.enzy);
+    renderReportBtn(d.enzy);
+    renderVoc(d.insight);
+    renderAsks(d.asks || []);
     d.events.forEach(handle);
     renderPerm(d.pending, d.allowed);
     since = d.next;
@@ -523,65 +525,112 @@ async function poll() {
 }
 poll();
 
-// ---- Báo cáo quảng cáo Enzy tự động ----
-const KIND_VI = { daily: 'Ngày', weekly: 'Tuần', monthly: 'Tháng' };
-const WDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-let enzyKey = '', enzyData = null;
-function renderEnzy(e) {
-  if (!e) return;
-  enzyData = e;
-  const key = JSON.stringify(e);
-  if (key === enzyKey) return;
-  enzyKey = key;
-  $('enzy').hidden = false;
-  const box = $('enzyStatus');
+// ---- Câu hỏi làm rõ của team gửi CEO (lên idea mà thiếu thông tin: không giả định, hỏi đến khi đủ) ----
+let asksKey = '';
+function renderAsks(list) {
+  const key = list.map((a) => a.id).join(',');
+  if (key === asksKey) return; // chỉ dựng lại khi có câu hỏi mới/đã xong, để không mất chữ CEO đang gõ
+  asksKey = key;
+  const box = $('asks');
+  box.replaceChildren();
+  for (const a of list) {
+    const card = document.createElement('div'); card.className = 'ask';
+    const h = document.createElement('h5'); h.textContent = `❓ ${a.title || 'Cần làm rõ'}${a.round > 1 ? ` (lần ${a.round})` : ''}`;
+    const p = document.createElement('p'); p.textContent = `${a.agent || 'Content Lead'}: ${a.intro || ''}`;
+    card.append(h, p);
+    const inputs = {};
+    for (const q of a.questions || []) {
+      const wrap = document.createElement('label'); wrap.className = 'aq';
+      const t = document.createElement('b'); t.textContent = `${q.label}${q.required ? ' *' : ''}`;
+      const s = document.createElement('span'); s.textContent = q.question;
+      const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = q.placeholder || ''; inp.maxLength = 400; inp.autocomplete = 'off';
+      inputs[q.key] = inp;
+      wrap.append(t, s);
+      if (q.options?.length) {
+        const chips = document.createElement('div'); chips.className = 'achips';
+        for (const o of q.options) {
+          const c = document.createElement('button'); c.type = 'button'; c.className = 'tchip'; c.textContent = o;
+          c.onclick = () => {
+            if (!q.multi) { inp.value = o; return; }
+            const parts = inp.value.split(',').map((x) => x.trim()).filter(Boolean);
+            inp.value = (parts.includes(o) ? parts.filter((x) => x !== o) : [...parts, o]).join(', ');
+          };
+          chips.append(c);
+        }
+        wrap.append(chips);
+      }
+      wrap.append(inp);
+      card.append(wrap);
+    }
+    const err = document.createElement('div'); err.className = 'aerr';
+    const btns = document.createElement('div'); btns.className = 'btns';
+    const send = document.createElement('button'); send.type = 'button'; send.textContent = 'Gửi trả lời';
+    const no = document.createElement('button'); no.type = 'button'; no.className = 'no'; no.textContent = 'Huỷ yêu cầu';
+    send.onclick = async () => {
+      const miss = (a.questions || []).filter((q) => q.required && !inputs[q.key].value.trim());
+      if (miss.length) { err.textContent = `Cần trả lời: ${miss.map((q) => q.label).join(', ')} (nếu muốn team tự đề xuất, ghi "để team đề xuất").`; inputs[miss[0].key].focus(); return; }
+      send.disabled = no.disabled = true;
+      const r = await post('ask/answer', { id: a.id, answers: Object.fromEntries(Object.entries(inputs).map(([k, el]) => [k, el.value.trim()])) });
+      if (!r.ok) { err.textContent = await r.text(); send.disabled = no.disabled = false; }
+    };
+    no.onclick = async () => { send.disabled = no.disabled = true; await post('ask/answer', { id: a.id, cancel: true }); };
+    btns.append(send, no);
+    card.append(err, btns);
+    box.append(card);
+  }
+}
+
+// ---- Ý kiến khách hàng: cào tuần tự ≤ 7 ngày, chắt lọc vào kho insight ----
+let vocKey = '';
+const vnDate = (s) => (s ? s.split('-').reverse().join('/') : '');
+function renderVoc(v) {
+  if (!v) return;
+  const key = JSON.stringify(v);
+  if (key === vocKey) return;
+  vocKey = key;
+  $('voc').hidden = false;
+  const box = $('vocStatus');
   box.replaceChildren();
   const line = (text, cls) => { const d = document.createElement('div'); d.textContent = text; if (cls) d.className = cls; box.append(d); return d; };
-  if (!e.configured) line('Chưa có tài khoản đăng nhập trang báo cáo: bấm ⚙ (hoặc nút 📊 Cấu hình Enzy) để nhập, không cần sửa code hay khởi động lại server.', 'warn');
-  const s = e.schedule;
-  line(s.enabled ? `Lịch: ngày ${s.daily} · tuần (ngày 1·8·15·22·29) ${s.weekly.time} · tháng ngày ${s.monthly.day} ${s.monthly.time}` : 'Lịch tự động: đang tắt (bấm ⏰ để bật)', 'muted');
-  line(`Tài khoản: ${e.accounts.join(', ')}`, 'muted');
-  if (e.owners?.length) line(`Dashboard content: ${e.owners.join(', ')}`, 'muted');
-  if (e.running) { const d = line(` ${KIND_VI[e.running.kind]}: ${e.running.step}`, 'run'); const sp = document.createElement('i'); sp.className = 'spin'; d.prepend(sp); }
-  if (e.queued.length) line(`Đang chờ: ${e.queued.map((k) => KIND_VI[k]).join(', ')}`, 'muted');
-  for (const k of ['daily', 'weekly', 'monthly']) {
-    const l = e.last[k];
-    if (!l) continue;
-    const when = new Date(l.at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
-    const d = line(`${l.ok ? '✅' : '⚠️'} ${KIND_VI[k]} (${when}): ${l.ok ? `kỳ ${l.period}` : l.error}`, l.ok ? '' : 'warn');
-    if (l.ok && l.data) { const a = document.createElement('a'); a.href = l.data; a.target = '_blank'; a.textContent = ' số liệu'; d.append(a); }
-  }
-  for (const k of ['daily', 'weekly', 'monthly']) {
-    const p = e.dash?.[k];
-    if (!p) continue;
-    const when = new Date(p.at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
-    const d = line(`${p.ok ? '📈' : '⚠️'} Dashboard ${KIND_VI[k]} (${when}): ${p.ok ? `kỳ ${(p.period || '').replace(/^.*?(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})$/, '$1 – $2')}` : p.error}`, p.ok ? '' : 'warn');
-    if (p.ok && p.path) { const a = document.createElement('a'); a.href = p.path; a.target = '_blank'; a.textContent = ' mở'; d.append(a); }
-  }
-  document.querySelectorAll('#enzy .enzyBtns button[data-kind]').forEach((b) => { b.disabled = !e.configured || (e.running?.kind === b.dataset.kind && !e.running.dashOnly) || e.queued.includes(b.dataset.kind); });
-  document.querySelectorAll('#enzy .enzyBtns button[data-dash]').forEach((b) => { b.disabled = !e.configured || !(e.owners || []).length || (e.running?.kind === b.dataset.dash && e.running.dashOnly) || e.queued.includes('dash-' + b.dataset.dash); });
+  if (!v.configured) line('Chưa có tài khoản đăng nhập trang Enzy: bấm ⚙ → 📊 Dữ liệu Enzy để nhập.', 'warn');
+  if (v.coverage) line(`Đã cào: ${vnDate(v.coverage.from)} → ${vnDate(v.coverage.to)} · ${v.coverage.customers} khách · ${v.themes} chủ đề`, '');
+  else line('Chưa cào lần nào.', 'muted');
+  if (v.running) { const d = line(` ${v.running.step}`, 'run'); const sp = document.createElement('i'); sp.className = 'spin'; d.prepend(sp); }
+  else if (v.next) line(`Khoảng kế tiếp: ${vnDate(v.next.from)} → ${vnDate(v.next.to)}${v.behindDays > 7 ? ` · còn ${v.behindDays} ngày chưa cào` : ''}`, 'muted');
+  else line('Đã cập nhật tới hôm qua ✅', 'muted');
+  line(`Khi lên idea, team tự cập nhật tối đa ${v.autoWindows} khoảng ngày mới nhất.`, 'muted');
+  if (v.lastError && !v.running) line(`⚠️ Lỗi gần nhất: ${v.lastError}`, 'warn'); // lỗi cũ được xoá khi bắt đầu lượt cào mới
+  // Nhật ký của lượt cào hiện tại/gần nhất (server xoá nhật ký cũ mỗi khi bắt đầu lượt mới).
+  const lg = $('vocLog'), rows = v.log || [];
+  lg.hidden = !rows.length;
+  lg.replaceChildren(...rows.map((e) => { const d = document.createElement('div'); if (e.level) d.className = e.level; const t = new Date(e.at); d.textContent = `${t.toTimeString().slice(0, 8)} ${e.text}`; return d; }));
+  lg.scrollTop = lg.scrollHeight;
+  const sb = $('vocStop'); sb.hidden = !v.running; sb.disabled = Boolean(v.running?.stopping); sb.textContent = v.running?.stopping ? 'Đang dừng…' : '■ Dừng';
+  const a = $('vocDigest'); a.hidden = !v.digest; if (v.digest) a.href = v.digest;
+  document.querySelectorAll('#voc button[data-voc]').forEach((b) => { b.disabled = !v.configured || Boolean(v.running) || (!v.next && !v.running); });
+  if (document.activeElement !== $('vocStart')) $('vocStart').value = v.start || '';
 }
-document.querySelectorAll('#enzy .enzyBtns button[data-dash]').forEach((b) => {
-  b.onclick = async () => { b.disabled = true; const r = await post('enzy/run', { kind: b.dataset.dash, dashboard: true }); const t = await r.text(); if (t !== 'ok') addSys(t); };
+$('vocStop').onclick = async () => { $('vocStop').disabled = true; const r = await post('insight/stop', {}); const t = await r.text(); if (t !== 'ok') addSys(t); };
+document.querySelectorAll('#voc button[data-voc]').forEach((b) => {
+  b.onclick = async () => { b.disabled = true; const r = await post('insight/run', { mode: b.dataset.voc }); const t = await r.text(); if (t !== 'ok') addSys(t); };
 });
-document.querySelectorAll('#enzy .enzyBtns button[data-kind]').forEach((b) => {
-  b.onclick = async () => { b.disabled = true; const r = await post('enzy/run', { kind: b.dataset.kind }); const t = await r.text(); if (t !== 'ok') addSys(t); };
-});
-$('esMDay').replaceChildren(...Array.from({ length: 28 }, (_, i) => new Option(`Ngày ${i + 1}`, i + 1)));
-$('enzyCfg').onclick = () => {
-  const f = $('enzySched');
-  f.hidden = !f.hidden;
-  if (f.hidden || !enzyData) return;
-  const s = enzyData.schedule;
-  $('esOn').checked = s.enabled; $('esDaily').value = s.daily;
-  $('esWDay').value = s.weekly.day; $('esWTime').value = s.weekly.time;
-  $('esMDay').value = s.monthly.day; $('esMTime').value = s.monthly.time;
+$('vocStartSave').onclick = async () => {
+  const r = await post('insight/config', { start: $('vocStart').value });
+  const t = await r.text(); addSys(t === 'ok' ? 'Đã lưu ngày bắt đầu cào ý kiến khách hàng.' : t);
 };
-$('enzySched').onsubmit = async (ev) => {
-  ev.preventDefault();
-  const r = await post('enzy/schedule', { enabled: $('esOn').checked, daily: $('esDaily').value, weeklyDay: $('esWDay').value, weeklyTime: $('esWTime').value, monthlyDay: $('esMDay').value, monthlyTime: $('esMTime').value });
-  if (r.ok) $('enzySched').hidden = true; else addSys(await r.text());
-};
+
+// ---- Nút "Tạo báo cáo": mở bảng riêng (enzyreport.html) để chọn kỳ, tạo báo cáo/dashboard và xem nhật ký ----
+function renderReportBtn(e) {
+  const b = $('openReport');
+  if (!e || !b) return;
+  const busy = Boolean(e.running) || e.queued.length > 0;
+  b.classList.toggle('busy', busy);
+  b.querySelector('i').textContent = busy ? '⏳' : '📈';
+  b.title = busy ? `Đang tạo báo cáo${e.running?.label ? ` (${e.running.label})` : ''}: ${e.running?.step || 'đang chờ trong hàng đợi'}` : 'Tạo báo cáo quảng cáo Enzy theo ngày / tuần / tháng, xem nhật ký';
+}
+$('openReport').onclick = () => { $('erFrame').src = 'enzyreport.html'; $('erDlg').showModal(); };
+$('erClose').onclick = () => $('erDlg').close();
+$('erDlg').addEventListener('close', () => { $('erFrame').removeAttribute('src'); });
 
 // Bảng "Cấu hình Office": gom Thêm agent / Cấu hình AI / Dữ liệu Enzy; bấm một mục thì đóng bảng rồi mở mục đó.
 $('openOffice').onclick = () => $('offDlg').showModal();
@@ -626,7 +675,7 @@ async function openEnzyCfg() {
   $('ezNote').textContent = (c.envCreds ? 'Đang có biến môi trường ENZY_USER/ENZY_PASS: biến này được ưu tiên hơn giá trị ở đây. ' : '') + 'Mật khẩu lưu trong enzy.json (quyền 600), không gửi lại về trình duyệt.';
   ezDlg.showModal();
 }
-$('enzyCfg2').onclick = $('openEnzy').onclick = openEnzyCfg;
+$('openEnzy').onclick = openEnzyCfg;
 $('openCfg').onclick = () => openConfig();
 $('ezCancel').onclick = () => ezDlg.close();
 $('ezForm').onsubmit = async (ev) => {

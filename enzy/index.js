@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchEnzy } from './fetch.js';
-import { parseEnzy, buildDataMarkdown, snapshot } from './metrics.js';
+import { parseEnzy, buildDataMarkdown, snapshot, kindLabel } from './metrics.js';
 import { normalizeAds, groupByOwner, buildOwnerDashboard, ownerSummaryMarkdown } from './owners.js';
 
 // Báo cáo quảng cáo Enzy tự động: lấy số liệu từ trang Streamlit → tính chỉ số, bảng, biểu đồ → giao #analyst viết nhận định.
@@ -15,7 +15,8 @@ export const KINDS = ['daily', 'weekly', 'monthly'];
 const KIND_LABEL = { daily: 'Báo cáo ngày', weekly: 'Báo cáo tuần', monthly: 'Báo cáo tháng' };
 // Nhãn đặt trước tiêu đề báo cáo để dễ tìm/lọc: [Daily] / [Weekly] / [Monthly].
 const KIND_TAG = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' };
-const RANGE = { daily: 'Hôm qua (trọn ngày)', weekly: '7 ngày gần nhất (không gồm hôm nay)', monthly: '30 ngày gần nhất (không gồm hôm nay)' };
+// Tuần/tháng lấy theo lịch (xem calendarRange), nhãn dưới đây chỉ để hiển thị.
+const RANGE = { daily: 'Hôm qua (trọn ngày)', weekly: 'Tuần theo lịch (1–7, 8–14, 15–21, 22–28, 29–cuối tháng)', monthly: 'Tháng dương lịch' };
 
 const DEFAULTS = {
   URL: 'https://enzyfood.streamlit.app/~/+/',
@@ -107,12 +108,15 @@ function periodLabel(period) {
 }
 
 // Dashboard content theo người thực hiện (HTML độc lập) từ danh sách từng quảng cáo. Trả về đường dẫn tương đối trong reports/ hoặc ''.
-function writeOwnerDashboard(cfg, kind, key, d, rows) {
+function writeOwnerDashboard(cfg, kind, key, d, rows, write = true) {
   const owners = cfg.OWNERS || [];
   if (!owners.length || !rows?.length) return '';
   const g = groupByOwner(normalizeAds(rows), owners);
   const lab = periodLabel(d.period);
-  const title = `[${KIND_TAG[kind]}] Dashboard content ${g.listed.join(' + ')} và nhóm còn lại — ${KIND_LABEL[kind]} ${lab}`;
+  const title = `[${KIND_TAG[kind]}] Dashboard content ${g.listed.join(' + ')} và nhóm còn lại — ${kindLabel(kind, d.period)} ${lab}`;
+  const mdAll = ownerSummaryMarkdown(g, lab);
+  // Chỉ xuất báo cáo (không dashboard): vẫn có bảng so sánh người thực hiện nhưng bỏ dòng link tới dashboard.
+  if (!write) return { rel: '', md: mdAll.replace(/^\[📈 Mở Dashboard content[^\n]*\n?/m, '') };
   const dir = path.join(ROOT, 'reports', 'enzy', kind);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, `${key}-dashboard-content.html`), buildOwnerDashboard({ title, period: lab, updated: d.updated, kindLabel: KIND_LABEL[kind], ...g }));
@@ -122,10 +126,28 @@ function writeOwnerDashboard(cfg, kind, key, d, rows) {
 // Kỳ theo lịch (không phải "N ngày gần nhất"): tuần = các khối 1–7, 8–14, 15–21, 22–28, 29–cuối tháng; tháng = tháng dương lịch.
 // Lấy kỳ chứa "hôm qua" (ngày trọn vẹn gần nhất) và chỉ tính tới hôm qua nếu kỳ chưa kết thúc (vd. hôm nay 6/10 → tuần 1–5/10, tháng 1–5/10).
 // Ngày 1 hàng tháng (hoặc ngày đầu khối) thì hôm qua thuộc kỳ trước nên ra trọn kỳ trước. Ngày: null (dùng "Hôm qua").
+// pick = { year, month (1–12), week (1–5, chỉ báo cáo tuần) }: người dùng chọn kỳ cụ thể thay vì kỳ gần nhất; kỳ chưa bắt đầu hoặc không tồn tại thì ném lỗi.
 const eom = (y, m) => new Date(y, m + 1, 0).getDate();
-export function calendarRange(kind, now = new Date()) {
+const fmtDay = (d) => `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()}`;
+export function calendarRange(kind, now = new Date(), pick = null) {
   if (kind === 'daily') return null;
   const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if (pick) {
+    const py = Number(pick.year), pm = Number(pick.month) - 1;
+    if (!Number.isInteger(py) || py < 2020 || py > 2100 || !Number.isInteger(pm) || pm < 0 || pm > 11) throw new Error('Tháng hoặc năm không hợp lệ.');
+    const last = eom(py, pm);
+    let from, end, name;
+    if (kind === 'monthly') { from = new Date(py, pm, 1); end = new Date(py, pm, last); name = `tháng ${pm + 1}/${py}`; }
+    else {
+      const w = Number(pick.week);
+      if (!Number.isInteger(w) || w < 1 || w > 5) throw new Error('Tuần phải từ 1 đến 5.');
+      const st = WEEK_START_DAYS[w - 1];
+      if (st > last) throw new Error(`Tháng ${pm + 1}/${py} chỉ có ${last} ngày nên không có tuần ${w}.`);
+      from = new Date(py, pm, st); end = new Date(py, pm, w === 5 ? last : st + 6); name = `tuần ${w} tháng ${pm + 1}/${py}`;
+    }
+    if (from > y) throw new Error(`Chưa có dữ liệu cho ${name}: kỳ bắt đầu từ ${fmtDay(from)}, dữ liệu chỉ có tới hết hôm qua (${fmtDay(y)}).`);
+    return { from, to: end > y ? y : end };
+  }
   const yy = y.getFullYear(), mm = y.getMonth(), d = y.getDate();
   if (kind === 'monthly') return { from: new Date(yy, mm, 1), to: y };
   const st = d >= 29 ? 29 : Math.floor((d - 1) / 7) * 7 + 1;
@@ -134,6 +156,7 @@ export function calendarRange(kind, now = new Date()) {
 export const WEEK_START_DAYS = [1, 8, 15, 22, 29];
 
 const p2 = (n) => String(n).padStart(2, '0');
+const pickLabel = (kind, pick) => (!pick ? '' : kind === 'weekly' ? `tuần ${pick.week} tháng ${pick.month}/${pick.year}` : `tháng ${pick.month}/${pick.year}`);
 const dayKey = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 // Ngày cuối kỳ từ "00:00 17/10/2026 đến 23:59 23/10/2026" → 20261023
 function periodKey(period) {
@@ -154,10 +177,10 @@ function history(kind, before) {
 function buildTask(cfg, kind, d) {
   let body = '';
   try { body = fs.readFileSync(path.resolve(ROOT, cfg.PROMPT), 'utf8').replace(/^\/\w+[^\n]*\n/, '').trim(); } catch { body = 'Viết báo cáo hiệu quả quảng cáo dựa trên file số liệu đính kèm.'; }
-  const title = `[${KIND_TAG[kind]}] ${KIND_LABEL[kind]} quảng cáo Enzy — ${d.period || RANGE[kind]}`;
+  const title = `[${KIND_TAG[kind]}] ${kindLabel(kind, d.period)} quảng cáo Enzy — ${d.period || RANGE[kind]}`;
   return {
     title,
-    task: `/analyst ${title}\nKỲ BÁO CÁO: ${KIND_LABEL[kind].toUpperCase()} (${RANGE[kind]}). File số liệu đính kèm do hệ thống tự lấy từ trang báo cáo Enzy lúc ${d.updated || 'vừa xong'}; số liệu, bảng và biểu đồ đã được tính sẵn và sẽ tự đính kèm vào báo cáo — dùng đúng các số này, không tự tính lại hay vẽ lại.\n\n${body}`,
+    task: `/analyst ${title}\nKỲ BÁO CÁO: ${kindLabel(kind, d.period).toUpperCase()} (${d.period || RANGE[kind]}). File số liệu đính kèm do hệ thống tự lấy từ trang báo cáo Enzy lúc ${d.updated || 'vừa xong'}; số liệu, bảng và biểu đồ đã được tính sẵn và sẽ tự đính kèm vào báo cáo — dùng đúng các số này, không tự tính lại hay vẽ lại.\n\n${body}`,
   };
 }
 
@@ -165,20 +188,33 @@ function buildTask(cfg, kind, d) {
  * deps: { isBusy(), submit(task, uploadRelPaths, opts) → Promise (chạy văn phòng tới khi xong), uploadsDir, log(text) }
  */
 export function createEnzy(deps) {
+  // Nhật ký chạy báo cáo (hiện ở bảng "Tạo báo cáo"): giữ 200 dòng gần nhất, lưu ra data/enzy/log.json để xem lại sau khi khởi động lại server.
+  const LOG_FILE = path.join(DATA, 'log.json');
+  let logs = readJson(LOG_FILE, []);
+  const note = (text, level = '') => {
+    logs.push({ at: Date.now(), text: String(text).slice(0, 500), level });
+    if (logs.length > 200) logs = logs.slice(-200);
+    try { writeJson(LOG_FILE, logs); } catch { /* chỉ để xem lại */ }
+    deps.log(text);
+  };
+  const setStep = (text) => { if (state.running) { state.running.step = text; note(text); } };
   let state = readJson(STATE, { last: {}, running: null });
   state.running = null;
+  // Lịch tự động theo dõi riêng (sched) để chạy báo cáo kỳ cũ do người dùng chọn không làm lỡ lần chạy theo lịch hôm nay.
+  state.sched ||= Object.fromEntries(Object.entries(state.last || {}).map(([k, v]) => [k, { ok: v.ok, at: v.at, day: v.day }]));
   const save = () => writeJson(STATE, state);
   const queue = [];
   let working = false;
 
-  async function runOnce(kind, reason, dashOnly = false) {
+  // dashOnly: chỉ dựng dashboard (không AI). noDash: chỉ báo cáo, không dựng dashboard. Mặc định: cả hai.
+  async function runOnce(kind, reason, dashOnly = false, pick = null, noDash = false) {
     const cfg = loadConfig();
-    state.running = { kind, dashOnly, step: 'Đang lấy số liệu từ trang báo cáo…', since: Date.now() };
-    deps.log(`${dashOnly ? 'Dashboard content' : 'Báo cáo Enzy'} (${KIND_LABEL[kind]}, ${reason}): đang lấy số liệu cho ${cfg.ACCOUNTS.join(', ')}…`);
+    state.running = { kind, dashOnly, label: pickLabel(kind, pick), step: 'Đang lấy số liệu từ trang báo cáo…', since: Date.now() };
+    note(`${dashOnly ? 'Dashboard content' : 'Báo cáo Enzy'} (${KIND_LABEL[kind]}, ${reason}): đang lấy số liệu cho ${cfg.ACCOUNTS.join(', ')}…`);
     // ENZY_FAKE_RAW=<file.json>: dùng dữ liệu thô đã lưu thay cho trang thật (chỉ để thử nghiệm).
     const raw = process.env.ENZY_FAKE_RAW ? { ...readJson(process.env.ENZY_FAKE_RAW, {}), range: RANGE[kind] } : await fetchEnzy({
       url: cfg.URL, user: process.env.ENZY_USER || cfg.USER, pass: process.env.ENZY_PASS || cfg.PASS,
-      brand: cfg.BRAND, system: cfg.SYSTEM, store: cfg.STORE, accounts: cfg.ACCOUNTS, range: RANGE[kind], dates: calendarRange(kind),
+      brand: cfg.BRAND, system: cfg.SYSTEM, store: cfg.STORE, accounts: cfg.ACCOUNTS, range: RANGE[kind], dates: calendarRange(kind, new Date(), pick),
     });
     const d = parseEnzy(raw);
     if (d.totals.spend == null) throw new Error('Không đọc được số liệu tổng từ trang báo cáo (cấu trúc trang có thể đã thay đổi).');
@@ -195,47 +231,57 @@ export function createEnzy(deps) {
     writeJson(path.join(DATA, kind, `${key}.json`), snapshot(d));
     fs.writeFileSync(path.join(DATA, kind, `${key}-raw.txt`), raw.code || '');
     let dashboard = '', ownerMd = '';
-    try { const w = writeOwnerDashboard(cfg, kind, key, d, raw.adsRows); dashboard = w?.rel || ''; ownerMd = w?.md || ''; } catch (e) { deps.log(`Dashboard content theo người thực hiện lỗi: ${e.message}`); }
-    if (raw.adsError) deps.log(`Không tải được file Excel từng quảng cáo (${raw.adsError}); bỏ qua dashboard theo người thực hiện.`);
-    // Bản số liệu xem được ngay trên trang Báo cáo, kể cả khi bước AI lỗi.
-    const repDir = path.join(ROOT, 'reports', 'enzy', kind);
-    fs.mkdirSync(repDir, { recursive: true });
+    try { const w = writeOwnerDashboard(cfg, kind, key, d, raw.adsRows, !noDash); dashboard = w?.rel || ''; ownerMd = w?.md || ''; } catch (e) { note(`Dashboard content theo người thực hiện lỗi: ${e.message}`); }
+    if (raw.adsError) note(`Không tải được file Excel từng quảng cáo (${raw.adsError}); bỏ qua ${noDash ? 'bảng so sánh' : 'dashboard'} theo người thực hiện.`);
+    // Số liệu do code tính nằm ngay trong báo cáo cuối (phụ lục), nên KHÔNG tạo file riêng trong danh sách báo cáo; bản lưu nội bộ ở data/enzy/.
     // Bảng so sánh NGA/TRÂN/nhóm còn lại nằm ngay trong báo cáo (link tương đối khác nhau cho file .md và trang báo cáo tổng hợp).
     const mdFile = md + (ownerMd ? '\n' + ownerMd.replace('{{DASH}}', `${key}-dashboard-content.html`) : '');
     const mdApp = md + (ownerMd ? '\n' + ownerMd.replace('{{DASH}}', `enzy/${kind}/${key}-dashboard-content.html`) : '');
-    fs.writeFileSync(path.join(repDir, `${key}-so-lieu.md`), mdFile);
+    fs.writeFileSync(path.join(DATA, kind, `${key}-so-lieu.md`), mdApp);
     const upRel = `enzy/${kind}-${key}.md`;
     fs.mkdirSync(path.join(deps.uploadsDir, 'enzy'), { recursive: true });
     fs.writeFileSync(path.join(deps.uploadsDir, upRel), mdFile);
 
-    state.running.step = 'Chờ văn phòng rảnh để giao #analyst…';
+    setStep('Chờ văn phòng rảnh để giao #analyst…');
     for (let i = 0; deps.isBusy() && i < 360; i++) await new Promise((r) => setTimeout(r, 5000));
     if (deps.isBusy()) throw new Error('Văn phòng bận quá 30 phút, chưa giao được việc phân tích.');
-    state.running.step = '#analyst đang viết nhận định…';
+    setStep('#analyst đang viết nhận định…');
     const { task, title } = buildTask(cfg, kind, d);
-    await deps.submit(task, [upRel], { label: `${title} [📎 số liệu tự động]`, appendix: [{ agent: 'Số liệu Enzy (tự động)', title: `${d.range} · ${d.period}`, status: 'done', text: mdApp }], links: dashboard ? [{ label: '📈 Dashboard content: TRÂN · NGA · người còn lại', href: dashboard }] : [] });
-    return { key, period: d.period, data: `reports/enzy/${kind}/${key}-so-lieu.md`, dashboard };
+    let fin = null;
+    await deps.submit(task, [upRel], { onFinal: (ev) => { fin = ev; }, label: `${title} [📎 số liệu tự động]`, appendix: [{ agent: 'Số liệu Enzy (tự động)', title: `${d.range} · ${d.period}`, status: 'done', text: mdApp }], links: dashboard ? [{ label: '📈 Dashboard content: TRÂN · NGA · người còn lại', href: dashboard }] : [] });
+    // Không có báo cáo cuối (vd Quản Lí đang offline): giữ bản số liệu trong danh sách báo cáo để vẫn xem được.
+    let data = fin?.file ? `reports/${encodeURIComponent(fin.file)}` : '';
+    if (!data) {
+      const repDir = path.join(ROOT, 'reports', 'enzy', kind);
+      fs.mkdirSync(repDir, { recursive: true });
+      fs.writeFileSync(path.join(repDir, `${key}-so-lieu.md`), mdFile);
+      data = `reports/enzy/${kind}/${key}-so-lieu.md`;
+      note('Không tạo được báo cáo cuối; đã lưu riêng bản số liệu trong danh sách báo cáo.');
+    }
+    return { key, period: d.period, data, dashboard };
   }
 
   async function pump() {
     if (working) return;
     working = true;
     while (queue.length) {
-      const { kind, reason, dashOnly } = queue.shift();
+      const { kind, reason, dashOnly, pick, noDash } = queue.shift();
       const started = Date.now();
       try {
-        const r = await runOnce(kind, reason, dashOnly);
+        const r = await runOnce(kind, reason, dashOnly, pick, noDash);
         if (r.dashboard) { (state.dash ||= {})[kind] = { ok: true, at: started, period: r.period, path: r.dashboard }; }
-        if (dashOnly) deps.log(`Dashboard content (${KIND_LABEL[kind]}) xong: kỳ ${r.period}.`);
+        if (dashOnly) note(`Dashboard content (${KIND_LABEL[kind]}) xong: kỳ ${r.period}. Dashboard: ${r.dashboard}`, 'ok');
         else {
           state.last[kind] = { ok: true, at: started, day: dayKey(new Date(started)), ...r };
-          deps.log(`Báo cáo Enzy (${KIND_LABEL[kind]}) xong: kỳ ${r.period}. Số liệu: ${r.data}`);
+          if (!pick) (state.sched ||= {})[kind] = { ok: true, at: started, day: dayKey(new Date(started)) }; // chạy theo kỳ người chọn không tính vào lịch tự động
+          note(`Báo cáo Enzy (${KIND_LABEL[kind]}) xong: kỳ ${r.period}. Báo cáo: ${r.data} · Dashboard: ${r.dashboard || 'không tạo'}`, 'ok');
         }
       } catch (e) {
-        if (dashOnly) { (state.dash ||= {})[kind] = { ok: false, at: started, error: e.message }; deps.log(`Dashboard content (${KIND_LABEL[kind]}) lỗi: ${e.message}`); }
+        if (dashOnly) { (state.dash ||= {})[kind] = { ok: false, at: started, error: e.message }; note(`Dashboard content (${KIND_LABEL[kind]}) lỗi: ${e.message}`, 'err'); }
         else {
           state.last[kind] = { ok: false, at: started, day: dayKey(new Date(started)), error: e.message };
-          deps.log(`Báo cáo Enzy (${KIND_LABEL[kind]}) lỗi: ${e.message}`);
+          if (!pick) (state.sched ||= {})[kind] = { ok: false, at: started, day: dayKey(new Date(started)) };
+          note(`Báo cáo Enzy (${KIND_LABEL[kind]}) lỗi: ${e.message}`, 'err');
         }
       }
       state.running = null;
@@ -244,10 +290,12 @@ export function createEnzy(deps) {
     working = false;
   }
 
-  const enqueue = (kind, reason = 'chạy tay', dashOnly = false) => {
+  const enqueue = (kind, reason = 'chạy tay', dashOnly = false, pick = null, noDash = false) => {
     if (!KINDS.includes(kind)) throw new Error('Loại báo cáo phải là daily, weekly hoặc monthly.');
+    if (kind === 'daily') pick = null;
+    else if (pick) { calendarRange(kind, new Date(), pick); pick = { year: Number(pick.year), month: Number(pick.month), ...(kind === 'weekly' ? { week: Number(pick.week) } : {}) }; } // báo lỗi ngay nếu kỳ không hợp lệ/chưa có dữ liệu
     if ((state.running?.kind === kind && !!state.running.dashOnly === dashOnly) || queue.some((q) => q.kind === kind && !!q.dashOnly === dashOnly)) return false;
-    queue.push({ kind, reason, dashOnly });
+    queue.push({ kind, reason, dashOnly, pick, noDash: !dashOnly && noDash });
     pump();
     return true;
   };
@@ -258,7 +306,7 @@ export function createEnzy(deps) {
     if (!s.enabled) return [];
     const hm = `${p2(now.getHours())}:${p2(now.getMinutes())}`, today = dayKey(now);
     // Đã chạy hôm nay: thành công thì thôi, lỗi thì thử lại sau mỗi giờ.
-    const ran = (k) => state.last[k]?.day === today && (state.last[k].ok || Date.now() - state.last[k].at < 3600e3);
+    const ran = (k) => state.sched?.[k]?.day === today && (state.sched[k].ok || Date.now() - state.sched[k].at < 3600e3);
     const out = [];
     if (hm >= s.daily && !ran('daily')) out.push('daily');
     if (WEEK_START_DAYS.includes(now.getDate()) && hm >= s.weekly.time && !ran('weekly')) out.push('weekly');
@@ -294,5 +342,8 @@ export function createEnzy(deps) {
     return out;
   }
 
-  return { enqueue, status, due, rebuildDashboards };
+  // Trạng thái đầy đủ cho bảng "Tạo báo cáo" (kèm nhật ký); /poll chỉ dùng status() cho nhẹ.
+  const statusFull = () => ({ ...status(), now: Date.now(), log: logs.slice(-200) });
+
+  return { enqueue, status, statusFull, due, rebuildDashboards };
 }

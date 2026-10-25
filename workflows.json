@@ -91,6 +91,46 @@
       }
     },
     {
+      "id": "idea",
+      "name": "Lên idea từ insight khách hàng",
+      "when": "lên idea/ý tưởng content hoặc chiến dịch dựa trên ý kiến thật của khách (Inbox + Comment); hỏi lại CEO khi thiếu thông tin",
+      "template": "Lên idea content cho: ",
+      "keywords": [
+        "len idea",
+        "len y tuong",
+        "idea",
+        "brainstorm",
+        "insight khach hang",
+        "y kien khach hang",
+        "cham dung diem cham",
+        "diem cham khach hang",
+        "khach hang dang mong muon",
+        "khach hang dang quan tam"
+      ],
+      "unless": [
+        "bao cao ngay",
+        "bao cao tuan",
+        "bao cao thang",
+        "bao cao trend",
+        "bao cao xu huong",
+        "chi so",
+        "thumbnail",
+        "banner",
+        "poster",
+        "shot list"
+      ],
+      "clarify": true,
+      "insight": true,
+      "steps": [
+        "signal",
+        "planner"
+      ],
+      "titles": {
+        "signal": "01 Insight khách hàng cho: {c}. Dùng kho insight (đã sẵn bản tóm tắt; tra thêm bằng insight_search): nêu 5-8 điều khách đang hỏi/lo/mong muốn LIÊN QUAN thông tin CEO đã xác nhận, kèm số khách và giai đoạn phễu; chỉ ra điểm chạm. Không giả định, không bịa trích dẫn.",
+        "planner": "02-03 Lên 5-8 idea chạm đúng điểm chạm khách hàng cho: {c}. Mỗi idea: tên · insight gốc (chủ đề + số khách) · điểm chạm · hook 3 giây · kênh/định dạng · CTA hợp giai đoạn phễu CEO chọn · rủi ro/claim cần tránh. Chỉ dùng thông tin CEO đã xác nhận + insight; mục nào chưa có thì ghi 'chưa có'."
+      }
+    },
+    {
       "id": "measure",
       "name": "Đo lường & rút insight",
       "when": "theo dõi chỉ số, báo cáo hiệu quả ngày/tuần/tháng, rút insight, tạo idea mới cho backlog",

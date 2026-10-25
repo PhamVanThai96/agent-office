@@ -17,6 +17,7 @@ import { authStatus, detect, discoverModel, lastModel, onModelFound, loginStart,
 import { templates } from './routing.js';
 import { skillsFor } from './skills.js';
 import { createEnzy, saveSchedule, saveConfig as saveEnzyConfig, publicConfig as enzyConfig } from './enzy/index.js';
+import { createInsight, saveInsightStart } from './insight/index.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const PORT = CONFIG.port;
@@ -163,7 +164,17 @@ function emit(event) {
   history.push(event);
 }
 
-const run = createOrchestrator({ emit, state });
+// Câu hỏi làm rõ gửi CEO (lên idea mà thiếu thông tin): chờ trả lời trên giao diện, hết hạn sau 2 giờ.
+const asks = new Map();
+let askSeq = 0;
+const askCeo = (payload) => new Promise((resolve) => {
+  const id = `ask${++askSeq}`;
+  const timer = setTimeout(() => { if (asks.delete(id)) { emit({ type: 'log', from: 'Hệ thống', text: 'Câu hỏi làm rõ đã hết hạn chờ (2 giờ).' }); resolve(null); } }, 2 * 3600e3);
+  asks.set(id, { id, ...payload, resolve, timer });
+});
+// Kho "Ý kiến khách hàng" (cào tuần tự ≤ 7 ngày, chắt lọc thành insight): xem insight/index.js.
+const insight = createInsight({ log: (text) => emit({ type: 'log', from: 'Insight', text }), wrap: (label, fn) => withRequest(label, fn) });
+const run = createOrchestrator({ emit, state, ask: askCeo, insight });
 
 // Sau mỗi yêu cầu: agent tự cập nhật kỹ năng (hợp nhất bài học, nén skill khi đủ điều kiện) — chạy nền, token ghi riêng trong dashboard.
 function scheduleLearn() {
@@ -219,6 +230,10 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(adminAuth.status(req)));
     return;
   }
+  if (req.method === 'GET' && url.pathname === '/enzy/status') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzy.statusFull()));
+    return;
+  }
   if (req.method === 'GET' && url.pathname === '/usage') {
     const mo = url.searchParams.get('month') || '';
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(usageSummary(/^\d{4}-\d{2}$/.test(mo) ? mo : undefined)));
@@ -237,6 +252,8 @@ const server = http.createServer(async (req, res) => {
       settings: full ? settings() : undefined,
       templates: full ? templates() : undefined,
       enzy: enzy.status(),
+      insight: insight.status(),
+      asks: [...asks.values()].map(({ resolve, timer, ...a }) => a),
       usage: usageMini(),
       keys: full ? Object.fromEntries(Object.entries(CONFIG.connection === 'CLI' ? CONFIG.cliOk : CONFIG.keys).map(([k, v]) => [k, Boolean(v)])) : undefined,
       events: history.slice(since),
@@ -247,7 +264,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && (url.pathname === '/reports' || url.pathname === '/reports/')) {
     if (url.searchParams.has('list')) {
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      res.end(JSON.stringify(listReports().sort((a, b) => b.day.localeCompare(a.day) || b.mtime - a.mtime)));
+      res.end(JSON.stringify(listReports().sort((a, b) => b.day.slice(0, 7).localeCompare(a.day.slice(0, 7)) || b.mtime - a.mtime)));
     } else {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
       fs.createReadStream(path.join(dir, 'public', 'reports.html')).pipe(res);
@@ -478,11 +495,35 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/enzy/run' || url.pathname === '/enzy/schedule' || url.pathname === '/enzy/config/get' || url.pathname === '/enzy/config/save') {
       if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
       try {
-        if (url.pathname === '/enzy/run') res.writeHead(200).end(enzy.enqueue(String(b.kind), 'chạy tay', b.dashboard === true) ? 'ok' : 'Báo cáo này đang chạy hoặc đã xếp hàng.');
+        if (url.pathname === '/enzy/run') {
+          // Tính kết quả TRƯỚC khi ghi header: enqueue ném lỗi khi kỳ/loại báo cáo không hợp lệ, lúc đó phải trả 400 chứ không được làm sập server.
+          // output: 'both' (mặc định: báo cáo + dashboard) | 'report' (chỉ báo cáo) | 'dashboard' (chỉ dashboard, không AI); `dashboard:true` là cách gọi cũ.
+          const out = String(b.output || '').toLowerCase();
+          const queued = enzy.enqueue(String(b.kind), 'chạy tay', out === 'dashboard' || b.dashboard === true, b.pick && typeof b.pick === 'object' ? b.pick : null, out === 'report');
+          res.writeHead(200).end(queued ? 'ok' : 'Báo cáo này đang chạy hoặc đã xếp hàng.');
+        }
         else if (url.pathname === '/enzy/config/get') res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzyConfig()));
         else if (url.pathname === '/enzy/config/save') { saveEnzyConfig(b); const made = enzy.rebuildDashboards(); agentsVer++; res.writeHead(200).end(made.length ? `ok: đã dựng lại ${made.length} dashboard` : 'ok'); }
         else { saveSchedule(b); res.writeHead(200).end('ok'); }
-      } catch (e) { res.writeHead(400).end(e.message); }
+      } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
+      return;
+    }
+    if (url.pathname === '/ask/answer') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      const a = asks.get(String(b.id));
+      if (!a) { res.writeHead(404).end('Câu hỏi không còn hiệu lực.'); return; }
+      asks.delete(a.id); clearTimeout(a.timer);
+      a.resolve(b.cancel === true ? null : (b.answers && typeof b.answers === 'object' ? b.answers : {}));
+      res.writeHead(200).end('ok');
+      return;
+    }
+    if (url.pathname === '/insight/run' || url.pathname === '/insight/config' || url.pathname === '/insight/stop') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      try {
+        if (url.pathname === '/insight/stop') { const stopped = insight.stop(); res.writeHead(200).end(stopped ? 'ok' : 'Không có lượt cào nào đang chạy.'); }
+        else if (url.pathname === '/insight/run') { const started = insight.start(String(b.mode)); res.writeHead(200).end(started ? 'ok' : 'Đang cào ý kiến khách hàng, hãy chờ xong.'); }
+        else { saveInsightStart(b.start); res.writeHead(200).end('ok'); }
+      } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
       return;
     }
     if (url.pathname === '/memory/clear') { clearMemory(); res.writeHead(200).end('ok'); return; }

@@ -2,6 +2,8 @@ import { remember, recall } from './memory.js';
 import { recordRun, recordTask, recordVerdict, addLesson, lessonFromReview } from './learn.js';
 import { AGENTS, work, makePlan, summarize, answer } from './agents.js';
 import { toolsFor } from './access.js';
+import { classify } from './routing.js';
+import { clarifyBrief, FIELDS } from './clarify.js';
 
 const byId = new Proxy({}, { get: (_, id) => AGENTS.find((a) => a.id === id) });
 const CEO = 'manager';
@@ -11,7 +13,8 @@ const MAX_REVISE = 1;
 const needsRevision = (text) => /K[ẾE]T LU[ẬA]N\s*:\s*Y[ÊE]U C[ẦA]U S[ỬU]A/i.test(text) || /^\s*Y[ÊE]U C[ẦA]U S[ỬU]A/i.test(text);
 
 // Vòng lặp xã hội: CEO(user) → Quản Lí → (assign) → agent ⇄ agent (handoff/hỏi đáp) → (report) → Quản Lí → (final) → user
-export function createOrchestrator({ emit, state }) {
+// ask(payload) → Promise<{key: text} | null>: hỏi CEO trên giao diện và chờ trả lời. insight: kho ý kiến khách hàng (insight/index.js).
+export function createOrchestrator({ emit, state, ask, insight }) {
   const locks = {};
   // Mỗi agent chỉ làm một task một lúc; các task khác của agent đó xếp hàng.
   const withAgent = (id, fn) => {
@@ -56,10 +59,45 @@ export function createOrchestrator({ emit, state }) {
     msg('user', CEO, 'command', opts.label || command + (attachments.length ? ` [📎 ${attachments.map((f) => f.name).join(', ')}]` : ''));
     setStatus(CEO, 'working', 'Đang lập kế hoạch…');
     think(CEO, `Nhận lệnh: ${short(command, 80)}`, command);
+    const planText = command; // phân loại quy trình theo lời CEO, không theo phần thông tin bổ sung bên dưới
+    const wf = direct ? null : classify(planText);
+    let insightCtx = '';
+    // Lên idea: thiếu thông tin thì HỎI LẠI CEO (không tự giả định), rồi cập nhật ý kiến khách hàng mới nhất.
+    if (wf?.clarify && ask) {
+      setStatus(CEO, 'working', 'Đang kiểm tra đủ thông tin để lên idea…');
+      think(CEO, 'Kiểm tra thông tin còn thiếu trước khi lên idea…');
+      const c = await clarifyBrief({
+        command: planText,
+        say: (t, detail) => { msg(CEO, 'user', 'question', short(t, 140)); think(CEO, short(t, 80), detail); },
+        ask: async (payload) => {
+          setStatus(CEO, 'waiting', 'Đang chờ CEO trả lời để làm rõ yêu cầu…');
+          const r = await ask({ agent: byId[CEO].name, ...payload });
+          setStatus(CEO, 'working', 'Đang kiểm tra đủ thông tin để lên idea…');
+          return r;
+        },
+      });
+      if (c.cancelled) {
+        emit({ type: 'log', from: 'Hệ thống', text: 'CEO đã huỷ hoặc không trả lời câu hỏi làm rõ nên yêu cầu lên idea được dừng (không giả định thay CEO).' });
+        setStatus(CEO, 'idle', 'Đã dừng: chưa đủ thông tin để lên idea.');
+        return;
+      }
+      if (c.asked.length) msg('user', CEO, 'answer', short(c.asked.map((k) => `${FIELDS.find((f) => f.key === k)?.label}: ${c.answers[k]}`).join(' · '), 140));
+      if (c.missing.length) think(CEO, `Vẫn thiếu: ${c.missing.map((k) => FIELDS.find((f) => f.key === k)?.label).join(', ')} — sẽ ghi rõ trong kết quả`);
+      command += c.block;
+    }
+    if (wf?.insight && insight) {
+      setStatus(CEO, 'working', 'Đang cập nhật ý kiến khách hàng mới nhất…');
+      think(CEO, 'Cập nhật ý kiến khách hàng mới nhất…');
+      const r = await insight.ensureFresh({ onProgress: (t) => { think(CEO, t); setStatus(CEO, 'working', t); } });
+      const note = r.ok ? '' : `lần cập nhật gần nhất không thành công (${short(r.error || '', 120)}), đang dùng dữ liệu đã lưu`;
+      think(CEO, r.ok ? (r.windows ? `Đã chắt lọc thêm ${r.windows} khoảng ý kiến khách hàng (${r.newCustomers} khách mới)` : 'Ý kiến khách hàng đã cập nhật tới hôm qua') : `Không cập nhật được ý kiến khách hàng: ${short(r.error || '', 90)}`, r.error);
+      insightCtx = insight.context(note);
+    }
     think(CEO, 'Phân tích và chia task…');
+    setStatus(CEO, 'working', 'Đang lập kế hoạch…');
     const tasks = direct
       ? [{ id: 't1', title: command, assignee: direct, dependsOn: [] }]
-      : await makePlan(command);
+      : await makePlan(planText);
     if (tasks.route) think(CEO, `Quy trình: ${tasks.route} (${tasks.map((t) => '#' + t.assignee).join(' → ')})`);
     emit({ type: 'plan', tasks: tasks.map((t) => ({ ...t, status: 'pending' })) });
     for (const t of tasks) msg(CEO, t.assignee, 'assign', t.title);
@@ -106,7 +144,7 @@ export function createOrchestrator({ emit, state }) {
         };
         try {
           const text = await work(a, {
-            command, task: t, inputs, memory, attachments, feedback: extra.feedback, round: extra.round || 0,
+            command, task: t, inputs, memory, attachments, feedback: extra.feedback, round: extra.round || 0, insight: insightCtx,
             think: (x) => think(a.id, x), isLast: !tasks.some((o) => o.dependsOn?.includes(t.id)),
             tools,
             ask: (to, q) => consult(a, to, q, command),
@@ -201,8 +239,10 @@ export function createOrchestrator({ emit, state }) {
       text = `Không tổng hợp được báo cáo: ${e.message}`;
     }
     msg(CEO, 'user', 'final', short(text, 140));
-    await emit({ type: 'final', text, artifacts, links: opts.links, details: [...(opts.appendix || []), ...items], tasks: items.map((i) => ({ agent: i.agent, title: i.title, status: i.status })) });
-    try { remember({ command, summary: text, items, artifacts }); } catch { /* không lưu được thì bỏ qua */ }
+    const fin = { type: 'final', text, artifacts, links: opts.links, details: [...(opts.appendix || []), ...items], tasks: items.map((i) => ({ agent: i.agent, title: i.title, status: i.status })) };
+    await emit(fin);
+    try { opts.onFinal?.(fin); } catch { /* chỉ để bên gọi biết tên file báo cáo */ } // fin.file do server gán khi lưu báo cáo
+    try { remember({ command: planText, summary: text, items, artifacts }); } catch { /* không lưu được thì bỏ qua */ }
     think(CEO, 'Đã gửi báo cáo cho CEO ✓');
     setStatus(CEO, 'idle', text);
   }

@@ -25,9 +25,11 @@
   <div id="tools">
     <button id="openOffice" type="button" class="main" title="Thêm agent, cấu hình AI, dữ liệu Enzy"><i>⚙</i><b>Cấu hình</b></button>
     <button id="openUsage" type="button" title="Giám sát token đã dùng theo model, theo yêu cầu, theo tháng"><i>🪙</i><b>Giám sát token</b></button>
+    <button id="openReport" type="button" class="wide" title="Tạo báo cáo quảng cáo Enzy theo ngày / tuần / tháng, xem nhật ký"><i>📈</i><b>Tạo báo cáo</b></button>
   </div>
   <div id="mode"></div>
   <div id="tkn" class="tk" role="button" tabindex="0" title="Bấm để mở dashboard giám sát token" hidden></div>
+  <div id="asks"></div>
   <div id="perm"></div>
   <div id="allowed"></div>
   <section id="final" hidden>
@@ -41,18 +43,12 @@
       <div id="fbMsg" class="fbm"></div>
     </div>
   </section>
-  <section id="enzy" hidden>
-    <h4><span>Báo cáo quảng cáo Enzy tự động</span><button id="enzyCfg" type="button" class="mini" title="Lịch chạy">⏰</button><button id="enzyCfg2" type="button" class="mini" title="Cấu hình dữ liệu Enzy">⚙</button></h4>
-    <div id="enzyStatus"></div>
-    <div class="enzyBtns"><button type="button" data-kind="daily">Chạy báo cáo ngày</button><button type="button" data-kind="weekly">Tuần</button><button type="button" data-kind="monthly">Tháng</button></div>
-    <div class="enzyBtns dashBtns"><span>📈 Dashboard content (không dùng AI):</span><button type="button" data-dash="daily" class="sec">Ngày</button><button type="button" data-dash="weekly" class="sec">Tuần</button><button type="button" data-dash="monthly" class="sec">Tháng</button></div>
-    <form id="enzySched" hidden>
-      <label class="chk"><input id="esOn" type="checkbox"> Tự động chạy theo lịch (server phải đang bật)</label>
-      <div class="esRow"><span>Ngày</span><input id="esDaily" type="time"></div>
-      <div class="esRow"><span>Tuần</span><select id="esWDay" hidden></select><small>ngày 1·8·15·22·29</small><input id="esWTime" type="time"></div>
-      <div class="esRow"><span>Tháng</span><select id="esMDay"></select><input id="esMTime" type="time"></div>
-      <button id="esSave" type="submit">Lưu lịch</button>
-    </form>
+  <section id="voc" hidden>
+    <h4><span>💬 Ý kiến khách hàng (insight)</span><a id="vocDigest" href="#" target="_blank" hidden>Xem digest</a></h4>
+    <div id="vocStatus"></div>
+    <div id="vocLog" class="vlog" hidden></div>
+    <div class="enzyBtns"><button type="button" data-voc="next">Cào 7 ngày kế tiếp</button><button type="button" data-voc="catchup" class="sec">Cào bù tới hôm qua</button><button type="button" id="vocStop" class="stopb" hidden>■ Dừng</button></div>
+    <div class="vocStart"><label>Cào từ ngày <input id="vocStart" type="date"></label><button id="vocStartSave" type="button" class="sec">Lưu</button></div>
   </section>
   <section id="board"><h4>Bảng task</h4><div id="tasks"></div></section>
   <section id="feedWrap"><h4>Giao tiếp giữa các agent</h4><div id="log"></div></section>
@@ -115,6 +111,10 @@
 <dialog id="usDlg">
   <div class="usHead"><b>Giám sát token</b><span></span><a id="usOpen" href="usage.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="usClose" type="button" class="ghost">Đóng</button></div>
   <iframe id="usFrame" title="Giám sát token"></iframe>
+</dialog>
+<dialog id="erDlg">
+  <div class="usHead"><b>Tạo báo cáo quảng cáo Enzy</b><span></span><a id="erOpen" href="enzyreport.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="erClose" type="button" class="ghost">Đóng</button></div>
+  <iframe id="erFrame" title="Tạo báo cáo quảng cáo Enzy"></iframe>
 </dialog>
 <dialog id="ezDlg">
   <form id="ezForm" method="dialog">

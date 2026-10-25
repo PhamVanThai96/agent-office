@@ -72,6 +72,19 @@ export function parseEnzy(raw) {
 }
 
 const KIND_LABEL = { daily: 'Báo cáo ngày', weekly: 'Báo cáo tuần', monthly: 'Báo cáo tháng' };
+
+// "Báo cáo tuần 1 tháng 10/2026" khi kỳ đúng là một khối tuần theo lịch (1–7, 8–14, 15–21, 22–28, 29–cuối tháng); tháng: "Báo cáo tháng 10/2026".
+// Kỳ không khớp (vd. khoảng nhiều tháng) thì dùng nhãn chung.
+export function kindLabel(kind, period) {
+  const base = KIND_LABEL[kind];
+  const ds = [...String(period || '').matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)].map((m) => ({ d: +m[1], m: +m[2], y: +m[3] }));
+  if (kind === 'daily' || ds.length < 2) return base;
+  const a = ds[0], b = ds.at(-1);
+  if (a.m !== b.m || a.y !== b.y) return base;
+  if (kind === 'monthly') return a.d === 1 ? `${base} ${a.m}/${a.y}` : base;
+  const starts = [1, 8, 15, 22, 29];
+  return starts.includes(a.d) ? `${base} ${starts.indexOf(a.d) + 1} tháng ${a.m}/${a.y}` : base;
+}
 const KIND_TAG = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' };
 const delta = (cur, prev) => (cur == null || prev == null || !prev ? '–' : cur === prev ? '=' : `${cur > prev ? '▲' : '▼'} ${pct(Math.abs(cur - prev) / Math.abs(prev), 0)}`);
 const chart = (spec) => '```chart\n' + JSON.stringify(spec) + '\n```';
@@ -84,7 +97,7 @@ export function buildDataMarkdown(kind, d, history = []) {
   const t = d.totals, prev = history.at(-1)?.totals;
   const target = d.cpaTarget;
   const L = [];
-  L.push(`# [${KIND_TAG[kind]}] ${KIND_LABEL[kind]} quảng cáo Enzy — ${d.period || d.range}`);
+  L.push(`# [${KIND_TAG[kind]}] ${kindLabel(kind, d.period)} quảng cáo Enzy — ${d.period || d.range}`);
   L.push(`Nguồn: enzyfood.streamlit.app · Khoảng: ${d.range} · Cập nhật lúc ${d.updated || '–'} · Tài khoản: ${d.selected.join(', ') || '–'}`);
   if (d.missing.length) L.push(`⚠️ Không chọn được tài khoản: ${d.missing.join(', ')} (không có trong danh sách của trang).`);
   if (d.notes) L.push(`⚠️ ${d.notes}`);

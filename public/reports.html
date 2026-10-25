@@ -56,6 +56,7 @@ nav { display:flex; flex-direction:column; padding:0; overflow:hidden; }
 .row.sel .it { background:#e8eef8; }
 .tagk { display:inline-block; font-size:10.5px; font-weight:600; padding:0 7px; border-radius:999px; background:#e6ebf3; color:#34517a; margin-right:6px; vertical-align:1px; }
 .tagk.dash { background:#e3f3ea; color:#1d6b46; }
+.tagk.rep { background:#fdeccb; color:#8a5a00; }
 </style>
 </head>
 <body>
@@ -160,7 +161,9 @@ const sel = new Set();       // báo cáo đang được chọn (đường dẫn
 let all = [], shown = [], current = '';
 const closed = new Set(JSON.parse(sessionStorage.getItem('rp-closed') || '[]'));
 const mlabel = (m) => 'Tháng ' + m.slice(5) + '/' + m.slice(0, 4);
-const kindOf = (n) => { const m = n.match(/^enzy\/(daily|weekly|monthly)\//); return m ? ({ daily: 'Enzy · ngày', weekly: 'Enzy · tuần', monthly: 'Enzy · tháng' })[m[1]] : ''; };
+const KIND_NAME = { daily: 'Enzy · ngày', weekly: 'Enzy · tuần', monthly: 'Enzy · tháng' };
+// Nhãn loại: theo thư mục enzy/<kỳ>/ (số liệu, dashboard) hoặc theo thẻ [Daily]/[Weekly]/[Monthly] ở đầu tiêu đề (báo cáo cuối).
+const kindOf = (n, title = '') => { const m = n.match(/^enzy\/(daily|weekly|monthly)\//) || String(title).match(/^\[(Daily|Weekly|Monthly)\]/i); return m ? KIND_NAME[m[1].toLowerCase()] : ''; };
 
 function updateBar() {
   const n = sel.size;
@@ -199,9 +202,11 @@ function draw() {
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = sel.has(it.name); cb.setAttribute('aria-label', 'Chọn ' + (it.title || it.name));
       cb.onchange = () => { cb.checked ? sel.add(it.name) : sel.delete(it.name); row.classList.toggle('sel', cb.checked); updateBar(); };
       const b = document.createElement('button'); b.className = 'it'; b.type = 'button'; b.title = it.name;
-      const kd = kindOf(it.name);
+      const kd = kindOf(it.name, it.title);
       if (kd) { const tg = document.createElement('span'); tg.className = 'tagk'; tg.textContent = kd; b.append(tg); }
       if (/dashboard-content/.test(it.name)) { const tg = document.createElement('span'); tg.className = 'tagk dash'; tg.textContent = 'Dashboard'; b.append(tg); }
+      else if (/so-lieu\.md$/.test(it.name)) { const tg = document.createElement('span'); tg.className = 'tagk rep'; tg.textContent = 'Số liệu'; b.append(tg); }
+      else if (kd) { const tg = document.createElement('span'); tg.className = 'tagk rep'; tg.textContent = 'Báo cáo'; b.append(tg); }
       b.append(document.createTextNode(it.title || it.name));
       const sm = document.createElement('small'); sm.textContent = `${new Date(it.mtime).toLocaleString('vi-VN')} · ${fmt(it.size)}${it.title ? ' · ' + it.name.split('/').pop() : ''}`;
       b.append(sm);

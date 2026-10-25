@@ -213,9 +213,11 @@ export async function buildReport(ev, command, when, title = '') {
   const files = left.map((a) => `<figure><img src="${a.uri}" alt=""><figcaption>${esc(a.f)}</figcaption></figure>`).join('')
     + tables.filter((t) => t.rows.length > 1).map((t) => `<div class="meta">${esc(t.f)}</div>${tableHtml(t.rows[0], t.rows.slice(1))}`).join('');
   const rows = (ev.tasks || []).map((x) => `<tr><td>${esc(x.agent)}</td><td>${esc(x.title)}</td><td>${esc(x.status)}</td></tr>`).join('');
+  // Liên kết kèm theo (vd Dashboard content): href tính từ gốc web ("reports/…") nên đổi sang đường dẫn tương đối trong thư mục reports.
+  const links = (ev.links || []).filter((l) => l?.href).map((l) => `<a href="${esc(String(l.href).replace(/^reports\//, ''))}">${esc(l.label || l.href)}</a>`).join(' &nbsp;·&nbsp; ');
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title || 'Báo cáo')}</title>
 <style>${CSS}</style>
-<h2>${esc(title || 'Báo cáo gửi CEO')}</h2><p class="meta"><b>Lệnh:</b> ${esc(command)}<br>${esc(when)}</p>
+<h2>${esc(title || 'Báo cáo gửi CEO')}</h2><p class="meta"><b>Lệnh:</b> ${esc(command)}<br>${esc(when)}</p>${links ? `<p class="meta">${links}</p>` : ''}
 <div class="sum">${summary}</div>
 ${files ? `<h3>Hình ảnh &amp; dữ liệu đính kèm</h3>${files}` : ''}
 ${detail}

@@ -135,7 +135,7 @@ export function change(req, res, current, newId, newPw) {
 
 // Các thao tác cần quyền Admin (sửa/xoá agent, đổi cấu hình, quyền, dữ liệu).
 const PROTECTED = new Set(['/agent/save', '/agent/delete', '/config/save', '/auth/connect', '/auth/login/start', '/auth/login/code', '/auth/login/cancel', '/auth/login/status',
-  '/enzy/config/save', '/enzy/schedule', '/usage/limit', '/memory/clear', '/revoke', '/reports/delete']);
+  '/enzy/config/save', '/enzy/schedule', '/insight/config', '/usage/limit', '/memory/clear', '/revoke', '/reports/delete']);
 export function needsAdmin(pathname, body) {
   if (PROTECTED.has(pathname)) return true;
   if (pathname === '/learn/act') return body?.action !== 'feedback'; // đánh giá kết quả của CEO là thao tác thường

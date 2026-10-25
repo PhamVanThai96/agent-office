@@ -10,6 +10,7 @@ import { webSearch, webFetch } from './web.js';
 import { scanTrends } from './trends.js';
 import { learnedText, digestFor } from './learn.js';
 import { skillsText, contextSkillsText, searchSkills } from './skills.js';
+import { searchKb, loadKb, loadLedger } from './insight/store.js';
 
 // Danh sách agent đọc từ agents.json. Quản Lí (#manager) là agent điều phối; người dùng là CEO.
 const ROOM_CAPACITY = 3;
@@ -149,6 +150,12 @@ const MOCK = {
   manager: () => 'Đã xử lý xong yêu cầu.',
 };
 // MOCK: thêm "#sua" vào yêu cầu để agent duyệt trả YÊU CẦU SỬA ở vòng đầu (thử vòng sửa).
+// Việc lên idea: chỉ dùng thông tin CEO đã xác nhận + insight khách thật.
+const IDEA_RULE = ' QUY TẮC LÊN IDEA: chỉ dựa trên "THÔNG TIN CEO ĐÃ XÁC NHẬN" trong yêu cầu và insight khách hàng ở trên (tra thêm bằng insight_search). Mục nào CEO chưa cung cấp thì nêu rõ "chưa có", KHÔNG tự giả định hay bịa số liệu/trích dẫn khách. Mỗi idea phải chỉ ra insight gốc (chủ đề + số khách), điểm chạm, hook, định dạng/kênh và CTA phù hợp giai đoạn phễu CEO đã chọn.';
+const MOCK_INSIGHT = {
+  signal: () => { const t = searchKb(loadKb(), loadLedger(), '', 4); return t.length ? `Insight khách hàng (từ kho ý kiến thật): ${t.map((x) => `${x.label} (${x.customers} khách)`).join('; ')}.` : 'Chưa có dữ liệu ý kiến khách hàng trong kho.'; },
+  planner: () => { const t = searchKb(loadKb(), loadLedger(), '', 3); return t.length ? `| Idea | Insight gốc | Điểm chạm |\n|---|---|---|\n${t.map((x, i) => `| Idea ${i + 1}: giải đáp "${x.label}" | ${x.label} (${x.customers} khách) | ${x.touchpoint || '—'} |`).join('\n')}` : 'Chưa đủ insight khách hàng để lên idea; cần cào ý kiến khách hàng trước.'; },
+};
 const MOCK_REVISE = 'KẾT LUẬN: YÊU CẦU SỬA\n1. Hook quá dài, cần gọn trong 3 giây.\n2. CTA chưa khớp mục tiêu.';
 
 // Ở chế độ mock, một số agent giả lập việc cần truy cập file hoặc hỏi đồng nghiệp.
@@ -202,6 +209,8 @@ const TOOL_DEFS = [
     parameters: { type: 'object', properties: { command: { type: 'string', description: 'Một lệnh, hoặc nhiều lệnh nối bằng |' }, cwd: { type: 'string', description: 'Thư mục chạy trong dự án (mặc định: thư mục dự án)' }, timeout_s: { type: 'number', description: 'Giới hạn giây (mặc định 15, tối đa 60)' } }, required: ['command'] } },
   { name: 'skill_search', description: 'Tra cứu nhanh kho kỹ năng của team (skills dạng YAML): trả về tối đa 3 mục khớp từ khoá (tên skill, mục, nội dung). Dùng khi cần quy tắc/số liệu cụ thể (giá sản phẩm, hook thắng, checklist duyệt, quy chuẩn kênh, quy trình trend…) mà không nằm sẵn trong prompt.',
     parameters: { type: 'object', properties: { query: { type: 'string', description: 'Từ khoá cần tra, vd "giá hạt nêm chay", "hook video thắng"' }, limit: { type: 'number', description: 'Số mục tối đa (1-5, mặc định 3)' } }, required: ['query'] } },
+  { name: 'insight_search', description: 'Tra kho INSIGHT KHÁCH HÀNG đã chắt lọc từ ý kiến thật (Inbox + Comment): trả về chủ đề khớp (số khách nhắc, giai đoạn phễu, xu hướng theo tuần, điểm chạm gợi ý, trích dẫn ẩn danh). Dùng khi lên idea/viết nội dung cần biết khách đang hỏi, lo ngại, mong muốn gì. Bỏ trống query để lấy chủ đề nổi bật nhất.',
+    parameters: { type: 'object', properties: { query: { type: 'string', description: 'Từ khoá, vd "hạn dùng", "hàng giả", "bé ăn dặm"' }, limit: { type: 'number', description: 'Số chủ đề tối đa (1-8, mặc định 5)' } } } },
   { name: 'trend_scan', description: 'Quét xu hướng THỜI GIAN THỰC tại Việt Nam: từ khoá đang tăng trên Google Trends (kèm lượt tìm và tin liên quan, có "mới nổi so với lần quét trước"), tin mới theo chủ đề (Google News), tiêu đề mới của VnExpress/Tuổi Trẻ/Dân Trí. Gọi ĐẦU TIÊN cho mọi việc về trend, ý tưởng, kế hoạch content; kết quả có giờ đăng và nguồn.',
     parameters: { type: 'object', properties: { topics: { type: 'array', items: { type: 'string' }, description: 'Tối đa 6 chủ đề cần tìm tin (mặc định: ăn chay, thực phẩm sạch, gia vị nấu ăn, eat clean, bột ngọt, ăn dặm cho bé)' }, days: { type: 'number', description: 'Chỉ lấy tin trong N ngày gần nhất (mặc định 14)' } } } },
   { name: 'web_search', description: 'Tìm trên Internet để lấy thông tin/số liệu MỚI NHẤT (giá, tỷ giá, tin tức, sự kiện, thống kê...). Bắt buộc dùng cho mọi số liệu thay đổi theo thời gian; trả về tiêu đề, URL, đoạn trích.',
@@ -328,7 +337,7 @@ export async function work(agent, ctx) {
     return claude({
       agent,
       tools: names,
-      system: `${agent.prompt}${workDoc(agent, `${ctx.command} ${ctx.task.title}`)} ${nowText(has('web_search'))} Chỉ làm đúng phần việc của vai trò mình; việc ngoài vai trò thì nói ngắn gọn cần agent nào. Trả lời tiếng Việt, ${style().work} Giữ phần văn bản trong khoảng ${words(CONFIG.workMax)} từ. ${DATA_RULES}${wordRule}${fileRule}${cmdRule}${budgetRule}${askRule} Không bịa đã làm điều chưa làm.`,
+      system: `${agent.prompt}${workDoc(agent, `${ctx.command} ${ctx.task.title}`)}${ctx.insight || ''}${ctx.insight ? IDEA_RULE : ''} ${nowText(has('web_search'))} Chỉ làm đúng phần việc của vai trò mình; việc ngoài vai trò thì nói ngắn gọn cần agent nào. Trả lời tiếng Việt, ${style().work} Giữ phần văn bản trong khoảng ${words(CONFIG.workMax)} từ. ${DATA_RULES}${wordRule}${fileRule}${cmdRule}${budgetRule}${askRule} Không bịa đã làm điều chưa làm.`,
       user: `Yêu cầu gốc của CEO: ${ctx.command}\nTask của bạn: ${ctx.task.title}${attachText(ctx.attachments)}\n\nKết quả từ đồng nghiệp:\n${inputs}${feedback}${agent.memory === false ? '' : ctx.memory || ''}`,
       max: CONFIG.workMax,
       handlers: {
@@ -339,6 +348,7 @@ export async function work(agent, ctx) {
         make_image: (i) => ctx.tools.makeImage(i),
         make_docx: (i) => ctx.tools.makeDocx(i),
         skill_search: async (i) => { ctx.think?.(`Tra kỹ năng: ${i?.query}`); const r = searchSkills(agent, i?.query, i?.limit); return r.length ? { results: r.map(({ score, ...x }) => x) } : { results: [], note: 'Không có mục khớp, thử từ khoá khác.' }; },
+        insight_search: async (i) => { ctx.think?.(`Tra insight khách hàng${i?.query ? `: ${i.query}` : ''}`); const r = searchKb(loadKb(), loadLedger(), i?.query, i?.limit); return r.length ? { results: r } : { results: [], note: 'Kho insight chưa có dữ liệu hoặc không có chủ đề khớp: nói rõ với CEO, không bịa.' }; },
         trend_scan: async (i) => { ctx.think?.(`Quét trend thời gian thực${i?.topics?.length ? `: ${i.topics.join(', ')}` : ''}`); return scanTrends(i); },
         web_search: async (i) => { ctx.think?.(`Tìm web: ${i.query}`); return webSearch(i.query); },
         web_fetch: async (i) => { ctx.think?.(`Đọc trang: ${i.url}`); return webFetch(i.url); },
@@ -348,6 +358,7 @@ export async function work(agent, ctx) {
   }
   await sleep(1500 + Math.random() * 1500);
   let out = agent.gate && !ctx.round && /#sua\b/i.test(ctx.command) ? MOCK_REVISE
+    : ctx.insight && MOCK_INSIGHT[agent.id] ? MOCK_INSIGHT[agent.id]()
     : (MOCK[agent.id] || ((c, t) => `Đã hoàn thành: ${short(t, 60)}`))(ctx.command, ctx.task.title, ctx);
   if (ctx.attachments?.length && !agent.gate) out = `Đã đọc ${ctx.attachments.length} file đính kèm (${ctx.attachments.map((f) => f.name).join(', ')}). ${out}`;
   const consult = IDS.includes(MOCK_CONSULT[agent.id]?.to) ? MOCK_CONSULT[agent.id] : null;
