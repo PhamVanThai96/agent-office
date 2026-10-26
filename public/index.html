@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agent Office</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="town.css">
 </head>
 <body>
 <main id="office">
@@ -18,6 +19,12 @@
       <div id="bubbles"></div>
       <div id="pop" hidden></div>
     </div>
+  </div>
+  <div id="town" hidden>
+    <div id="townGL"></div><div id="townLabels"></div>
+    <div id="townLoading"><i class="spin"></i></div>
+    <div id="townCard" hidden></div>
+    <button id="townStill" type="button">⏸ Dừng chuyển động</button><button id="townFix" type="button">🔒 Cố định góc nhìn</button>
   </div>
 </main>
 <div id="split" title="Kéo để đổi độ rộng"></div>
@@ -106,6 +113,11 @@
     <button id="openMemory" type="button"><i>🧠</i><span><b>Trí nhớ &amp; kỹ năng agent</b><small>Sổ tay kinh nghiệm tự cập nhật của từng agent, bài học, nén skill</small></span></button>
     <button id="openEnzy" type="button"><i>📊</i><span><b>Dữ liệu Enzy</b><small>Tài khoản đăng nhập, tài khoản quảng cáo, người thực hiện, prompt báo cáo</small></span></button>
   </div>
+  <div class="gfx">
+    <h4>🎨 Cấu hình đồ hoạ</h4>
+    <div id="viewSw"><button type="button" data-v="2d" class="on">🏢 Văn phòng 2D</button><button type="button" data-v="3d">🏘 Thị trấn 3D</button></div>
+    <label class="gfxSw"><input type="checkbox" id="townLock"><i></i><span>Cố định góc nhìn 3D <small>(bật = khoá, không xoay/phóng to được)</small></span></label>
+  </div>
 </dialog>
 <dialog id="memDlg">
   <div class="usHead"><b>Trí nhớ &amp; kỹ năng agent</b><span></span><a id="memOpen" href="memory.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="memClose" type="button" class="ghost">Đóng</button></div>
@@ -177,5 +189,17 @@
 <div id="dropzone"><div>Thả file để đính kèm vào việc giao<small>Ảnh, kịch bản, brief, CSV chỉ số… tối đa 20MB/file, 10 file/lần</small></div></div>
 <script src="admin.js"></script>
 <script src="app.js"></script>
+<script>
+// Bấm "Thị trấn 3D" trước khi module 3D nạp xong: vẫn hiện khung + biểu tượng loading; module sẽ tiếp quản khi sẵn sàng.
+document.getElementById('viewSw').addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b || window.townReady || b.dataset.v !== '3d') return;
+  window.__townWant = true;
+  document.getElementById('town').hidden = false; document.getElementById('stage').hidden = true; document.getElementById('legend').hidden = true;
+  Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x.dataset.v === '3d'); });
+});
+</script>
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
+<script type="module" src="town3d.js"></script>
 </body>
 </html>

@@ -556,6 +556,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // three.js phục vụ từ node_modules (không CDN, chạy offline): chỉ build/ và examples/jsm/, chỉ file .js.
+  if (url.pathname.startsWith('/vendor/three/')) {
+    const root = path.join(dir, 'node_modules', 'three'), rel = path.normalize(url.pathname.slice('/vendor/three/'.length));
+    const f = path.join(root, rel);
+    if (!/^(build|examples[\\/]jsm)[\\/]/.test(rel) || !f.startsWith(root + path.sep) || path.extname(f) !== '.js' || !fs.existsSync(f)) { res.writeHead(404).end('not found'); return; }
+    res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'public, max-age=86400' });
+    fs.createReadStream(f).pipe(res);
+    return;
+  }
   const pub = path.join(dir, 'public');
   const file = path.join(pub, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
   if (!file.startsWith(pub + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {

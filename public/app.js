@@ -168,6 +168,8 @@ function build(agents, state) {
     setAgent(a.id, state[a.id].status, state[a.id].report);
   }
   fit();
+  window.aoAgents = agents;   // thị trấn 3D (module nạp sau) đọc lại danh sách này khi sẵn sàng
+  if (window.townBuild) window.townBuild(agents);
 }
 
 // Biểu tượng tiến trình: hiện ở "Bảng task" khi có agent đang làm (tạo báo cáo, giao việc…).
@@ -189,6 +191,7 @@ function setAgent(id, status, report) {
   if (status !== 'working' && status !== 'waiting' && el.think && prev) thinkHide(id, true);
   for (const s of Object.keys(STATUS)) el.root.classList.toggle(s, s === status);
   updateBusy();
+  if (window.townRefresh) window.townRefresh();
   el.badge.className = 'badge st-' + status;
   el.badge.textContent = STATUS[status] || status;
   if (el.think) { const pl = el.think.querySelector('.pill'); pl.textContent = STATUS[status] || status; pl.className = 'pill st-' + status; }
