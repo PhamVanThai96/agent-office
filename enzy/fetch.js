@@ -80,14 +80,16 @@ export async function login(page, cfg) {
   if (!cfg.user || !cfg.pass) throw new Error('Chưa có tài khoản đăng nhập Enzy: điền USER/PASS trong enzy.json (hoặc biến môi trường ENZY_USER/ENZY_PASS).');
   const pass = page.locator('input[type="password"]');
   const submitted = async (ms) => { await page.waitForTimeout(ms); return !(await pass.count()); };
-  await user.fill(cfg.user);
-  await user.press('Tab'); // Streamlit chỉ ghi nhận giá trị ô nhập khi rời ô / nhấn Enter; bấm nút ngay sau fill sẽ gửi giá trị cũ (rỗng).
-  await settle(page, 400);
-  await pass.fill(cfg.pass);
-  await pass.press('Enter');
-  if (!(await submitted(2500))) {
+  // Trang Streamlit đôi khi chậm/bỏ qua lần gửi đầu: thử tối đa 3 lần (điền lại cả hai ô) trước khi báo sai tài khoản.
+  for (let attempt = 0; attempt < 3 && (await pass.count()); attempt++) {
+    await user.fill(cfg.user);
+    await user.press('Tab'); // Streamlit chỉ ghi nhận giá trị ô nhập khi rời ô / nhấn Enter; bấm nút ngay sau fill sẽ gửi giá trị cũ (rỗng).
+    await settle(page, 400);
+    await pass.fill(cfg.pass);
+    await pass.press('Enter');
+    if (await submitted(3000)) break;
     await page.getByRole('button', { name: 'Đăng nhập' }).click().catch(() => {});
-    for (let i = 0; i < 8 && !(await submitted(1500)); i++);
+    for (let i = 0; i < 10 && !(await submitted(1500)); i++);
   }
   if (await pass.count()) throw new Error('Đăng nhập Enzy thất bại: kiểm tra USER/PASS (trang không chấp nhận hoặc không phản hồi).');
 }

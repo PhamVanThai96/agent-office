@@ -1,0 +1,41 @@
+id: 08-van-hanh-doi-agent
+title: "Vận hành đội agent: nhật ký, mã kịch bản, QA 3 mức, sprint tuần, thư viện hook"
+summary: Quy trình học từ một đội agent marketing mẫu (nhật ký làm việc, kịch bản đánh mã, QA theo lô tuần, nghiên cứu đối thủ ra bảng + công thức hook), đã chỉnh cho đội Enzy.
+agents: [manager, planner, signal, writer, script_review, video, video_review, designer, analyst]
+when: [kich ban, brief, duyet, qa, tuan, sprint, hook, doi thu, nghien cuu, nhat ky, backlog, review, thu vien, cong thuc]
+order: 8
+tags: [vận hành, nhật ký, mã kịch bản, QA, sprint tuần, hook, đối thủ, nỗi đau]
+updated: 2026-10-26
+sections:
+  - id: nhat-ky
+    title: Nhật ký làm việc thật
+    tags: [nhật ký, ngày, agent, việc]
+    text: |-
+      Mỗi việc xong được hệ thống ghi vào **Nhật ký** (ngày · agent · việc) — do code ghi, không do bạn tự khai; nút 📒 Nhật ký trên giao diện. Vì vậy tiêu đề việc và dòng đầu câu trả lời phải **cụ thể, kể được kết quả** (vd "Viết 3 kịch bản hook hỏi-đáp cho Rắc cơm, đẩy chờ duyệt"), không ghi chung chung "đã làm xong". Không bịa việc chưa làm.
+  - id: ma-kich-ban
+    title: Mã kịch bản và bản khoá
+    tags: [mã, ENZ, bản khoá, chờ duyệt]
+    text: |-
+      Mỗi kịch bản có **mã duy nhất ENZ-###** (hệ thống cấp; #writer ghi ở dòng đầu). Mọi nhận xét duyệt, bản dựng, báo cáo đo lường dùng đúng mã này để không lẫn bản.
+      **Bản khoá:** kịch bản đã DUYỆT là bản khoá — không sửa tay nữa; muốn đổi phải tạo bản mới (cùng mã + hậu tố v2) và duyệt lại. Kịch bản viết xong nằm ở trạng thái **chờ duyệt** cho tới khi #script_review kết luận.
+  - id: qa-3-muc
+    title: QA theo 3 mức và theo lô tuần
+    tags: [qa, đạt có điều kiện, không đạt, tuần, lô]
+    text: |-
+      Người duyệt (#script_review, #video_review) ghi dòng đầu **"KẾT LUẬN: DUYỆT"**, **"KẾT LUẬN: DUYỆT CÓ ĐIỀU KIỆN"** (liệt kê điều kiện cần sửa trước khi đăng; bước sau PHẢI làm đúng các điều kiện đó) hoặc **"KẾT LUẬN: YÊU CẦU SỬA"** (không đạt; trả về làm lại). Mỗi mục kiểm theo checklist trong skill duyệt và nêu mã kịch bản.
+      Khi duyệt một **lô theo tuần** (vd "QA 7 kịch bản tuần W43"): trả bảng mã → kết luận → lý do ngắn, rồi tổng kết "x đạt, y đạt có điều kiện, z không đạt". Khớp giọng thu/mốc thời gian, khử ồn, hiệu ứng nhất quán là các điểm QA của video.
+  - id: sprint-tuan
+    title: Nhịp sprint tuần
+    tags: [sprint, tuần, lô, 7 kịch bản]
+    text: |-
+      Làm việc theo **sprint tuần** (số tuần ISO, vd W43): #planner chốt mục tiêu và số lượng kịch bản của tuần (mặc định một lô ~7 kịch bản nếu CEO không nêu), #writer viết theo lô và đánh mã liên tiếp, #script_review duyệt cả lô một lượt, #video dựng các bản đã khoá, #analyst đo lường cuối tuần và đưa insight vào backlog tuần sau. Ghi rõ tuần ở đầu kế hoạch/báo cáo.
+  - id: nghien-cuu-doi-thu
+    title: Nghiên cứu đối thủ ra bảng đối thủ + bảng nỗi đau
+    tags: [nghiên cứu, đối thủ, nỗi đau, sprint nghiên cứu]
+    text: |-
+      Một **sprint nghiên cứu** cho một chủ đề/đối thủ ra hai sản phẩm bản đầu: (1) **Bảng đối thủ**: kênh/thương hiệu, sản phẩm, thông điệp chính, dạng nội dung, tần suất, điểm mạnh/yếu, bằng chứng (link/ngày). (2) **Bảng nỗi đau khách hàng**: nỗi đau → trích dẫn ẩn danh/nguồn → mức nhắc → giai đoạn phễu → điểm chạm Enzy có thể trả lời (ưu tiên dữ liệu thật từ kho insight). Dữ liệu nào chưa có thì ghi "chưa có", không bịa. Ghi rõ đã quét bao nhiêu video/bài và từ nguồn nào.
+  - id: thu-vien-hook
+    title: Thư viện công thức hook
+    tags: [hook, công thức, thư viện]
+    text: |-
+      Từ các video/bài thắng (nội bộ hoặc đối thủ, kể cả transcript video mẫu) rút **công thức hook** thay vì chép câu chữ: mỗi công thức gồm *tên* · *cấu trúc* (vd "câu hỏi đánh vào nỗi lo → tiết lộ nguyên nhân") · *ví dụ ngắn đã trung tính hoá* · *nguồn* · *kết quả* nếu có số liệu. Chỉ ghi công thức đã thấy thật trong dữ liệu (số lượng tuỳ dữ liệu, không đặt chỉ tiêu bịa). Khi viết kịch bản Enzy, chọn công thức hợp giai đoạn phễu và tệp khách hàng, áp vào sản phẩm/lợi ích thật của Enzy, không copy claim của nguồn. Tra thêm hook thắng của Enzy bằng skill_search ("hook video thắng").

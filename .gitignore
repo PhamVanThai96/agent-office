@@ -7,6 +7,7 @@ node_modules/
 config.json
 enzy.json
 permissions.json
+data/admin.json
 
 # Dữ liệu chạy: bộ nhớ agent, file tải lên, số liệu quảng cáo, báo cáo, bản sao lưu
 memory.json
@@ -18,3 +19,6 @@ backups/
 # Ảnh chụp số liệu nội bộ và file tạm
 images/Ảnh màn hình*
 images/code.md
+
+# Môi trường Python cho transcript video (yt-dlp + faster-whisper)
+tools/venv/

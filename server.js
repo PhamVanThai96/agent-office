@@ -18,6 +18,7 @@ import { templates } from './routing.js';
 import { skillsFor } from './skills.js';
 import { createEnzy, saveSchedule, saveConfig as saveEnzyConfig, publicConfig as enzyConfig } from './enzy/index.js';
 import { createInsight, saveInsightStart } from './insight/index.js';
+import * as journal from './journal.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const PORT = CONFIG.port;
@@ -232,6 +233,11 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/enzy/status') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzy.statusFull()));
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/journal') {
+    const q = url.searchParams, rows = journal.list({ limit: Number(q.get('limit')) || 200, from: q.get('from') || '', to: q.get('to') || '', agent: q.get('agent') || '' });
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify({ week: journal.isoWeek(), rows }));
     return;
   }
   if (req.method === 'GET' && url.pathname === '/usage') {
@@ -517,10 +523,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200).end('ok');
       return;
     }
-    if (url.pathname === '/insight/run' || url.pathname === '/insight/config' || url.pathname === '/insight/stop') {
+    if (url.pathname === '/insight/run' || url.pathname === '/insight/config' || url.pathname === '/insight/stop' || url.pathname === '/insight/excel') {
       if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
       try {
         if (url.pathname === '/insight/stop') { const stopped = insight.stop(); res.writeHead(200).end(stopped ? 'ok' : 'Không có lượt cào nào đang chạy.'); }
+        else if (url.pathname === '/insight/excel') { const started = insight.startExcel({ from: String(b.from || ''), to: String(b.to || ''), mode: String(b.mode || 'saved') }); res.writeHead(200).end(started ? 'ok' : 'Đang lấy ý kiến khách hàng, hãy chờ xong.'); }
         else if (url.pathname === '/insight/run') { const started = insight.start(String(b.mode)); res.writeHead(200).end(started ? 'ok' : 'Đang cào ý kiến khách hàng, hãy chờ xong.'); }
         else { saveInsightStart(b.start); res.writeHead(200).end('ok'); }
       } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }

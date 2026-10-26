@@ -8,6 +8,7 @@ import { classify, planFor, routeGuide } from './routing.js';
 import { stripData } from './report.js';
 import { webSearch, webFetch } from './web.js';
 import { scanTrends } from './trends.js';
+import { transcribeVideo } from './transcribe.js';
 import { learnedText, digestFor } from './learn.js';
 import { skillsText, contextSkillsText, searchSkills } from './skills.js';
 import { searchKb, loadKb, loadLedger } from './insight/store.js';
@@ -217,6 +218,8 @@ const TOOL_DEFS = [
     parameters: { type: 'object', properties: { query: { type: 'string', description: 'Từ khoá, nên kèm năm/tháng hiện tại' } }, required: ['query'] } },
   { name: 'web_fetch', description: 'Tải một trang web: trả về tiêu đề, mô tả, giá/thông tin sản phẩm có cấu trúc và phần nội dung chính (khoảng 6000 ký tự đầu, có totalChars). Website chậm thì tự thử lại; nên tải từng trang sản phẩm thay vì trang chủ.',
     parameters: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
+  { name: 'video_transcribe', description: 'Xem video và chép lời thoại thành chữ (transcript): nhận link video (Facebook, YouTube, TikTok…) hoặc tên file video CEO đính kèm. Chỉ tải âm thanh, chạy nhận dạng giọng nói trên máy (có thể mất 1–5 phút lần đầu); video tối đa 15 phút; kết quả được nhớ theo link. Chỉ có lời thoại, KHÔNG mô tả hình ảnh — nói rõ giới hạn này khi báo cáo.',
+    parameters: { type: 'object', properties: { url: { type: 'string', description: 'Link http(s) của video hoặc tên file đã đính kèm' } }, required: ['url'] } },
   { name: 'ask_colleague', description: 'Hỏi nhanh một đồng nghiệp và nhận câu trả lời.',
     parameters: { type: 'object', properties: { to: { type: 'string', enum: IDS }, question: { type: 'string' } }, required: ['to', 'question'] } },
 ];
@@ -312,6 +315,7 @@ async function leanWork(agent, ctx) {
     handlers: {
       web_search: async (i) => { ctx.think?.(`Tìm web: ${i.query}`); const r = await webSearch(i.query); return r.results ? { ...r, results: r.results.slice(0, 5).map((x) => ({ ...x, snippet: short(x.snippet, 220) })) } : r; },
       web_fetch: async (i) => { ctx.think?.(`Đọc trang: ${i.url}`); return webFetch(i.url, 3000); },
+      video_transcribe: async (i) => { ctx.think?.(`Transcript video: ${i?.url}`); return transcribeVideo(i?.url, { uploadsDir: ctx.uploadsDir, maxChars: 4000, onStep: (t) => ctx.think?.(t) }); },
       read_file: (i) => ctx.tools.readFile(String(i.path)),
       run_command: (i) => ctx.tools.runCommand(i),
     },
@@ -337,7 +341,7 @@ export async function work(agent, ctx) {
     return claude({
       agent,
       tools: names,
-      system: `${agent.prompt}${workDoc(agent, `${ctx.command} ${ctx.task.title}`)}${ctx.insight || ''}${ctx.insight ? IDEA_RULE : ''} ${nowText(has('web_search'))} Chỉ làm đúng phần việc của vai trò mình; việc ngoài vai trò thì nói ngắn gọn cần agent nào. Trả lời tiếng Việt, ${style().work} Giữ phần văn bản trong khoảng ${words(CONFIG.workMax)} từ. ${DATA_RULES}${wordRule}${fileRule}${cmdRule}${budgetRule}${askRule} Không bịa đã làm điều chưa làm.`,
+      system: `${agent.prompt}${workDoc(agent, `${ctx.command} ${ctx.task.title}`)}${ctx.insight || ''}${ctx.insight ? IDEA_RULE : ''}${ctx.video || ''}${ctx.scriptCode ? ` MÃ KỊCH BẢN của bản này: ${ctx.scriptCode} — ghi mã này ở dòng đầu bài viết (vd "${ctx.scriptCode} · Tên kịch bản") để người duyệt và nhật ký cùng gọi đúng bản.` : ''} ${nowText(has('web_search'))} Chỉ làm đúng phần việc của vai trò mình; việc ngoài vai trò thì nói ngắn gọn cần agent nào. Trả lời tiếng Việt, ${style().work} Giữ phần văn bản trong khoảng ${words(CONFIG.workMax)} từ. ${DATA_RULES}${wordRule}${fileRule}${cmdRule}${budgetRule}${askRule} Không bịa đã làm điều chưa làm.`,
       user: `Yêu cầu gốc của CEO: ${ctx.command}\nTask của bạn: ${ctx.task.title}${attachText(ctx.attachments)}\n\nKết quả từ đồng nghiệp:\n${inputs}${feedback}${agent.memory === false ? '' : ctx.memory || ''}`,
       max: CONFIG.workMax,
       handlers: {
@@ -352,6 +356,7 @@ export async function work(agent, ctx) {
         trend_scan: async (i) => { ctx.think?.(`Quét trend thời gian thực${i?.topics?.length ? `: ${i.topics.join(', ')}` : ''}`); return scanTrends(i); },
         web_search: async (i) => { ctx.think?.(`Tìm web: ${i.query}`); return webSearch(i.query); },
         web_fetch: async (i) => { ctx.think?.(`Đọc trang: ${i.url}`); return webFetch(i.url); },
+        video_transcribe: async (i) => { ctx.think?.(`Transcript video: ${i?.url}`); return transcribeVideo(i?.url, { uploadsDir: ctx.uploadsDir, onStep: (t) => ctx.think?.(t) }); },
         ask_colleague: async (i) => ({ answer: await ctx.ask(String(i.to), String(i.question)) }),
       },
     });

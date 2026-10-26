@@ -606,6 +606,8 @@ function renderVoc(v) {
   lg.replaceChildren(...rows.map((e) => { const d = document.createElement('div'); if (e.level) d.className = e.level; const t = new Date(e.at); d.textContent = `${t.toTimeString().slice(0, 8)} ${e.text}`; return d; }));
   lg.scrollTop = lg.scrollHeight;
   const sb = $('vocStop'); sb.hidden = !v.running; sb.disabled = Boolean(v.running?.stopping); sb.textContent = v.running?.stopping ? 'Đang dừng…' : '■ Dừng';
+  $('vxInfo').textContent = v.excel ? `File YAML gần nhất (Excel): ${v.excel} · data/insight/voc/latest.yaml` : '';
+  document.querySelectorAll('#vxSaved, #vxScan').forEach((b) => { b.disabled = !v.configured || Boolean(v.running); });
   const a = $('vocDigest'); a.hidden = !v.digest; if (v.digest) a.href = v.digest;
   document.querySelectorAll('#voc button[data-voc]').forEach((b) => { b.disabled = !v.configured || Boolean(v.running) || (!v.next && !v.running); });
   if (document.activeElement !== $('vocStart')) $('vocStart').value = v.start || '';
@@ -614,6 +616,14 @@ $('vocStop').onclick = async () => { $('vocStop').disabled = true; const r = awa
 document.querySelectorAll('#voc button[data-voc]').forEach((b) => {
   b.onclick = async () => { b.disabled = true; const r = await post('insight/run', { mode: b.dataset.voc }); const t = await r.text(); if (t !== 'ok') addSys(t); };
 });
+for (const [id, mode] of [['vxSaved', 'saved'], ['vxScan', 'scan']]) {
+  $(id).onclick = async () => {
+    if (!$('vxFrom').value || !$('vxTo').value) { addSys('Chọn khoảng ngày (từ – đến) trước.'); return; }
+    $(id).disabled = true;
+    const r = await post('insight/excel', { from: $('vxFrom').value, to: $('vxTo').value, mode });
+    const t = await r.text(); if (t !== 'ok') addSys(t);
+  };
+}
 $('vocStartSave').onclick = async () => {
   const r = await post('insight/config', { start: $('vocStart').value });
   const t = await r.text(); addSys(t === 'ok' ? 'Đã lưu ngày bắt đầu cào ý kiến khách hàng.' : t);
@@ -656,6 +666,9 @@ $('fbSend').onclick = async () => {
 };
 
 // Dashboard giám sát token: hộp thoại lớn nhúng usage.html (nạp lại mỗi lần mở, dừng tự cập nhật khi đóng).
+$('openJournal').onclick = () => { $('jnFrame').src = 'journal.html'; $('jnDlg').showModal(); };
+$('jnClose').onclick = () => $('jnDlg').close();
+$('jnDlg').addEventListener('close', () => { $('jnFrame').removeAttribute('src'); });
 $('openUsage').onclick = () => { $('usFrame').src = 'usage.html'; $('usDlg').showModal(); };
 $('usClose').onclick = () => $('usDlg').close();
 $('usDlg').addEventListener('close', () => { $('usFrame').removeAttribute('src'); });
@@ -801,7 +814,7 @@ async function sendAgent(url, body) {
   $('edErr').textContent = msg;
 }
 
-const TOOL_LABELS = [['read_file', 'Đọc file'], ['write_file', 'Ghi file'], ['run_command', 'Chạy lệnh (đọc/chẩn đoán/tạo mới)'], ['list_dir', 'Xem thư mục'], ['skill_search', 'Tra cứu nhanh kỹ năng (skills)'], ['trend_scan', 'Quét trend thời gian thực'], ['web_search', 'Tìm web'], ['web_fetch', 'Đọc trang web'], ['make_image', 'Tạo ảnh'], ['make_docx', 'Tạo Word'], ['ask_colleague', 'Hỏi đồng nghiệp']];
+const TOOL_LABELS = [['read_file', 'Đọc file'], ['write_file', 'Ghi file'], ['run_command', 'Chạy lệnh (đọc/chẩn đoán/tạo mới)'], ['list_dir', 'Xem thư mục'], ['video_transcribe', 'Transcript video (chép lời thoại)'], ['skill_search', 'Tra cứu nhanh kỹ năng (skills)'], ['trend_scan', 'Quét trend thời gian thực'], ['web_search', 'Tìm web'], ['web_fetch', 'Đọc trang web'], ['make_image', 'Tạo ảnh'], ['make_docx', 'Tạo Word'], ['ask_colleague', 'Hỏi đồng nghiệp']];
 function fillTools(tools) {
   $('edTools').replaceChildren(...TOOL_LABELS.map(([id, label]) => {
     const l = document.createElement('label'); l.className = 'tl2';

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhật ký làm việc · Agent Office</title>
+<style>
+:root{--bg:#f1efe8;--panel:#fff;--ink:#232834;--mute:#667085;--line:#e4e1d8;--soft:#f6f4ee;--accent:#34517a;--ok:#1d6b46;--warn:#9a6a12;--bad:#8a3a37;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#12161c;--panel:#1b222b;--ink:#e8edf2;--mute:#9aa8b6;--line:#2b3541;--soft:#222b36;--accent:#7da2e0;--ok:#5cc79a;--warn:#e0b25c;--bad:#e08a86}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 16px;margin-bottom:12px}
+h1{margin:0;font-size:21px}.sub{color:var(--mute);font-size:13px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px}
+select,input{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);text-align:left;padding:9px 14px;background:var(--soft)}
+td{padding:9px 14px;border-top:1px solid var(--line);vertical-align:top}
+td.d{white-space:nowrap;color:var(--mute);width:84px}td.a{white-space:nowrap;font-weight:600;width:150px}
+.tag{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;font-size:11.5px;font-weight:600;border:1px solid var(--line)}
+.tag.ok{color:var(--ok)}.tag.warn{color:var(--warn)}.tag.bad{color:var(--bad)}.tag.code{color:var(--accent)}
+.empty{padding:28px;text-align:center;color:var(--mute)}
+@media (max-width:620px){td.a{width:auto}th:nth-child(2),td.a{display:none}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div><h1>Nhật ký làm việc</h1><div class="sub" id="sub">Ghi tự động bởi hệ thống mỗi khi agent xong việc — không phải AI tự khai.</div></div>
+    <div class="ctl"><select id="agent"><option value="">Mọi agent</option></select><select id="range"><option value="7">7 ngày</option><option value="30">30 ngày</option><option value="0">Tất cả</option></select></div>
+  </header>
+  <div class="card"><table><thead><tr><th>Ngày</th><th>Agent</th><th>Việc</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>Chưa có việc nào được ghi.</div></div>
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var base = new URL('./', location.href).href;
+  function vn(d) { var p = d.split('-'); return p[2] + '/' + p[1]; }
+  function tag(cls, text) { var s = document.createElement('span'); s.className = 'tag ' + cls; s.textContent = text; return s; }
+  function verdictClass(v) { return /KH[ÔO]NG|S[ỬU]A/.test(v) ? 'bad' : /ĐI[ỀE]U KI[ỆE]N/.test(v) ? 'warn' : 'ok'; }
+  var agents = {};
+  function load() {
+    var from = '';
+    var n = Number($('range').value);
+    if (n) { var d = new Date(Date.now() - n * 864e5); from = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    fetch(base + 'journal?limit=500&from=' + from + '&agent=' + encodeURIComponent($('agent').value), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      $('sub').textContent = 'Tuần ' + j.week + ' · ghi tự động bởi hệ thống mỗi khi agent xong việc — không phải AI tự khai.';
+      j.rows.forEach(function (r) { agents[r.agent] = r.name; });
+      var sel = $('agent'), cur = sel.value;
+      if (sel.options.length - 1 !== Object.keys(agents).length) { sel.replaceChildren(new Option('Mọi agent', '')); Object.keys(agents).forEach(function (k) { sel.add(new Option(agents[k], k)); }); sel.value = cur; }
+      $('empty').hidden = j.rows.length > 0;
+      $('rows').replaceChildren.apply($('rows'), j.rows.map(function (r) {
+        var tr = document.createElement('tr'), a = document.createElement('td'), d = document.createElement('td'), w = document.createElement('td');
+        d.className = 'd'; d.textContent = vn(r.day); a.className = 'a'; a.textContent = r.name;
+        if (r.code) w.appendChild(tag('code', r.code));
+        if (r.verdict) w.appendChild(tag(verdictClass(r.verdict), r.verdict));
+        w.appendChild(document.createTextNode(r.title));
+        tr.append(d, a, w); return tr;
+      }));
+    }).catch(function () { $('empty').hidden = false; $('empty').textContent = 'Không tải được nhật ký.'; });
+  }
+  $('agent').onchange = load; $('range').onchange = load;
+  load(); setInterval(load, 15000);
+})();
+</script>
+</body>
+</html>

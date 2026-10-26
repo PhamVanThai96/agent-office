@@ -3,6 +3,7 @@ import path from 'node:path';
 import { loadConfig, CONFIG_FILE } from '../enzy/index.js';
 import { scrapeVoc, parseVoc } from './voc.js';
 import { distill } from './distill.js';
+import { fetchVocExcel, readVocWorkbook, vocToYaml, saveVocYaml, VOC_DIR } from './excel.js';
 import * as S from './store.js';
 
 // Ý kiến khách hàng: cào TUẦN TỰ từng khoảng ≤ 7 ngày (không chồng nhau) → chưng cất → hợp nhất vào kho insight (insight/store.js).
@@ -142,6 +143,7 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
       start, coverage: S.coverage(ledger), next: wins[0] || null, behindDays: behind, themes: kb.themes, updated: kb.updated,
       running, log: runLog.slice(-14), lastError: ledger.lastError || '', lastRun: ledger.lastRun || null, autoWindows: cfg.AUTO_WINDOWS,
       digest: fs.existsSync(S.DIGEST_FILE) ? 'reports/insight/digest.md' : '',
+      excel: fs.existsSync(path.join(VOC_DIR, 'latest.yaml')) ? (fs.readFileSync(path.join(VOC_DIR, 'latest.yaml'), 'utf8').match(/^tu_ngay: (\S+)\nden_ngay: (\S+)/m) || []).slice(1).join(' → ') || 'có' : '',
     };
   }
 
@@ -154,6 +156,37 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
     exclusive(() => wrap('Cào ý kiến khách hàng', () => doRun(mode, { onProgress: (t) => log(t) })))
       .then((r) => log(r.stopped ? `Ý kiến khách hàng: đã dừng${r.windows ? `, ${r.windows} khoảng đã xong vẫn được giữ` : ''}.` : r.ok ? (r.windows ? `Ý kiến khách hàng: đã chắt lọc ${r.windows} khoảng, ${r.newCustomers}/${r.customers} khách mới, ${r.themes} chủ đề cập nhật.` : r.note) : `Ý kiến khách hàng lỗi: ${r.error}`))
       .catch((e) => { running = null; ctl = null; log(`Ý kiến khách hàng lỗi: ${e.message}`); });
+    return true;
+  }
+
+  /** Lấy Excel "Tải Excel đầy đủ" cho một khoảng ngày bất kỳ → lưu YAML ẩn danh (data/insight/voc/). Chạy nền; false nếu đang bận. */
+  function startExcel({ from, to, mode = 'saved' } = {}) {
+    if (!S.parseIso(from) || !S.parseIso(to) || from > to) throw new Error('Khoảng ngày không hợp lệ (cần dạng YYYY-MM-DD, từ ≤ đến).');
+    if (to > S.yesterday()) throw new Error('Ngày kết thúc không được muộn hơn hôm qua.');
+    if (!['saved', 'scan'].includes(mode)) throw new Error('mode phải là saved hoặc scan.');
+    if (mode === 'scan' && S.dayDiff(from, to) + 1 > S.WINDOW_DAYS) throw new Error(`Quét mới từ Pancake chỉ tối đa ${S.WINDOW_DAYS} ngày.`);
+    if (running) return false;
+    runLog.length = 0;
+    running = { mode: 'excel', step: 'Đang chuẩn bị…', since: Date.now() };
+    ctl = { stopped: stopReq, browser: null }; stopReq = false;
+    const label = `${S.vn(from)}–${S.vn(to)}`;
+    exclusive(() => wrap('Lấy Excel ý kiến khách hàng', async () => {
+      try {
+        const cfg = insightConfig();
+        if (!cfg.creds.user || !cfg.creds.pass) throw new Error('Chưa có tài khoản đăng nhập trang Enzy (điền USER/PASS ở 📊 Dữ liệu Enzy).');
+        running = { ...running, step: `Đang tải Excel ý kiến khách hàng ${label} (${mode === 'scan' ? 'quét mới' : 'dữ liệu đã lưu'})…` };
+        rl(running.step); log(running.step);
+        const res = await fetchVocExcel({ url: cfg.c.URL, user: cfg.creds.user, pass: cfg.creds.pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from, to, mode, ctl });
+        const w = readVocWorkbook(res.buf);
+        const y = vocToYaml({ rows: w.rows, from, to, mode, metrics: { ...res.metrics, ...w.info } });
+        const file = saveVocYaml(y);
+        rl(`Xong ${label}: ${y.items} ý kiến → ${path.relative(S.DIR, file)} (cũng lưu latest.yaml).`, 'ok');
+        log(`Ý kiến khách hàng: đã lưu ${y.items} ý kiến (${label}) dạng YAML: data/insight/voc/latest.yaml`);
+      } catch (e) {
+        rl(ctl?.stopped ? 'Đã dừng theo yêu cầu.' : `Lỗi ${label}: ${e.message}`, ctl?.stopped ? 'warn' : 'err');
+        log(`Ý kiến khách hàng (Excel) lỗi: ${ctl?.stopped ? 'đã dừng' : e.message}`);
+      } finally { running = null; ctl = null; }
+    }));
     return true;
   }
 
@@ -187,10 +220,11 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
     const stale = cov ? S.dayDiff(cov.to, S.yesterday()) : null;
     if (!text) return `\n\n--- Insight khách hàng ---\nCHƯA CÓ dữ liệu ý kiến khách hàng đã chắt lọc${extraNote ? ` (${extraNote})` : ''}. Nói rõ điều này với CEO; TUYỆT ĐỐI không bịa insight hay trích dẫn khách.\n--- Hết ---\n`;
     const warn = stale > 7 ? `\nLƯU Ý: dữ liệu mới nhất chỉ tới ${S.vnFull(cov.to)} (cách hôm qua ${stale} ngày)${extraNote ? `; ${extraNote}` : ''}. Nêu rõ giới hạn này.` : extraNote ? `\nLƯU Ý: ${extraNote}` : '';
-    return `\n\n--- Insight khách hàng (từ ý kiến thật, đã chắt lọc) ---\n${text}${warn}\n--- Hết ---\n`;
+    const xl = fs.existsSync(path.join(VOC_DIR, 'latest.yaml')) ? '\nÝ kiến gốc từng dòng (ẩn danh, từ file Excel): data/insight/voc/latest.yaml — chỉ đọc (read_file) khi cần trích dẫn/ví dụ cụ thể.' : '';
+    return `\n\n--- Insight khách hàng (từ ý kiến thật, đã chắt lọc) ---\n${text}${warn}${xl}\n--- Hết ---\n`;
   }
 
   const search = (query, limit) => S.searchKb(S.loadKb(), S.loadLedger(), query, limit);
 
-  return { status, start, stop, ensureFresh, context, search, running: () => running };
+  return { status, start, startExcel, stop, ensureFresh, context, search, running: () => running };
 }

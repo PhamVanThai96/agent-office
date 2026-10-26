@@ -25,6 +25,7 @@
   <div id="tools">
     <button id="openOffice" type="button" class="main" title="Thêm agent, cấu hình AI, dữ liệu Enzy"><i>⚙</i><b>Cấu hình</b></button>
     <button id="openUsage" type="button" title="Giám sát token đã dùng theo model, theo yêu cầu, theo tháng"><i>🪙</i><b>Giám sát token</b></button>
+    <button id="openJournal" type="button" title="Nhật ký làm việc thật của đội agent theo ngày"><i>📒</i><b>Nhật ký</b></button>
     <button id="openReport" type="button" class="wide" title="Tạo báo cáo quảng cáo Enzy theo ngày / tuần / tháng, xem nhật ký"><i>📈</i><b>Tạo báo cáo</b></button>
   </div>
   <div id="mode"></div>
@@ -48,6 +49,8 @@
     <div id="vocStatus"></div>
     <div id="vocLog" class="vlog" hidden></div>
     <div class="enzyBtns"><button type="button" data-voc="next">Cào 7 ngày kế tiếp</button><button type="button" data-voc="catchup" class="sec">Cào bù tới hôm qua</button><button type="button" id="vocStop" class="stopb" hidden>■ Dừng</button></div>
+    <div class="vocStart vocExcel"><label>Excel từ <input id="vxFrom" type="date"></label><label>đến <input id="vxTo" type="date"></label><button id="vxSaved" type="button" class="sec" title="Mở dữ liệu đã lưu → Tải Excel đầy đủ → lưu YAML">Mở dữ liệu đã lưu</button><button id="vxScan" type="button" class="sec" title="Quét mới từ Pancake (tối đa 7 ngày, chậm)">Quét mới</button></div>
+    <div id="vxInfo" class="muted"></div>
     <div class="vocStart"><label>Cào từ ngày <input id="vocStart" type="date"></label><button id="vocStartSave" type="button" class="sec">Lưu</button></div>
   </section>
   <section id="board"><h4>Bảng task</h4><div id="tasks"></div></section>
@@ -111,6 +114,10 @@
 <dialog id="usDlg">
   <div class="usHead"><b>Giám sát token</b><span></span><a id="usOpen" href="usage.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="usClose" type="button" class="ghost">Đóng</button></div>
   <iframe id="usFrame" title="Giám sát token"></iframe>
+</dialog>
+<dialog id="jnDlg">
+  <div class="usHead"><b>Nhật ký làm việc</b><span></span><a id="jnOpen" href="journal.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="jnClose" type="button" class="ghost">Đóng</button></div>
+  <iframe id="jnFrame" title="Nhật ký làm việc"></iframe>
 </dialog>
 <dialog id="erDlg">
   <div class="usHead"><b>Tạo báo cáo quảng cáo Enzy</b><span></span><a id="erOpen" href="enzyreport.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="erClose" type="button" class="ghost">Đóng</button></div>

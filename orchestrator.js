@@ -1,9 +1,13 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { remember, recall } from './memory.js';
 import { recordRun, recordTask, recordVerdict, addLesson, lessonFromReview } from './learn.js';
 import { AGENTS, work, makePlan, summarize, answer } from './agents.js';
 import { toolsFor } from './access.js';
 import { classify } from './routing.js';
 import { clarifyBrief, FIELDS } from './clarify.js';
+import { transcribeVideo } from './transcribe.js';
+import { addEntry, nextScriptCode, verdictOf } from './journal.js';
 
 const byId = new Proxy({}, { get: (_, id) => AGENTS.find((a) => a.id === id) });
 const CEO = 'manager';
@@ -93,6 +97,17 @@ export function createOrchestrator({ emit, state, ask, insight }) {
       think(CEO, r.ok ? (r.windows ? `Đã chắt lọc thêm ${r.windows} khoảng ý kiến khách hàng (${r.newCustomers} khách mới)` : 'Ý kiến khách hàng đã cập nhật tới hôm qua') : `Không cập nhật được ý kiến khách hàng: ${short(r.error || '', 90)}`, r.error);
       insightCtx = insight.context(note);
     }
+    // Lệnh có link video (Facebook/YouTube/TikTok/Instagram): code tự lấy transcript TRƯỚC khi giao việc (không phụ thuộc AI tự gọi công cụ),
+    // rồi đưa vào ngữ cảnh của mọi agent. Tối đa 2 video mỗi lệnh.
+    let videoCtx = '';
+    const vids = [...new Set((planText.match(/https?:\/\/[^\s)>\]"']+/g) || []).filter((u) => /facebook\.com|fb\.watch|fb\.com|youtube\.com|youtu\.be|tiktok\.com|instagram\.com/i.test(u)).map((u) => u.replace(/[.,;]+$/, '')))].slice(0, 2);
+    for (const u of vids) {
+      setStatus(CEO, 'working', 'Đang lấy transcript video…');
+      think(CEO, `Lấy transcript video: ${short(u, 70)}`);
+      const r = await transcribeVideo(u, { uploadsDir: path.join(path.dirname(fileURLToPath(import.meta.url)), 'uploads'), maxChars: 6000, onStep: (t) => { think(CEO, t); setStatus(CEO, 'working', t); } });
+      if (r.error) { think(CEO, `Không lấy được transcript: ${short(r.error, 120)}`, r.error); videoCtx += `\n\n--- Video ${u} ---\nKHÔNG lấy được transcript: ${r.error}. Nói rõ điều này với CEO, TUYỆT ĐỐI không bịa nội dung video.\n--- Hết ---\n`; }
+      else { think(CEO, `Đã có transcript (${r.chars} ký tự, video ${Math.round(r.duration)}s${r.cached ? ', từ bộ nhớ' : ''})`); videoCtx += `\n\n--- TRANSCRIPT VIDEO ${u} (lời thoại tự nhận dạng, ${Math.round(r.duration)}s; có thể sai ở tên riêng/thuật ngữ; KHÔNG có mô tả hình ảnh) ---\n${r.text}\n--- Hết transcript ---\n`; }
+    }
     think(CEO, 'Phân tích và chia task…');
     setStatus(CEO, 'working', 'Đang lập kế hoạch…');
     const tasks = direct
@@ -144,7 +159,7 @@ export function createOrchestrator({ emit, state, ask, insight }) {
         };
         try {
           const text = await work(a, {
-            command, task: t, inputs, memory, attachments, feedback: extra.feedback, round: extra.round || 0, insight: insightCtx,
+            command, task: t, inputs, memory, attachments, feedback: extra.feedback, round: extra.round || 0, insight: insightCtx, video: videoCtx, scriptCode: codeOf(t),
             think: (x) => think(a.id, x), isLast: !tasks.some((o) => o.dependsOn?.includes(t.id)),
             tools,
             ask: (to, q) => consult(a, to, q, command),
@@ -154,6 +169,7 @@ export function createOrchestrator({ emit, state, ask, insight }) {
           msg(a.id, CEO, 'report', short(text, 140));
           emit({ type: 'task', id: t.id, status: 'done', round: extra.round || 0 });
           recordRun(a.id, { ok: true }); recordTask(a.id, { title: t.title, text });
+          if (!extra.round) addEntry({ agent: a.id, name: a.name, title: t.title, code: scriptCodes[t.id], ...(a.gate ? { kind: 'verdict', verdict: verdictOf(text) } : {}) });
           return { status: 'done', text };
         } catch (e) {
           const text = `Lỗi: ${e.message}`;
@@ -166,6 +182,10 @@ export function createOrchestrator({ emit, state, ask, insight }) {
         }
       });
     };
+
+    // Mã kịch bản (ENZ-001…): cấp một lần cho mỗi task của #writer, giữ nguyên khi sửa lại để các vòng duyệt cùng nói về một bản.
+    const scriptCodes = {};
+    const codeOf = (t) => (byId[t.assignee]?.id === 'writer' ? (scriptCodes[t.id] ||= nextScriptCode()) : undefined);
 
     const exec = async (t) => {
       const deps = await Promise.all(t.dependsOn.map((d) => start(byTask[d])));

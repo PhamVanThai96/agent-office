@@ -49,6 +49,34 @@
       "noSummary": true
     },
     {
+      "id": "video_ref",
+      "name": "Phân tích video tham khảo",
+      "when": "xem video / transcript / học cấu trúc từ video mẫu (link Facebook, YouTube, TikTok…) để áp dụng cho sản phẩm Enzy",
+      "template": "Xem video và transcript, học cấu trúc hook/kịch bản/CTA để áp dụng cho Enzy: ",
+      "keywords": [
+        "transcript",
+        "xem video",
+        "phan tich video",
+        "video mau",
+        "video tham khao",
+        "tham khao video",
+        "review video",
+        "boc bang",
+        "chep loi video"
+      ],
+      "unless": [
+        "gia vang",
+        "ty gia"
+      ],
+      "steps": [
+        "planner"
+      ],
+      "titles": {
+        "planner": "Phân tích video tham khảo và đề xuất áp dụng cho Enzy: {c}"
+      },
+      "noSummary": true
+    },
+    {
       "id": "full",
       "name": "Quy trình đầy đủ: từ ý tưởng đến video",
       "when": "chạy trọn quy trình từ tín hiệu, backlog, brief, kịch bản, duyệt, dựng video đến duyệt cuối",

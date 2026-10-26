@@ -1,0 +1,4 @@
+# Công cụ video_transcribe (transcript video): cài bằng scripts/setup-media.sh
+yt-dlp
+faster-whisper==1.2.1
+av==14.4.0

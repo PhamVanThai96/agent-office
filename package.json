@@ -9,5 +9,8 @@
     "docx": "^9.13.0",
     "playwright-core": "^1.48.2",
     "sharp": "^0.35.5"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -1,0 +1,27 @@
+id: 07-video-tham-khao
+title: "Video mẫu/tham khảo: quy tắc mặc định (CEO đã chốt)"
+summary: Khi CEO đưa video có sẵn (link hoặc file) để xem/transcript/review thì MẶC ĐỊNH là chỉ tham khảo cấu trúc hook-kịch bản-CTA để áp dụng cho Enzy; không hỏi lại, không copy claim; cảnh báo claim y tế/nội tiết.
+agents: [planner, writer, script_review, video_review, video, analyst, signal]
+when: [video, transcript, tham khao, video mau, review video, xem video, link, facebook, tiktok, youtube, reel, hook, cta, kich ban]
+order: 7
+tags: [video mẫu, tham khảo, transcript, hook, cta, claim, nội tiết tố, pháp chế]
+updated: 2026-10-26
+sections:
+  - id: quy-tac-mac-dinh
+    title: Mục đích mặc định khi gặp video có sẵn
+    tags: [mặc định, tham khảo, không hỏi lại]
+    text: |-
+      **CEO đã xác nhận (áp dụng cho mọi việc xem/review video mẫu):** mục đích là THAM KHẢO để học cấu trúc hook / kịch bản / CTA của video mẫu rồi áp dụng cho sản phẩm **Enzy** (hạt nêm chay, rắc cơm…). KHÔNG hỏi lại CEO "tham khảo hay dùng cho brand khác" và KHÔNG dừng lại chờ xác nhận; cứ làm theo hướng này, và chỉ đổi khi CEO nói rõ khác.
+      Video của brand/sản phẩm khác (vd sâm tôn nữ) chỉ là nguồn học cách làm, không phải việc của team, không cần quy trình riêng.
+  - id: cach-lam
+    title: Cách phân tích và áp dụng
+    tags: [cấu trúc, hook, body, cta, áp dụng]
+    text: |-
+      **Đầu ra gồm:** (1) Transcript (chép nguyên văn từ phần "TRANSCRIPT VIDEO" trong yêu cầu; ghi rõ là nhận dạng tự động nên có thể sai tên riêng/thuật ngữ và không có hình ảnh; nếu không lấy được thì nói thẳng, KHÔNG bịa). (2) Cấu trúc: hook (giây đầu, cách gây tò mò/đánh vào nỗi lo), thân (lập luận, bằng chứng, câu chuyện), CTA/ưu đãi (cách chốt, khan hiếm), giọng điệu, nhịp. (3) Vì sao có thể hiệu quả với tệp khách hàng của Enzy (đối chiếu skill khách hàng mục tiêu). (4) Đề xuất áp dụng cho Enzy: 2–3 hướng hook + dàn ý ngắn + CTA phù hợp giai đoạn phễu, dùng sản phẩm/lợi ích thật của Enzy trong skill sản phẩm. (5) Rủi ro cần tránh.
+      Bước tiếp theo theo quy trình: #planner lập brief → #writer viết kịch bản Enzy → #script_review duyệt 1 → #video dựng → #video_review duyệt 2; chỉ chạy khi CEO yêu cầu tạo nội dung, việc "xem/transcript" chỉ cần phần phân tích ở trên.
+  - id: claim-rui-ro
+    title: Không sao chép claim; cảnh báo claim y tế
+    tags: [claim, y tế, nội tiết tố, hormone, pháp chế, cam kết]
+    text: |-
+      **KHÔNG copy nguyên claim/nội dung gốc.** Mọi nội dung áp dụng cho Enzy phải dùng thông tin thật của Enzy; không dùng câu chữ, số liệu, ưu đãi, tên sản phẩm của video mẫu.
+      **Đánh dấu claim rủi ro trong video mẫu** (để tránh lặp lại): hứa chữa/giảm bệnh, "giống nội tiết tố/hormone", "trẻ ra/đẹp lên rõ rệt", so sánh y khoa không bằng chứng, "quý hiếm/duy nhất", khan hiếm giả. Với Enzy chỉ nói lợi ích hỗ trợ lối sống/thành phần có thể kiểm chứng; không hứa chữa bệnh. Nếu video mẫu có claim y tế/nội tiết, nêu rõ "không dùng lại" thay vì chuyển sang pháp chế.

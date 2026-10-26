@@ -25,9 +25,16 @@ const unesc = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quo
 const texts = (xml) => [...xml.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((m) => unesc(m[1])).join('');
 const colIndex = (ref) => [...ref.replace(/\d+/g, '')].reduce((a, c) => a * 26 + c.charCodeAt(0) - 64, 0) - 1;
 
-export function readXlsx(buf) {
+// Tên các sheet theo thứ tự trong workbook ("sheet1.xml" ↔ phần tử đầu...), dùng khi file có nhiều sheet.
+export function xlsxSheetNames(buf) {
   const files = unzip(buf);
-  const sheetName = Object.keys(files).filter((f) => /^xl\/worksheets\/sheet\d+\.xml$/.test(f)).sort()[0];
+  const wb = files['xl/workbook.xml']?.().toString('utf8') || '';
+  return [...wb.matchAll(/<sheet\b[^>]*\bname="([^"]*)"/g)].map((m) => unesc(m[1]));
+}
+
+export function readXlsx(buf, sheetIndex = 0) {
+  const files = unzip(buf);
+  const sheetName = Object.keys(files).filter((f) => /^xl\/worksheets\/sheet\d+\.xml$/.test(f)).sort((a, b) => parseInt(a.match(/\d+/g).pop()) - parseInt(b.match(/\d+/g).pop()))[sheetIndex];
   if (!sheetName) throw new Error('Không thấy sheet trong file Excel.');
   const shared = files['xl/sharedStrings.xml'] ? [...files['xl/sharedStrings.xml']().toString('utf8').matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => texts(m[1])) : [];
   const xml = files[sheetName]().toString('utf8');
@@ -53,8 +60,8 @@ export function readXlsx(buf) {
 }
 
 // Hàng đầu là tiêu đề → mảng đối tượng {tiêu đề: giá trị}.
-export function readXlsxObjects(buf) {
-  const [head, ...rows] = readXlsx(buf);
+export function readXlsxObjects(buf, sheetIndex = 0) {
+  const [head, ...rows] = readXlsx(buf, sheetIndex);
   if (!head) return [];
   return rows.filter((r) => r.some((v) => v != null && v !== '')).map((r) => Object.fromEntries(head.map((h, i) => [String(h ?? '').trim(), r[i] ?? null])));
 }

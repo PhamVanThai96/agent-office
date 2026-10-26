@@ -21,6 +21,15 @@ npm install
 - `config.json`: chế độ MOCK/REAL, kết nối API (key) hoặc CLI (claude/codex đã đăng nhập).
 - `enzy.json`: tài khoản trang báo cáo Enzy (USER/PASS), danh sách tài khoản QC, lịch chạy báo cáo tự động. Báo cáo Enzy cần Google Chrome cài trên máy.
 
+## Chạy trên máy Mac khác
+
+Chỉ cần cài **Node.js 20+** (https://nodejs.org). Sau đó bấm đúp `Khoi dong Agent Office.command` (hoặc `npm install && npm start`); không có đường dẫn nào cố định theo máy.
+
+- File bí mật/dữ liệu **không nằm trong git** (`config.json`, `enzy.json`, `permissions.json`, `memory.json`, `data/` gồm `data/admin.json`, `uploads/`, `reports/`): trên máy mới hãy `cp config.example.json config.json` và `cp enzy.example.json enzy.json`, rồi nhập khoá/tài khoản ở giao diện (⚙ Cấu hình) và tạo lại Admin (🔐 hoặc `node scripts/set-admin.mjs`).
+- Lấy số liệu Enzy dùng **Google Chrome** có sẵn trên máy (cài Chrome nếu chưa có).
+- Dùng AI bằng CLI (claude/codex đã đăng nhập sẵn trên máy đó) hoặc API (điền khoá ở ⚙ Cấu hình).
+- **Tuỳ chọn – transcript video** (công cụ `video_transcribe`): chạy một lần `bash scripts/setup-media.sh` (cần Python 3.9+, tải ~100MB thư viện; mô hình Whisper ~480MB tự tải ở lần dùng đầu). Không cài thì mọi tính năng khác vẫn chạy bình thường.
+
 ## Chạy nhanh trên Mac (không cần gõ lệnh)
 
 Mở thư mục dự án trong Finder rồi **bấm đúp `Khoi dong Agent Office.command`**. File này tự làm hết, không phụ thuộc đường dẫn nên chép thư mục sang Mac nào cũng chạy:
