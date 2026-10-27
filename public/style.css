@@ -274,15 +274,15 @@ body.dropping #dropzone { display:flex; }
 #ezDlg[open] { display:block; }
 
 /* Dashboard token (hộp thoại lớn, nhúng usage.html) */
-#usDlg, #memDlg, #erDlg, #jnDlg { border:0; border-radius:16px; padding:0; width:min(1240px, 96vw); height:min(900px, 92vh); box-shadow:0 20px 50px rgba(30,40,70,.45); overflow:hidden; }
-#usDlg[open], #memDlg[open], #erDlg[open], #jnDlg[open] { display:flex; flex-direction:column; }
-#usDlg::backdrop, #memDlg::backdrop, #erDlg::backdrop, #jnDlg::backdrop { background:rgba(30,35,50,.55); }
-#usDlg .usHead, #memDlg .usHead, #erDlg .usHead, #jnDlg .usHead { display:flex; align-items:center; gap:12px; padding:10px 16px; background:#fff; border-bottom:1px solid var(--line); flex:none; }
-#usDlg .usHead span, #memDlg .usHead span, #erDlg .usHead span, #jnDlg .usHead span { flex:1; }
-#usDlg .usHead a, #memDlg .usHead a, #erDlg .usHead a, #jnDlg .usHead a { font-size:12.5px; color:#2d6fa3; text-decoration:none; }
-#usDlg .usHead button, #memDlg .usHead button, #erDlg .usHead button, #jnDlg .usHead button { height:32px; padding:0 14px; border-radius:10px; }
-#usFrame, #memFrame, #erFrame, #jnFrame { flex:1; width:100%; border:0; min-height:0; }
-@media (prefers-color-scheme:dark){ #usDlg .usHead, #memDlg .usHead, #erDlg .usHead { background:#1b222b; color:#e8edf2; border-bottom-color:#2b3541; } #usDlg .usHead a, #memDlg .usHead a, #erDlg .usHead a, #jnDlg .usHead a { color:#7da2e0; } }
+#usDlg, #memDlg, #erDlg { border:0; border-radius:16px; padding:0; width:min(1240px, 96vw); height:min(900px, 92vh); box-shadow:0 20px 50px rgba(30,40,70,.45); overflow:hidden; }
+#usDlg[open], #memDlg[open], #erDlg[open] { display:flex; flex-direction:column; }
+#usDlg::backdrop, #memDlg::backdrop, #erDlg::backdrop { background:rgba(30,35,50,.55); }
+#usDlg .usHead, #memDlg .usHead, #erDlg .usHead { display:flex; align-items:center; gap:12px; padding:10px 16px; background:#fff; border-bottom:1px solid var(--line); flex:none; }
+#usDlg .usHead span, #memDlg .usHead span, #erDlg .usHead span { flex:1; }
+#usDlg .usHead a, #memDlg .usHead a, #erDlg .usHead a { font-size:12.5px; color:#2d6fa3; text-decoration:none; }
+#usDlg .usHead button, #memDlg .usHead button, #erDlg .usHead button { height:32px; padding:0 14px; border-radius:10px; }
+#usFrame, #memFrame, #erFrame { flex:1; width:100%; border:0; min-height:0; }
+@media (prefers-color-scheme:dark){ #usDlg .usHead, #memDlg .usHead, #erDlg .usHead { background:#1b222b; color:#e8edf2; border-bottom-color:#2b3541; } #usDlg .usHead a, #memDlg .usHead a, #erDlg .usHead a { color:#7da2e0; } }
 .enzyBtns button.sec { background:#e6ebf3; color:#34517a; }
 
 /* Thanh token còn lại */
@@ -362,3 +362,9 @@ body.dropping #dropzone { display:flex; }
 .vlog div { word-break:break-word; } .vlog .ok { color:#1d6b46; } .vlog .err { color:#8a3a37; } .vlog .warn { color:#a96a05; }
 #vxInfo{font-size:11.5px;color:var(--muted);margin-top:4px}
 .vocExcel{flex-wrap:wrap}
+
+#ezDlg .ezTg { border:2px solid #ffc83d; border-radius:12px; padding:8px 12px 10px; margin:6px 0 10px; }
+#ezDlg .ezTg legend { font-weight:700; font-size:13px; padding:0 6px; }
+#ezDlg .ezHint { font-size:11.5px; color:var(--muted); margin:2px 0 8px; line-height:1.4; }
+#ezDlg .ezTgRow { display:grid; grid-template-columns:100px 64px 1fr; gap:8px; align-items:center; margin-bottom:6px; font-size:12.5px; }
+#ezDlg .ezTgRow select, #ezDlg .ezTgRow input { margin:0; }

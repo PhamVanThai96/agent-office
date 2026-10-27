@@ -1,0 +1,30 @@
+{
+  "_ghi_chu": "Khu vườn 2.5D: toạ độ tính theo pixel của ảnh gốc (width × height). layers: các lớp ảnh xếp từ xa đến gần; depth 0 = đứng yên, càng lớn càng dịch nhiều khi rê chuột (tạo chiều sâu). Thêm lớp tách sẵn (PNG nền trong suốt, cùng kích thước ảnh gốc) bằng cách thêm dòng vào layers, vd {\"src\":\"tree-front.png\",\"depth\":3}. spots: chỗ của mèo-agent theo thứ tự agent (x,y = giữa thân mèo; top = đỉnh đầu, nơi đặt nhãn tên; r = bán kính vùng bấm). Có thể thêm \"sprite\": \"cats/meo-1.png\" (PNG cắt rời con mèo, cùng kích thước ảnh gốc) để mèo cử động (thở, nhún) riêng. ceo: mèo trên mái nhà. lanterns: đèn lồng nhấp nháy. water: vùng mặt nước lấp lánh (đa giác). petals: vùng cây anh đào rụng cánh hoa [x, y, rộng, cao].",
+  "width": 1408,
+  "height": 768,
+  "layers": [
+    { "src": "garden.webp", "depth": 0 }
+  ],
+  "ceo": { "x": 858, "y": 108, "top": 48, "r": 48 },
+  "spots": [
+    { "x": 540, "y": 380, "top": 350, "r": 42, "note": "mèo trắng ngủ trên nệm ở hiên" },
+    { "x": 650, "y": 570, "top": 505, "r": 46, "note": "mèo mướp xám leo cây anh đào" },
+    { "x": 300, "y": 535, "top": 505, "r": 46, "note": "mèo đen vươn vai" },
+    { "x": 1272, "y": 445, "top": 408, "r": 38, "note": "mèo tuxedo trên thùng gỗ" },
+    { "x": 435, "y": 625, "top": 596, "r": 44, "note": "mèo tam thể chơi đùa" },
+    { "x": 1165, "y": 485, "top": 452, "r": 40, "note": "mèo mướp đang đi" },
+    { "x": 1012, "y": 610, "top": 562, "r": 46, "note": "mèo Ba Tư trắng bên ao" },
+    { "x": 925, "y": 488, "top": 458, "r": 46, "note": "mèo xám xanh ngủ trên ghế" },
+    { "x": 1262, "y": 690, "top": 665, "r": 34, "note": "mèo mướp cạnh cầu" },
+    { "x": 727, "y": 386, "top": 372, "r": 26, "note": "mèo con trong giỏ trên hiên" },
+    { "x": 1262, "y": 527, "top": 512, "r": 24, "note": "mèo con trong thùng gỗ" },
+    { "x": 1212, "y": 543, "top": 530, "r": 22, "note": "mèo con nằm trên nệm" }
+  ],
+  "lanterns": [[452, 125, 26], [537, 98, 26], [449, 250, 24], [604, 322, 22], [645, 320, 22], [918, 345, 24], [1277, 72, 14], [138, 528, 16], [200, 528, 16]],
+  "water": [
+    [[310, 622], [380, 632], [470, 648], [540, 652], [590, 680], [640, 702], [720, 712], [820, 705], [900, 690], [990, 688], [1060, 676], [1110, 700], [1100, 740], [1000, 768], [760, 768], [700, 750], [620, 735], [560, 705], [500, 672], [430, 668], [360, 652], [320, 645]],
+    [[1100, 612], [1170, 600], [1260, 598], [1320, 612], [1330, 650], [1290, 672], [1210, 690], [1170, 672], [1130, 650]],
+    [[255, 428], [290, 418], [318, 430], [310, 452], [270, 456], [250, 445]]
+  ],
+  "petals": [[0, 0, 330, 260], [0, 230, 200, 200], [540, 440, 180, 160], [1000, 300, 90, 80]]
+}

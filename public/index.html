@@ -32,7 +32,6 @@
   <div id="tools">
     <button id="openOffice" type="button" class="main" title="Thêm agent, cấu hình AI, dữ liệu Enzy"><i>⚙</i><b>Cấu hình</b></button>
     <button id="openUsage" type="button" title="Giám sát token đã dùng theo model, theo yêu cầu, theo tháng"><i>🪙</i><b>Giám sát token</b></button>
-    <button id="openJournal" type="button" title="Nhật ký làm việc thật của đội agent theo ngày"><i>📒</i><b>Nhật ký</b></button>
     <button id="openReport" type="button" class="wide" title="Tạo báo cáo quảng cáo Enzy theo ngày / tuần / tháng, xem nhật ký"><i>📈</i><b>Tạo báo cáo</b></button>
   </div>
   <div id="mode"></div>
@@ -115,8 +114,8 @@
   </div>
   <div class="gfx">
     <h4>🎨 Cấu hình đồ hoạ</h4>
-    <div id="viewSw"><button type="button" data-v="2d" class="on">🏢 Văn phòng 2D</button><button type="button" data-v="3d">🏘 Thị trấn 3D</button></div>
-    <label class="gfxSw"><input type="checkbox" id="townLock"><i></i><span>Cố định góc nhìn 3D <small>(bật = khoá, không xoay/phóng to được)</small></span></label>
+    <div id="viewSw"><button type="button" data-v="2d" class="on">🏢 Văn phòng 2D</button><button type="button" data-v="3d">🏡 Khu vườn mèo</button></div>
+    <label class="gfxSw"><input type="checkbox" id="townLock"><i></i><span>Cố định góc nhìn khu vườn <small>(bật = khoá, không phóng to/kéo được)</small></span></label>
   </div>
 </dialog>
 <dialog id="memDlg">
@@ -126,10 +125,6 @@
 <dialog id="usDlg">
   <div class="usHead"><b>Giám sát token</b><span></span><a id="usOpen" href="usage.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="usClose" type="button" class="ghost">Đóng</button></div>
   <iframe id="usFrame" title="Giám sát token"></iframe>
-</dialog>
-<dialog id="jnDlg">
-  <div class="usHead"><b>Nhật ký làm việc</b><span></span><a id="jnOpen" href="journal.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="jnClose" type="button" class="ghost">Đóng</button></div>
-  <iframe id="jnFrame" title="Nhật ký làm việc"></iframe>
 </dialog>
 <dialog id="erDlg">
   <div class="usHead"><b>Tạo báo cáo quảng cáo Enzy</b><span></span><a id="erOpen" href="enzyreport.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="erClose" type="button" class="ghost">Đóng</button></div>
@@ -150,7 +145,15 @@
     </div>
     <label>Cửa hàng <input id="ezStore" required></label>
     <label>Tài khoản quảng cáo (mỗi dòng một tên, tối đa 5, gõ đúng tên trên trang) <textarea id="ezAccounts" rows="5" required></textarea></label>
-    <label>Người thực hiện cho dashboard content (cách nhau dấu phẩy; tên nằm cuối tên quảng cáo, vd "… (TRÂN)"; để trống = không tạo) <input id="ezOwners" placeholder="TRÂN, NGA"></label>
+    <label>Từ khoá trong tên quảng cáo để lọc dữ liệu báo cáo (cách nhau dấu phẩy, vd STAC, LNT; không phân biệt hoa/thường và dấu). Không có người thực hiện → so sánh hiệu năng các từ khoá; có cả hai → thêm biểu đồ và số liệu so sánh từ khoá. Để trống = chỉ theo người thực hiện <input id="ezKeywords" placeholder="STAC, LNT"></label>
+    <label>Người thực hiện cho dashboard content (cách nhau dấu phẩy; tên nằm cuối tên quảng cáo, vd "… (TRÂN)"; để trống = không so sánh theo người) <input id="ezOwners" placeholder="TRÂN, NGA"></label>
+    <fieldset class="ezTg"><legend>Hiệu quả content (mục tiêu)</legend>
+      <p class="ezHint">Content được xếp "Hiệu quả" khi đạt TẤT CẢ các điều kiện bạn đặt dưới đây; đạt một phần → "Cần tối ưu" (ghi rõ chỉ số chưa đạt). Bỏ trống ô giá trị = không dùng chỉ số đó; để trống cả bốn = so với mặt bằng của nhóm như cũ.</p>
+      <div class="ezTgRow"><span>CPA (đ)</span><select id="ezT_cpa_op"><option value="<">&lt;</option><option value="<=">≤</option><option value=">">&gt;</option><option value=">=">≥</option></select><input id="ezT_cpa_v" inputmode="decimal" placeholder="vd 170000"></div>
+      <div class="ezTgRow"><span>Doanh thu (đ)</span><select id="ezT_rev_op"><option value=">=">≥</option><option value=">">&gt;</option><option value="<=">≤</option><option value="<">&lt;</option></select><input id="ezT_rev_v" inputmode="decimal" placeholder="vd 5000000"></div>
+      <div class="ezTgRow"><span>NS/DT (%)</span><select id="ezT_ns_op"><option value="<">&lt;</option><option value="<=">≤</option><option value=">">&gt;</option><option value=">=">≥</option></select><input id="ezT_ns_v" inputmode="decimal" placeholder="vd 40"></div>
+      <div class="ezTgRow"><span>CPL (đ)</span><select id="ezT_cpl_op"><option value="<">&lt;</option><option value="<=">≤</option><option value=">">&gt;</option><option value=">=">≥</option></select><input id="ezT_cpl_v" inputmode="decimal" placeholder="vd 60000"></div>
+    </fieldset>
     <label>File prompt cho #analyst (trong thư mục dự án, .md/.txt) <input id="ezPrompt" required></label>
     <div id="ezNote"></div>
     <div id="ezErr"></div>
@@ -199,7 +202,6 @@ document.getElementById('viewSw').addEventListener('click', function (e) {
   Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x.dataset.v === '3d'); });
 });
 </script>
-<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
-<script type="module" src="town3d.js"></script>
+<script src="town25d.js"></script>
 </body>
 </html>

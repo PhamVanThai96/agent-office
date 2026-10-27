@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchEnzy } from './fetch.js';
 import { parseEnzy, buildDataMarkdown, snapshot, kindLabel } from './metrics.js';
-import { normalizeAds, groupByOwner, buildOwnerDashboard, ownerSummaryMarkdown } from './owners.js';
+import { normalizeAds, filterByKeywords, groupByKeyword, keywordStats, keywordSummaryMarkdown, criteriaMarkdown, normTargets, groupByOwner, buildOwnerDashboard, ownerSummaryMarkdown } from './owners.js';
 
 // Báo cáo quảng cáo Enzy tự động: lấy số liệu từ trang Streamlit → tính chỉ số, bảng, biểu đồ → giao #analyst viết nhận định.
 // Cấu hình ở enzy.json (quyền 600, chứa tài khoản đăng nhập trang báo cáo; agent không được đọc/ghi file này).
@@ -23,6 +23,8 @@ const DEFAULTS = {
   USER: '', PASS: '',
   BRAND: 'Enzy', SYSTEM: 'Facebook Ads', STORE: 'HNC Vietnam',
   ACCOUNTS: ['Enzy 1', 'Enzy 2', 'Enzy 5', 'Enzy 6', 'Enzy 8'],
+  TARGETS: {},         // mục tiêu "Hiệu quả content": { cpa|rev|ns|cpl: { op: '<'|'<='|'>'|'>=', value } } (đ; NS/DT tính %); trống = so với mặt bằng của nhóm
+  KEYWORDS: [],        // từ khoá trong TÊN quảng cáo (vd STAC, LNT): chỉ tính quảng cáo có chứa một trong các từ khoá; để trống = chỉ lọc theo người thực hiện
   OWNERS: ['TRÂN', 'NGA'], // người thực hiện: tên nằm cuối tên quảng cáo, vd "… (TRÂN)"; để trống = không tạo dashboard theo người
   PROMPT: 'prompt/daily-report-enzy-data-prompt.md',
   SCHEDULE: { enabled: false, daily: '08:00', weekly: { day: 1, time: '08:30' }, monthly: { day: 1, time: '09:00' } },
@@ -58,7 +60,7 @@ export function publicConfig() {
   const c = loadConfig();
   return {
     URL: c.URL, USER: c.USER, hasPass: Boolean(c.PASS), envCreds: Boolean(process.env.ENZY_USER || process.env.ENZY_PASS),
-    BRAND: c.BRAND, SYSTEM: c.SYSTEM, STORE: c.STORE, ACCOUNTS: c.ACCOUNTS, OWNERS: c.OWNERS, PROMPT: c.PROMPT,
+    BRAND: c.BRAND, SYSTEM: c.SYSTEM, STORE: c.STORE, ACCOUNTS: c.ACCOUNTS, OWNERS: c.OWNERS, KEYWORDS: c.KEYWORDS || [], TARGETS: c.TARGETS || {}, PROMPT: c.PROMPT,
   };
 }
 
@@ -81,6 +83,19 @@ export function saveConfig(b) {
   const owners = [...new Set((Array.isArray(b.OWNERS) ? b.OWNERS : String(b.OWNERS || '').split(/[\n,;]/)).map((x) => String(x).trim()).filter(Boolean))];
   if (owners.length > 10) throw new Error('Tối đa 10 người thực hiện.');
   if (owners.some((o) => o.length > 30 || /[()]/.test(o))) throw new Error('Tên người thực hiện tối đa 30 ký tự, không chứa dấu ngoặc.');
+  const keywords = [...new Set((Array.isArray(b.KEYWORDS) ? b.KEYWORDS : String(b.KEYWORDS || '').split(/[\n,;]/)).map((x) => String(x).trim()).filter(Boolean))];
+  if (keywords.length > 20) throw new Error('Tối đa 20 từ khoá.');
+  if (keywords.some((k) => k.length > 40)) throw new Error('Mỗi từ khoá tối đa 40 ký tự.');
+  const targets = {};
+  for (const k of ['cpa', 'rev', 'ns', 'cpl']) {
+    const x = b.TARGETS?.[k];
+    if (!x || x.value === '' || x.value == null) continue;
+    const v = Number(String(x.value).replace(/[.\s]/g, '').replace(',', '.'));
+    if (!['<', '<=', '>', '>='].includes(x.op)) throw new Error('Điều kiện mục tiêu không hợp lệ (chọn <, ≤, >, ≥).');
+    if (!Number.isFinite(v) || v < 0 || v > 1e12) throw new Error('Giá trị mục tiêu phải là số không âm.');
+    if (k === 'ns' && v > 1000) throw new Error('NS/DT nhập theo % (vd 40).');
+    targets[k] = { op: x.op, value: v };
+  }
   const prompt = text(b.PROMPT, 'File prompt', 300);
   const abs = path.resolve(ROOT, prompt);
   if (abs !== ROOT && !abs.startsWith(ROOT + path.sep)) throw new Error('File prompt phải nằm trong thư mục dự án.');
@@ -95,6 +110,8 @@ export function saveConfig(b) {
   raw.STORE = text(b.STORE, 'Cửa hàng', 80);
   raw.ACCOUNTS = accounts;
   raw.OWNERS = owners;
+  raw.KEYWORDS = keywords;
+  raw.TARGETS = targets;
   raw.PROMPT = prompt;
   writeJson(CONFIG_FILE, raw, 0o600);
 }
@@ -109,18 +126,31 @@ function periodLabel(period) {
 
 // Dashboard content theo người thực hiện (HTML độc lập) từ danh sách từng quảng cáo. Trả về đường dẫn tương đối trong reports/ hoặc ''.
 function writeOwnerDashboard(cfg, kind, key, d, rows, write = true) {
-  const owners = cfg.OWNERS || [];
-  if (!owners.length || !rows?.length) return '';
-  const g = groupByOwner(normalizeAds(rows), owners);
+  const owners = cfg.OWNERS || [], kws = cfg.KEYWORDS || [];
+  if ((!owners.length && !kws.length) || !rows?.length) return '';
+  const f = filterByKeywords(normalizeAds(rows), kws);   // từ khoá trống = không lọc
   const lab = periodLabel(d.period);
-  const title = `[${KIND_TAG[kind]}] Dashboard content ${g.listed.join(' + ')} và nhóm còn lại — ${kindLabel(kind, d.period)} ${lab}`;
-  const mdAll = ownerSummaryMarkdown(g, lab);
-  // Chỉ xuất báo cáo (không dashboard): vẫn có bảng so sánh người thực hiện nhưng bỏ dòng link tới dashboard.
+  const kwTag = f.info.list.length ? ` [${f.info.list.join(', ')}]` : '';
+  let g, title, mdAll;
+  if (!owners.length) {
+    // Chỉ có từ khoá (không có người thực hiện): so sánh hiệu năng các chiến dịch theo từ khoá (STAC vs LNT…).
+    g = { ...groupByKeyword(f.ads, kws), kw: f.info, targets: cfg.TARGETS };
+    title = `[${KIND_TAG[kind]}] So sánh chiến dịch theo từ khoá ${g.listed.join(' vs ')} — ${kindLabel(kind, d.period)} ${lab}`;
+    mdAll = keywordSummaryMarkdown(keywordStats(f.ads, kws), f.info, lab, true);
+  } else {
+    // Có người thực hiện: so sánh người như cũ; nếu có thêm từ khoá thì bổ sung biểu đồ + số liệu so sánh các từ khoá.
+    g = { ...groupByOwner(f.ads, owners), kw: f.info, targets: cfg.TARGETS };
+    if (kws.length) g.kwStats = keywordStats(f.ads, kws);
+    title = `[${KIND_TAG[kind]}] Dashboard content ${g.listed.join(' + ')} và nhóm còn lại${kwTag} — ${kindLabel(kind, d.period)} ${lab}`;
+    mdAll = ownerSummaryMarkdown(g, lab) + (kws.length ? '\n' + keywordSummaryMarkdown(g.kwStats, f.info, lab, false) : '');
+  }
+  mdAll = criteriaMarkdown(g.rows, undefined, cfg.TARGETS) + '\n' + mdAll;   // panel tiêu chí & ngưỡng đánh giá nằm đầu phần số liệu theo content
+  // Chỉ xuất báo cáo (không dashboard): vẫn có bảng so sánh nhưng bỏ dòng link tới dashboard.
   if (!write) return { rel: '', md: mdAll.replace(/^\[📈 Mở Dashboard content[^\n]*\n?/m, '') };
   const dir = path.join(ROOT, 'reports', 'enzy', kind);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, `${key}-dashboard-content.html`), buildOwnerDashboard({ title, period: lab, updated: d.updated, kindLabel: KIND_LABEL[kind], ...g }));
-  return { rel: `reports/enzy/${kind}/${key}-dashboard-content.html`, md: ownerSummaryMarkdown(g, lab) };
+  return { rel: `reports/enzy/${kind}/${key}-dashboard-content.html`, md: mdAll };
 }
 
 // Kỳ theo lịch (không phải "N ngày gần nhất"): tuần = các khối 1–7, 8–14, 15–21, 22–28, 29–cuối tháng; tháng = tháng dương lịch.
@@ -180,7 +210,7 @@ function buildTask(cfg, kind, d) {
   const title = `[${KIND_TAG[kind]}] ${kindLabel(kind, d.period)} quảng cáo Enzy — ${d.period || RANGE[kind]}`;
   return {
     title,
-    task: `/analyst ${title}\nKỲ BÁO CÁO: ${kindLabel(kind, d.period).toUpperCase()} (${d.period || RANGE[kind]}). File số liệu đính kèm do hệ thống tự lấy từ trang báo cáo Enzy lúc ${d.updated || 'vừa xong'}; số liệu, bảng và biểu đồ đã được tính sẵn và sẽ tự đính kèm vào báo cáo — dùng đúng các số này, không tự tính lại hay vẽ lại.\n\n${body}`,
+    task: `/analyst ${title}\nKỲ BÁO CÁO: ${kindLabel(kind, d.period).toUpperCase()} (${d.period || RANGE[kind]}). File số liệu đính kèm do hệ thống tự lấy từ trang báo cáo Enzy lúc ${d.updated || 'vừa xong'}; số liệu, bảng và biểu đồ đã được tính sẵn và sẽ tự đính kèm vào báo cáo — dùng đúng các số này, không tự tính lại hay vẽ lại.${(cfg.KEYWORDS || []).length ? `\nCÓ PHẦN "SO SÁNH HIỆU QUẢ THEO TỪ KHOÁ" (${cfg.KEYWORDS.join(' vs ')}) trong file số liệu: hãy nhận xét ngắn so sánh các từ khoá này (chi tiêu, NS/DT, CPA, CPL, số đơn; từ khoá nào hiệu quả hơn và vì sao) và đề xuất hành động, dùng đúng số trong bảng đó.` : ''}\n\n${body}`,
   };
 }
 
@@ -224,7 +254,7 @@ export function createEnzy(deps) {
       // Chỉ dựng dashboard (không lưu số liệu kỳ, không giao #analyst, không tốn token AI).
       writeJson(path.join(DATA, kind, `${key}-meta.json`), { period: d.period, updated: d.updated });
       if (!raw.adsRows?.length) throw new Error(`Không tải được file Excel từng quảng cáo${raw.adsError ? ` (${raw.adsError})` : ''}.`);
-      if (!(cfg.OWNERS || []).length) throw new Error('Chưa cấu hình người thực hiện (📊 Dữ liệu Enzy).');
+      if (!(cfg.OWNERS || []).length && !(cfg.KEYWORDS || []).length) throw new Error('Chưa cấu hình người thực hiện hoặc từ khoá (📊 Dữ liệu Enzy).');
       return { key, period: d.period, dashboard: writeOwnerDashboard(cfg, kind, key, d, raw.adsRows).rel };
     }
     const md = buildDataMarkdown(kind, d, history(kind, key));
@@ -232,6 +262,8 @@ export function createEnzy(deps) {
     fs.writeFileSync(path.join(DATA, kind, `${key}-raw.txt`), raw.code || '');
     let dashboard = '', ownerMd = '';
     try { const w = writeOwnerDashboard(cfg, kind, key, d, raw.adsRows, !noDash); dashboard = w?.rel || ''; ownerMd = w?.md || ''; } catch (e) { note(`Dashboard content theo người thực hiện lỗi: ${e.message}`); }
+    // Có cấu hình từ khoá nhưng không dựng được so sánh (thiếu dữ liệu từng quảng cáo): nói rõ ngay trong báo cáo thay vì im lặng.
+    if (!ownerMd && (cfg.KEYWORDS || []).length) ownerMd = `## So sánh hiệu quả theo từ khoá (${cfg.KEYWORDS.join(' vs ')})\n\nChưa có so sánh theo từ khoá vì không lấy được dữ liệu từng quảng cáo từ file Excel của trang báo cáo${raw.adsError ? ` (${raw.adsError})` : ''}. Thử chạy lại báo cáo.\n`;
     if (raw.adsError) note(`Không tải được file Excel từng quảng cáo (${raw.adsError}); bỏ qua ${noDash ? 'bảng so sánh' : 'dashboard'} theo người thực hiện.`);
     // Số liệu do code tính nằm ngay trong báo cáo cuối (phụ lục), nên KHÔNG tạo file riêng trong danh sách báo cáo; bản lưu nội bộ ở data/enzy/.
     // Bảng so sánh NGA/TRÂN/nhóm còn lại nằm ngay trong báo cáo (link tương đối khác nhau cho file .md và trang báo cáo tổng hợp).

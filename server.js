@@ -18,7 +18,6 @@ import { templates } from './routing.js';
 import { skillsFor } from './skills.js';
 import { createEnzy, saveSchedule, saveConfig as saveEnzyConfig, publicConfig as enzyConfig } from './enzy/index.js';
 import { createInsight, saveInsightStart } from './insight/index.js';
-import * as journal from './journal.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const PORT = CONFIG.port;
@@ -209,7 +208,7 @@ const readJson = (req) => new Promise((resolve) => {
   req.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve({}); } });
 });
 
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json; charset=utf-8', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml' };
 const rmime = {
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8', '.csv': 'text/csv; charset=utf-8', '.json': 'application/json; charset=utf-8',
@@ -233,11 +232,6 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/enzy/status') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzy.statusFull()));
-    return;
-  }
-  if (req.method === 'GET' && url.pathname === '/journal') {
-    const q = url.searchParams, rows = journal.list({ limit: Number(q.get('limit')) || 200, from: q.get('from') || '', to: q.get('to') || '', agent: q.get('agent') || '' });
-    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify({ week: journal.isoWeek(), rows }));
     return;
   }
   if (req.method === 'GET' && url.pathname === '/usage') {

@@ -110,7 +110,8 @@ export function mdHtml(text, images = new Map(), used = new Set()) {
         let svg = null;
         try { svg = chartSvg(JSON.parse(buf.join('\n'))); } catch { /* JSON sai: hiện như mã */ }
         out.push(svg ? `<figure class="chart">${svg}</figure>` : `<pre>${esc(buf.join('\n'))}</pre>`);
-      } else out.push(`<pre>${esc(buf.join('\n'))}</pre>`);
+      } else if (fence[1].toLowerCase() === 'panel') out.push(`<aside class="panel-hi">${mdHtml(buf.join('\n'), images, used)}</aside>`);
+      else out.push(`<pre>${esc(buf.join('\n'))}</pre>`);
       continue;
     }
     if (ln.includes('|') && i + 1 < lines.length && isSep(lines[i + 1]) && !isSep(ln)) {
@@ -150,6 +151,7 @@ export function mdHtml(text, images = new Map(), used = new Set()) {
 export function stripData(text) {
   return String(text ?? '')
     .replace(/```chart\s*([\s\S]*?)```/gi, (_, j) => { try { return `[biểu đồ: ${JSON.parse(j).title || 'không tên'}]`; } catch { return '[biểu đồ]'; } })
+    .replace(/```panel\s*([\s\S]*?)```/gi, '[bảng tiêu chí đánh giá content]')
     .replace(/(^\|.*\|\s*\n){2,}/gm, '[bảng dữ liệu]\n');
 }
 
@@ -190,6 +192,9 @@ h2{margin:0 0 4px}h3{margin:26px 0 8px;padding-top:6px;border-top:1px solid #e6e
 th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f1efe8}td.n{text-align:right;font-variant-numeric:tabular-nums}
 tbody tr:nth-child(even){background:#faf9f5}pre{white-space:pre-wrap;background:#f6f4ee;padding:12px;border-radius:8px}code{background:#f1efe8;padding:1px 5px;border-radius:4px}
 figure{margin:14px 0}figure img{max-width:100%;border-radius:10px;border:1px solid #e6e3da}figcaption{color:#6b7280;font-size:12.5px;margin-top:4px}
+.panel-hi{background:#0d2540;color:#fff;border:3px solid #ffc83d;border-radius:14px;padding:6px 20px 14px;margin:20px 0;box-shadow:0 6px 18px rgba(13,37,64,.3)}
+.panel-hi h3,.panel-hi h4{color:#ffc83d;border:0;margin:12px 0 6px}.panel-hi p{margin:8px 0}.panel-hi strong,.panel-hi b{color:#ffd978}
+.panel-hi table{background:#12345a;color:#fff}.panel-hi th{background:#1d4a7e;color:#fff;border-color:#3b6ba3}.panel-hi td{border-color:#3b6ba3}.panel-hi tbody tr:nth-child(even){background:#173f6a}
 .sum{background:#f3f7ee;border:1px solid #dbe7cc;border-radius:10px;padding:4px 16px}.st{font-size:12px;color:#fff;border-radius:99px;padding:1px 8px}
 .st.done{background:#2fb67c}.st.failed{background:#e5484d}.st.skipped{background:#8a8f98}.fail{color:#b42318}`;
 

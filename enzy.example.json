@@ -6,6 +6,8 @@
   "SYSTEM": "Facebook Ads",
   "STORE": "HNC Vietnam",
   "ACCOUNTS": ["Enzy 1", "Enzy 2", "Enzy 5", "Enzy 6", "Enzy 8"],
+  "KEYWORDS": [],
+  "TARGETS": {},
   "PROMPT": "prompt/daily-report-enzy-data-prompt.md",
   "SCHEDULE": {
     "enabled": false,

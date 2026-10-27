@@ -182,11 +182,20 @@ function updateBusy() {
   if (!b) { b = document.createElement('span'); b.className = 'busy'; h.append(b); }
   b.replaceChildren(Object.assign(document.createElement('i'), { className: 'spin' }), document.createTextNode(` Đang xử lý (${w.length} agent)…`));
 }
+// Xoá log suy nghĩ + báo cáo cũ của agent khi nó nhận task mới (log của task mới sẽ thay thế).
+function clearAgentLog(id) {
+  const el = els[id]; if (!el) return;
+  if (el.think) { el.think.querySelector('.tlog').replaceChildren(); el.think.classList.remove('open'); el.root.classList.remove('thinkOpen'); thinkHide(id, false); }
+  if (info[id]) info[id].report = '';
+  if (window.townRefresh) window.townRefresh();
+}
 function setAgent(id, status, report) {
   const el = els[id];
   if (!el) return;
   const prev = info[id]?.status;
-  info[id] = { status, report: report || info[id]?.report || '' };
+  // Nhận việc mới (chuyển sang working): bỏ báo cáo/log của việc trước, chỉ giữ nội dung của việc mới.
+  const fresh = status === 'working' && prev !== 'working';
+  info[id] = { status, report: report || (fresh ? '' : info[id]?.report) || '' };
   if (status === 'working' && prev !== 'working' && el.think) { el.think.querySelector('.tlog').replaceChildren(); el.think.classList.remove('open'); el.root.classList.remove('thinkOpen'); thinkHide(id, false); }
   if (status !== 'working' && status !== 'waiting' && el.think && prev) thinkHide(id, true);
   for (const s of Object.keys(STATUS)) el.root.classList.toggle(s, s === status);
@@ -331,6 +340,7 @@ const center = (id) => (POS[id] ? { x: POS[id][0] + 65, y: POS[id][1] + 20 } : n
 
 const links = {}, bubs = [];
 function drawLink(from, to, kind, text) {
+  window.townLink?.(from, to, KIND[kind]?.c, KIND[kind]?.l);   // khu vườn mèo vẽ cùng đường giao việc
   const a = center(from), b = center(to);
   if (!a || !b) return;
   const col = KIND[kind].c, key = `${from}>${to}`;
@@ -434,6 +444,7 @@ function handle(m) {
     case 'think': if (!replaying) addThink(m.id, m.text, m.detail); break;
     case 'log': addSys(`${m.from}: ${m.text}`); break;
     case 'msg':
+      if (m.kind === 'assign' && els[m.to]) clearAgentLog(m.to);   // agent nhận task mới → xoá log cũ
       if (m.kind === 'command') { $('final').hidden = true; $('tasks').replaceChildren(); }
       addFeed(m.from, m.to, m.kind, m.text);
       if (!replaying) queue.push(m);
@@ -669,9 +680,6 @@ $('fbSend').onclick = async () => {
 };
 
 // Dashboard giám sát token: hộp thoại lớn nhúng usage.html (nạp lại mỗi lần mở, dừng tự cập nhật khi đóng).
-$('openJournal').onclick = () => { $('jnFrame').src = 'journal.html'; $('jnDlg').showModal(); };
-$('jnClose').onclick = () => $('jnDlg').close();
-$('jnDlg').addEventListener('close', () => { $('jnFrame').removeAttribute('src'); });
 $('openUsage').onclick = () => { $('usFrame').src = 'usage.html'; $('usDlg').showModal(); };
 $('usClose').onclick = () => $('usDlg').close();
 $('usDlg').addEventListener('close', () => { $('usFrame').removeAttribute('src'); });
@@ -687,7 +695,8 @@ async function openEnzyCfg() {
   $('ezPass').placeholder = c.hasPass ? 'Đã lưu — để trống = giữ nguyên' : 'Nhập mật khẩu';
   $('ezClearRow').hidden = !c.hasPass;
   $('ezBrand').value = c.BRAND; $('ezSystem').value = c.SYSTEM; $('ezStore').value = c.STORE;
-  $('ezAccounts').value = c.ACCOUNTS.join('\n'); $('ezPrompt').value = c.PROMPT; $('ezOwners').value = (c.OWNERS || []).join(', ');
+  $('ezAccounts').value = c.ACCOUNTS.join('\n'); $('ezPrompt').value = c.PROMPT; $('ezOwners').value = (c.OWNERS || []).join(', '); $('ezKeywords').value = (c.KEYWORDS || []).join(', ');
+  for (const k of ['cpa', 'rev', 'ns', 'cpl']) { const t = (c.TARGETS || {})[k]; $(`ezT_${k}_op`).value = t?.op || $(`ezT_${k}_op`).options[0].value; $(`ezT_${k}_v`).value = t ? String(t.value) : ''; }
   $('ezNote').textContent = (c.envCreds ? 'Đang có biến môi trường ENZY_USER/ENZY_PASS: biến này được ưu tiên hơn giá trị ở đây. ' : '') + 'Mật khẩu lưu trong enzy.json (quyền 600), không gửi lại về trình duyệt.';
   ezDlg.showModal();
 }
@@ -698,7 +707,7 @@ $('ezForm').onsubmit = async (ev) => {
   ev.preventDefault();
   const r = await post('enzy/config/save', {
     URL: $('ezUrl').value, USER: $('ezUser').value, PASS: $('ezPass').value, clearPass: $('ezClear').checked,
-    BRAND: $('ezBrand').value, SYSTEM: $('ezSystem').value, STORE: $('ezStore').value, ACCOUNTS: $('ezAccounts').value, OWNERS: $('ezOwners').value, PROMPT: $('ezPrompt').value,
+    BRAND: $('ezBrand').value, SYSTEM: $('ezSystem').value, STORE: $('ezStore').value, ACCOUNTS: $('ezAccounts').value, OWNERS: $('ezOwners').value, KEYWORDS: $('ezKeywords').value, TARGETS: Object.fromEntries(['cpa', 'rev', 'ns', 'cpl'].map((k) => [k, { op: $(`ezT_${k}_op`).value, value: $(`ezT_${k}_v`).value }])), PROMPT: $('ezPrompt').value,
   });
   if (r.ok) { const t = await r.text(); $('ezPass').value = ''; ezDlg.close(); addSys('Đã lưu cấu hình Enzy. Áp dụng từ lần chạy báo cáo kế tiếp.' + (t.startsWith('ok:') ? ' ' + t.slice(4) + '.' : '')); } else $('ezErr').textContent = await r.text();
 };
