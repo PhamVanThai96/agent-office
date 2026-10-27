@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quét Trend &amp; Tạo Idea · Agent Office</title>
+<style>
+:root{--bg:#f1efe8;--panel:#fff;--ink:#232834;--mute:#667085;--line:#e4e1d8;--soft:#f6f4ee;--accent:#a35a14;--good:#14795f;--warn:#a15c00;--bad:#8a3a37;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#12161c;--panel:#1b222b;--ink:#e8edf2;--mute:#9aa8b6;--line:#2b3541;--soft:#222b36;--accent:#e0a35d;--good:#5fd1b0;--warn:#f0c463;--bad:#ff9b92;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:20px 18px 40px}h1{margin:0;font-size:22px}.sub{color:var(--mute);font-size:13px;margin:2px 0 14px;max-width:820px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.sp{flex:1}
+.btn{height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 14px;cursor:pointer}.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}.btn.danger{color:var(--bad)}.btn:disabled{opacity:.5;cursor:default}
+.src{display:flex;gap:8px;align-items:baseline;padding:4px 0}.tag{font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--soft);flex:none}.tag.ok{color:var(--good)}.tag.error{color:var(--bad)}.tag.skipped{color:var(--warn)}
+.log{font:12px/1.5 ui-monospace,Menlo,monospace;background:var(--soft);border-radius:10px;padding:8px 10px;max-height:220px;overflow:auto;white-space:pre-wrap}.log .err{color:var(--bad)}.log .ok{color:var(--good)}.log .warn{color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;vertical-align:top;padding:7px 8px;border-top:1px solid var(--line)}th{color:var(--mute);font-weight:600;font-size:12px;position:sticky;top:0;background:var(--panel)}
+.tabs{display:flex;gap:6px;margin:10px 0}.tabs button{height:32px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 14px;cursor:pointer}.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+input[type=search],select,.note{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 8px}.note{width:100%;min-width:120px}
+.det{white-space:pre-wrap;color:var(--mute);font-size:12.5px;max-width:520px}.chip{font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--mute);display:inline-block;margin:1px 2px 1px 0}.wrap{overflow:auto;max-height:62vh}
+.idea{padding:3px 0;border-top:1px solid var(--line)}.idea small{color:var(--mute)}a{color:var(--accent)}
+</style></head>
+<body><main>
+<h1>Quét Trend &amp; Tạo Idea</h1>
+<div class="sub">Mỗi lần bấm: cập nhật <b>Ý kiến khách hàng</b> (Enzy) và <b>Brands Vietnam</b> (bài trong 3 ngày gần nhất, nếu có mới), nguồn nào lỗi/quá thời gian thì bỏ qua và làm tiếp nguồn khác, rồi team viết báo cáo trend + idea mới trong ngày. Idea đã đề xuất các ngày trước được đưa vào prompt để không lặp lại.</div>
+<div class="card"><div class="row"><button class="btn pri" id="run">🔥 Quét Trend &amp; Tạo Idea</button><button class="btn danger" id="stop" hidden>Dừng</button><button class="btn" id="vaultBtn">📚 Kho insight</button><span class="sp"></span><span id="step" class="sub" style="margin:0"></span></div>
+<div class="sub" style="margin:10px 0 0">Brands Vietnam dùng Cloudflare: nếu cửa sổ Chrome hiện trang xác minh, hãy tự bấm qua (chờ tối đa 4 phút, không thì bỏ qua nguồn này).</div></div>
+<div class="card" id="vault" hidden>
+  <div class="row"><b style="font-size:16px">📚 Kho insight</b><span class="sp"></span><input type="search" id="q" placeholder="Tìm trong bảng…" style="width:220px"><button class="btn" id="vaultClose">Đóng kho</button></div>
+  <div class="tabs"><button data-t="ideas" class="on">Idea đã đề xuất</button><button data-t="themes">Insight khách hàng</button><button data-t="articles">Case-study & kiến thức</button></div>
+  <div class="row" id="ideaFilter" style="margin-bottom:6px"><label>Trạng thái <select id="st"><option value="">Tất cả</option><option value="moi">Mới</option><option value="se-lam">Sẽ làm</option><option value="da-dung">Đã dùng</option><option value="bo">Bỏ</option></select></label><span class="sub" style="margin:0" id="cnt"></span></div>
+  <div class="row" style="margin-bottom:6px"><span class="sub" style="margin:0">Đã chọn <b id="selN">0</b> mục (giữ nguyên khi đổi tab)</span><span class="sp"></span><select id="fmt"><option value="md">Markdown (.md)</option><option value="csv">Excel/CSV (.csv)</option><option value="yaml">YAML (.yaml)</option></select><button class="btn pri" id="exp" disabled>⬇ Tải file đã chọn</button><button class="btn" id="clr" disabled>Bỏ chọn</button></div>
+  <div class="wrap" id="tbl"></div>
+</div>
+<div class="card"><b>Lượt gần nhất</b><div id="last" class="sub"></div><div class="log" id="log" hidden></div></div>
+</main>
+<script src="admin.js"></script>
+<script>
+const $=(i)=>document.getElementById(i);const esc=(s)=>String(s??'').replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function post(p){const r=await (window.adminFetch||fetch)(p,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});const t=await r.text();if(t!=='ok')alert(t);load()}
+async function load(){const s=await (await fetch('/daily/status',{cache:'no-store'})).json();const run=!!s.running;$('run').disabled=run;$('stop').hidden=!run;$('step').textContent=run?s.running.step:'';
+ const l=s.last;$('last').innerHTML=l?`${esc(new Date(l.at).toLocaleString('vi-VN'))} — ${l.ok?'đã tạo báo cáo ('+l.ideas+' idea)':'chưa tạo được báo cáo: '+esc(l.error||'')}${l.report?` · <a href="/${esc(l.report)}" target="_blank">Mở báo cáo</a>`:''}`+(l.sources||[]).map(x=>`<div class="src"><span class="tag ${x.status}">${x.status==='ok'?'OK':x.status==='skipped'?'Bỏ qua':'Lỗi — bỏ qua'}</span><span><b>${esc(x.label)}</b> — ${esc(x.note)}</span></div>`).join(''):'Chưa chạy lần nào.';
+ $('log').hidden=!s.log.length;$('log').innerHTML=s.log.map(x=>`<div class="${x.level}">${esc(new Date(x.at).toLocaleTimeString('vi-VN'))} ${esc(x.text)}</div>`).join('');
+ }
+let V=null,tab='ideas',shown=[];const sel=new Set();const ck=(k)=>`<input type="checkbox" data-k="${esc(k)}"${sel.has(k)?' checked':''}>`;
+const rows_=()=>[...document.querySelectorAll('#tbl [data-k]')].map(e=>e.dataset.k);
+function sync(){const all=document.querySelector('#tbl .all');if(all){all.checked=shown.length>0&&shown.every(k=>sel.has(k));}$('selN').textContent=sel.size;$('exp').disabled=!sel.size;$('clr').disabled=!sel.size}
+const STL={moi:'Mới','se-lam':'Sẽ làm','da-dung':'Đã dùng',bo:'Bỏ'};
+const has=(o,q)=>!q||JSON.stringify(o).toLowerCase().includes(q.toLowerCase());
+async function loadVault(){V=await (await fetch('/daily/vault',{cache:'no-store'})).json();draw()}
+function draw(){if(!V)return;const q=$('q').value.trim();$('ideaFilter').hidden=tab!=='ideas';let h='',n=0;
+ if(tab==='ideas'){const st=$('st').value;const rows=V.ideas.filter(i=>(!st||i.status===st)&&has(i,q));n=rows.length;
+  h='<table><tr><th><input type="checkbox" class="all"></th><th>Ngày</th><th>Idea</th><th>Insight · hook · CTA</th><th>Trạng thái</th><th>Ghi chú</th><th></th></tr>'+rows.map(i=>`<tr><td>${ck('i:'+i.id)}</td><td>${esc(i.day)}</td><td><b>${esc(i.title)}</b>${i.report?`<div><a href="/${esc(i.report)}" target="_blank">Báo cáo</a></div>`:''}</td><td class="det">${esc(i.detail)}</td><td><select data-id="${esc(i.id)}" data-f="status">${Object.entries(STL).map(([k,v])=>`<option value="${k}"${k===i.status?' selected':''}>${v}</option>`).join('')}</select></td><td><input class="note" data-id="${esc(i.id)}" data-f="note" value="${esc(i.note||'')}" placeholder="Ghi chú…"></td><td><button class="btn danger" data-del="${esc(i.id)}" title="Xoá khỏi kho (idea sẽ có thể được đề xuất lại)">Xoá</button></td></tr>`).join('')+'</table>'}
+ else if(tab==='themes'){const rows=V.themes.filter(t=>has(t,q));n=rows.length;
+  h='<table><tr><th><input type="checkbox" class="all"></th><th>Chủ đề</th><th>Loại · phễu</th><th>Số khách</th><th>Thấy từ → gần nhất</th><th>Điểm chạm gợi ý</th><th>Trích dẫn (ẩn danh)</th></tr>'+rows.map(t=>`<tr><td>${ck('t:'+t.id)}</td><td><b>${esc(t.label)}</b>${t.product?`<div class="det">${esc(t.product)}</div>`:''}</td><td><span class="chip">${esc(t.type)}</span><span class="chip">${esc(t.stage)}</span></td><td>${t.count}</td><td>${esc(t.firstSeen)} → ${esc(t.lastSeen)}</td><td class="det">${esc(t.touchpoint)}</td><td class="det">${t.quotes.map(x=>'“'+esc(x)+'”').join('\n')}</td></tr>`).join('')+'</table>'}
+ else{const rows=V.articles.filter(a=>has(a,q));n=rows.length;
+  h='<table><tr><th><input type="checkbox" class="all"></th><th>Bài</th><th>Insight · big idea</th><th>Bài học cho Enzy · góc content</th><th>Thẻ</th></tr>'+rows.map(a=>`<tr><td>${ck('a:'+a.source+'/'+a.id)}</td><td><a href="${esc(a.url)}" target="_blank" rel="noopener"><b>${esc(a.title)}</b></a><div class="det">${esc(a.source)} · ${esc(a.saved)}${a.brand?' · '+esc(a.brand):''}</div></td><td class="det">${esc(a.insight||a.summary)}${a.big_idea?'\nBig idea: '+esc(a.big_idea):''}</td><td class="det">${esc([...a.lessons,...a.angles].join('\n'))}</td><td>${a.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</td></tr>`).join('')+'</table>'}
+ $('cnt').textContent=n+' dòng';$('tbl').innerHTML=n?h:'<div class="sub" style="padding:12px">Chưa có dữ liệu.</div>';shown=rows_();sync()}
+$('vaultBtn').onclick=()=>{$('vault').hidden=false;loadVault()};$('vaultClose').onclick=()=>{$('vault').hidden=true};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));draw()});
+$('q').oninput=$('st').onchange=draw;
+async function upd(body){const r=await (window.adminFetch||fetch)('/daily/idea',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const t=await r.text();if(t!=='ok')alert(t);loadVault()}
+$('tbl').addEventListener('change',e=>{const el=e.target;
+ if(el.classList.contains('all')){shown.forEach(k=>el.checked?sel.add(k):sel.delete(k));document.querySelectorAll('#tbl [data-k]').forEach(c=>c.checked=el.checked);sync();return}
+ if(el.dataset.k){el.checked?sel.add(el.dataset.k):sel.delete(el.dataset.k);sync();return}
+ if(el.dataset.id)upd({id:el.dataset.id,[el.dataset.f]:el.value})});
+$('tbl').addEventListener('click',e=>{const id=e.target.dataset?.del;if(id&&confirm('Xoá idea này khỏi kho?'))upd({id,delete:true})});
+function picked(){const out=[];
+ for(const i of V.ideas)if(sel.has('i:'+i.id))out.push({loai:'Idea',tieu_de:i.title,ngay:i.day,noi_dung:i.detail,trang_thai:STL[i.status]||i.status,ghi_chu:i.note||'',nguon:i.report||''});
+ for(const t of V.themes)if(sel.has('t:'+t.id))out.push({loai:'Insight khách hàng',tieu_de:t.label,ngay:t.lastSeen,noi_dung:`${t.type} · ${t.stage} · ${t.count} khách\nĐiểm chạm: ${t.touchpoint||''}\nTrích dẫn: ${t.quotes.join(' | ')}`,trang_thai:'',ghi_chu:'',nguon:''});
+ for(const a of V.articles)if(sel.has('a:'+a.source+'/'+a.id))out.push({loai:'Case-study',tieu_de:a.title,ngay:a.saved,noi_dung:[a.brand&&'Thương hiệu: '+a.brand,a.insight&&'Insight: '+a.insight,a.big_idea&&'Big idea: '+a.big_idea,a.lessons.length&&'Bài học cho Enzy: '+a.lessons.join('; '),a.angles.length&&'Góc content: '+a.angles.join('; '),a.results.length&&'Kết quả: '+a.results.join('; ')].filter(Boolean).join('\n'),trang_thai:'',ghi_chu:'',nguon:a.url});
+ return out}
+const q_=(v)=>'"'+String(v??'').replace(/"/g,'""')+'"';
+function build(fmt,rows){
+ if(fmt==='csv'){const cols=['loai','tieu_de','ngay','noi_dung','trang_thai','ghi_chu','nguon'];return '\ufeff'+[cols.join(','),...rows.map(r=>cols.map(c=>q_(r[c])).join(','))].join('\r\n')}
+ if(fmt==='yaml')return rows.map(r=>'- '+Object.entries(r).map(([k,v],n)=>`${n?'  ':''}${k}: ${/\n/.test(v)?'|-\n'+String(v).split('\n').map(l=>'      '+l).join('\n'):JSON.stringify(String(v))}`).join('\n')).join('\n')+'\n';
+ return `# Kho insight — xuất ${new Date().toLocaleString('vi-VN')}\n\n`+rows.map(r=>`## ${r.tieu_de}\n*${r.loai}${r.ngay?' · '+r.ngay:''}${r.trang_thai?' · '+r.trang_thai:''}*\n\n${r.noi_dung}\n${r.ghi_chu?'\nGhi chú: '+r.ghi_chu+'\n':''}${r.nguon?'\nNguồn: '+r.nguon+'\n':''}`).join('\n---\n\n')}
+$('exp').onclick=()=>{const rows=picked();if(!rows.length)return;const fmt=$('fmt').value,mime={md:'text/markdown',csv:'text/csv',yaml:'text/yaml'}[fmt];
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([build(fmt,rows)],{type:mime+';charset=utf-8'}));a.download=`kho-insight-${new Date().toISOString().slice(0,10)}.${fmt}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)};
+$('clr').onclick=()=>{sel.clear();draw()};
+$('run').onclick=()=>post('/daily/run');$('stop').onclick=()=>post('/daily/stop');load();setInterval(load,2500);
+</script></body></html>

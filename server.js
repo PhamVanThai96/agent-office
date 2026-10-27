@@ -18,6 +18,9 @@ import { templates } from './routing.js';
 import { skillsFor } from './skills.js';
 import { createEnzy, saveSchedule, saveConfig as saveEnzyConfig, publicConfig as enzyConfig } from './enzy/index.js';
 import { createInsight, saveInsightStart } from './insight/index.js';
+import { createKnowledge } from './knowledge/index.js';
+import { createDaily, updateIdea } from './daily/index.js';
+import { saveConfig as saveKnowledgeConfig } from './knowledge/store.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const PORT = CONFIG.port;
@@ -174,6 +177,8 @@ const askCeo = (payload) => new Promise((resolve) => {
 });
 // Kho "Ý kiến khách hàng" (cào tuần tự ≤ 7 ngày, chắt lọc thành insight): xem insight/index.js.
 const insight = createInsight({ log: (text) => emit({ type: 'log', from: 'Insight', text }), wrap: (label, fn) => withRequest(label, fn) });
+// Kho kiến thức marketing (Brands Vietnam): knowledge/index.js.
+const knowledge = createKnowledge({ log: (text) => emit({ type: 'log', from: 'Kiến thức', text }), wrap: (label, fn) => withRequest(label, fn) });
 const run = createOrchestrator({ emit, state, ask: askCeo, insight });
 
 // Sau mỗi yêu cầu: agent tự cập nhật kỹ năng (hợp nhất bài học, nén skill khi đủ điều kiện) — chạy nền, token ghi riêng trong dashboard.
@@ -200,6 +205,13 @@ const enzy = createEnzy({
   submit: (task, ids, opts) => startRun(task, attachmentsOf(ids), opts),
   uploadsDir: UPLOADS,
   log: (text) => emit({ type: 'log', from: 'Enzy', text }),
+});
+
+// Quét Trend & Tạo Idea hằng ngày (nhiều nguồn, nguồn lỗi thì bỏ qua, chống trùng idea): daily/index.js.
+const daily = createDaily({
+  insight, knowledge, isBusy: () => busy, uploadsDir: UPLOADS,
+  submit: (task, ids, opts) => startRun(task, attachmentsOf(ids), opts),
+  log: (text) => emit({ type: 'log', from: 'Trend & Idea', text }),
 });
 
 const readJson = (req) => new Promise((resolve) => {
@@ -232,6 +244,18 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/enzy/status') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzy.statusFull()));
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/daily/status') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(daily.status()));
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/daily/vault') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(daily.vault()));
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/knowledge/status') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(knowledge.status()));
     return;
   }
   if (req.method === 'GET' && url.pathname === '/usage') {
@@ -524,6 +548,29 @@ const server = http.createServer(async (req, res) => {
         else if (url.pathname === '/insight/excel') { const started = insight.startExcel({ from: String(b.from || ''), to: String(b.to || ''), mode: String(b.mode || 'saved') }); res.writeHead(200).end(started ? 'ok' : 'Đang lấy ý kiến khách hàng, hãy chờ xong.'); }
         else if (url.pathname === '/insight/run') { const started = insight.start(String(b.mode)); res.writeHead(200).end(started ? 'ok' : 'Đang cào ý kiến khách hàng, hãy chờ xong.'); }
         else { saveInsightStart(b.start); res.writeHead(200).end('ok'); }
+      } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
+      return;
+    }
+    if (url.pathname === '/daily/idea') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      try { updateIdea(String(b.id || ''), { status: b.status, note: b.note, delete: b.delete === true }); res.writeHead(200).end('ok'); } catch (e) { res.writeHead(400).end(e.message); }
+      return;
+    }
+    if (url.pathname === '/daily/run' || url.pathname === '/daily/stop') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      try {
+        if (url.pathname === '/daily/stop') res.writeHead(200).end(daily.stop() ? 'ok' : 'Không có lượt quét nào đang chạy.');
+        else res.writeHead(200).end((await daily.start()) ? 'ok' : 'Đang quét, hãy chờ xong.');
+      } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
+      return;
+    }
+    if (url.pathname === '/knowledge/run' || url.pathname === '/knowledge/stop' || url.pathname === '/knowledge/config' || url.pathname === '/knowledge/rebuild') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      try {
+        if (url.pathname === '/knowledge/stop') { const s = knowledge.stop(); res.writeHead(200).end(s ? 'ok' : 'Không có lượt quét nào đang chạy.'); }
+        else if (url.pathname === '/knowledge/rebuild') { knowledge.rebuild(); res.writeHead(200).end('ok'); }
+        else if (url.pathname === '/knowledge/run') { const s = knowledge.start({ source: String(b.source || 'all'), perRun: b.perRun }); res.writeHead(200).end(s ? 'ok' : 'Đang quét, hãy chờ xong.'); }
+        else { saveKnowledgeConfig({ enabled: b.enabled === true, time: b.time, perRun: b.perRun }); res.writeHead(200).end('ok'); }
       } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
       return;
     }

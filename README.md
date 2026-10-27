@@ -28,7 +28,7 @@ Chỉ cần cài **Node.js 20+** (https://nodejs.org). Sau đó bấm đúp `Kho
 - File bí mật/dữ liệu **không nằm trong git** (`config.json`, `enzy.json`, `permissions.json`, `memory.json`, `data/` gồm `data/admin.json`, `uploads/`, `reports/`): trên máy mới hãy `cp config.example.json config.json` và `cp enzy.example.json enzy.json`, rồi nhập khoá/tài khoản ở giao diện (⚙ Cấu hình) và tạo lại Admin (🔐 hoặc `node scripts/set-admin.mjs`).
 - Lấy số liệu Enzy dùng **Google Chrome** có sẵn trên máy (cài Chrome nếu chưa có).
 - Dùng AI bằng CLI (claude/codex đã đăng nhập sẵn trên máy đó) hoặc API (điền khoá ở ⚙ Cấu hình).
-- **Tuỳ chọn – transcript video** (công cụ `video_transcribe`): chạy một lần `bash scripts/setup-media.sh` (cần Python 3.9+, tải ~100MB thư viện; mô hình Whisper ~480MB tự tải ở lần dùng đầu). Không cài thì mọi tính năng khác vẫn chạy bình thường.
+- **Tuỳ chọn – transcript video** (công cụ `video_transcribe`): chạy một lần `bash scripts/setup-media.sh` (cần CPython 3.9–3.13; hỗ trợ Intel macOS 10.13+ và Apple Silicon macOS 11+; PyAV dùng wheel dựng sẵn, không cần cài ffmpeg/pkg-config để build; mô hình Whisper ~480MB tự tải ở lần dùng đầu). Không cài thì mọi tính năng khác vẫn chạy bình thường.
 
 ## Chạy nhanh trên Mac (không cần gõ lệnh)
 

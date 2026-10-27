@@ -667,6 +667,13 @@ $('openMemory').onclick = () => { $('memFrame').src = 'memory.html'; $('memDlg')
 $('memClose').onclick = () => $('memDlg').close();
 $('memDlg').addEventListener('close', () => { $('memFrame').removeAttribute('src'); });
 
+$('openIdea').onclick = () => { $('idFrame').src = 'daily.html'; $('idDlg').showModal(); };
+$('idClose').onclick = () => $('idDlg').close();
+$('idDlg').addEventListener('close', () => { $('idFrame').removeAttribute('src'); });
+$('openKnow').onclick = () => { $('knFrame').src = 'knowledge.html'; $('knDlg').showModal(); };
+$('knClose').onclick = () => $('knDlg').close();
+$('knDlg').addEventListener('close', () => { $('knFrame').removeAttribute('src'); });
+
 // Đánh giá của CEO cho kết quả vừa xong → bài học cho các agent đã tham gia.
 let fbRating = '';
 const fbPick = (r) => { fbRating = r; $('fbGood').classList.toggle('on', r === 'good'); $('fbBad').classList.toggle('on', r === 'bad'); };

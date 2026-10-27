@@ -33,6 +33,7 @@
     <button id="openOffice" type="button" class="main" title="Thêm agent, cấu hình AI, dữ liệu Enzy"><i>⚙</i><b>Cấu hình</b></button>
     <button id="openUsage" type="button" title="Giám sát token đã dùng theo model, theo yêu cầu, theo tháng"><i>🪙</i><b>Giám sát token</b></button>
     <button id="openReport" type="button" class="wide" title="Tạo báo cáo quảng cáo Enzy theo ngày / tuần / tháng, xem nhật ký"><i>📈</i><b>Tạo báo cáo</b></button>
+    <button id="openIdea" type="button" class="wide" title="Mỗi ngày: thu thập Ý kiến khách hàng + Brands Vietnam (3 ngày), rồi tạo báo cáo idea mới, không lặp"><i>🔥</i><b>Quét Trend &amp; Tạo Idea</b></button>
   </div>
   <div id="mode"></div>
   <div id="tkn" class="tk" role="button" tabindex="0" title="Bấm để mở dashboard giám sát token" hidden></div>
@@ -110,6 +111,7 @@
     <button id="openCfg" type="button"><i>⚙</i><span><b>Cấu hình AI</b><small>Chọn nhà cung cấp, model, kết nối API hoặc CLI, đăng nhập CLI</small></span></button>
     <button id="openAdmin" type="button"><i>🔐</i><span><b>Quản trị (Admin)</b><small>Admin ID &amp; mật khẩu bảo vệ việc sửa/xoá agent và đổi cấu hình; đổi mật khẩu, đăng xuất</small></span></button>
     <button id="openMemory" type="button"><i>🧠</i><span><b>Trí nhớ &amp; kỹ năng agent</b><small>Sổ tay kinh nghiệm tự cập nhật của từng agent, bài học, nén skill</small></span></button>
+    <button id="openKnow" type="button"><i>📚</i><span><b>Kho kiến thức marketing</b><small>Quét case-study &amp; chiến dịch Brands Vietnam → YAML, digest ngày/tuần cho agent</small></span></button>
     <button id="openEnzy" type="button"><i>📊</i><span><b>Dữ liệu Enzy</b><small>Tài khoản đăng nhập, tài khoản quảng cáo, người thực hiện, prompt báo cáo</small></span></button>
   </div>
   <div class="gfx">
@@ -121,6 +123,14 @@
 <dialog id="memDlg">
   <div class="usHead"><b>Trí nhớ &amp; kỹ năng agent</b><span></span><a id="memOpen" href="memory.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="memClose" type="button" class="ghost">Đóng</button></div>
   <iframe id="memFrame" title="Trí nhớ và kỹ năng agent"></iframe>
+</dialog>
+<dialog id="knDlg">
+  <div class="usHead"><b>Kho kiến thức marketing</b><span></span><a href="knowledge.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="knClose" type="button" class="ghost">Đóng</button></div>
+  <iframe id="knFrame" title="Kho kiến thức marketing"></iframe>
+</dialog>
+<dialog id="idDlg">
+  <div class="usHead"><b>Quét Trend &amp; Tạo Idea</b><span></span><a href="daily.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="idClose" type="button" class="ghost">Đóng</button></div>
+  <iframe id="idFrame" title="Quét Trend và Tạo Idea"></iframe>
 </dialog>
 <dialog id="usDlg">
   <div class="usHead"><b>Giám sát token</b><span></span><a id="usOpen" href="usage.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="usClose" type="button" class="ghost">Đóng</button></div>

@@ -22,3 +22,8 @@ images/code.md
 
 # Môi trường Python cho transcript video (yt-dlp + faster-whisper)
 tools/venv/
+
+# Kho kiến thức Brands Vietnam (bản tóm tắt cục bộ) và 2 skill sinh tự động từ kho
+knowledge/data/
+skills/86-knowledge-casestudies.yaml
+skills/87-knowledge-digest.yaml
