@@ -560,10 +560,15 @@ const server = http.createServer(async (req, res) => {
       try { updateIdea(String(b.id || ''), { status: b.status, note: b.note, delete: b.delete === true }); res.writeHead(200).end('ok'); } catch (e) { res.writeHead(400).end(e.message); }
       return;
     }
-    if (url.pathname === '/daily/run' || url.pathname === '/daily/stop') {
+    if (url.pathname === '/daily/scan/config') {   // đã qua cổng Admin + nhập lại mật khẩu (adminauth.NEEDS_REAUTH)
+      try { daily.saveScan(b); res.writeHead(200).end('ok'); } catch (e) { res.writeHead(400).end(e.message); }
+      return;
+    }
+    if (url.pathname === '/daily/run' || url.pathname === '/daily/stop' || url.pathname === '/daily/scan') {
       if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
       try {
         if (url.pathname === '/daily/stop') res.writeHead(200).end(daily.stop() ? 'ok' : 'Không có lượt quét nào đang chạy.');
+        else if (url.pathname === '/daily/scan') res.writeHead(200).end(daily.startScan() ? 'ok' : 'Đang có lượt quét khác, hãy chờ xong.');
         else res.writeHead(200).end((await daily.start()) ? 'ok' : 'Đang quét, hãy chờ xong.');
       } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
       return;

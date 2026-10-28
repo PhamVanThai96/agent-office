@@ -61,8 +61,9 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
     return scrapeVoc({ url: cfg.c.URL, user, pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from: win.from, to: win.to, ctl: c });
   }
 
-  function planWindows(mode, cfg, ledger, max) {
+  function planWindows(mode, cfg, ledger, max, range) {
     const yest = S.yesterday();
+    if (mode === 'range') return S.nextWindows(ledger, range.from, range.to, 60);   // chỉ các ngày CHƯA cào trong khoảng → loại trừ trùng lặp
     if (!ledger.start) ledger.start = cfg.START || S.addDays(yest, -(DEFAULT_BACKFILL_DAYS - 1));
     if (cfg.START) ledger.start = cfg.START;
     let from = ledger.start, limit = 1;
@@ -71,15 +72,15 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
     return S.nextWindows(ledger, from, yest, limit);
   }
 
-  async function doRun(mode, { max, onProgress } = {}) {
+  async function doRun(mode, { max, onProgress, range } = {}) {
     runLog.length = 0; // xoá nhật ký cũ trước khi bắt đầu lượt mới
     ctl = { stopped: stopReq, browser: null };
     stopReq = false;
     const cfg = insightConfig();
     const ledger = S.loadLedger();
-    const wins = planWindows(mode, cfg, ledger, max);
+    const wins = planWindows(mode, cfg, ledger, max, range);
     if (ledger.lastError) { ledger.lastError = ''; S.saveLedger(ledger); } // lỗi cũ không còn hiển thị khi đã bắt đầu lượt mới
-    if (!wins.length) { running = null; ctl = null; rl('Đã cập nhật tới hôm qua, không có khoảng nào cần cào.', 'ok'); return { ok: true, windows: 0, customers: 0, note: 'Đã cập nhật tới hôm qua.' }; }
+    if (!wins.length) { running = null; ctl = null; const note = mode === 'range' ? 'Khoảng ngày này đã được cào trước đó, không có dữ liệu mới (đã loại trừ trùng lặp).' : 'Đã cập nhật tới hôm qua.'; rl(mode === 'range' ? note : 'Đã cập nhật tới hôm qua, không có khoảng nào cần cào.', 'ok'); return { ok: true, windows: 0, customers: 0, note }; }
     const done = { ok: true, windows: 0, customers: 0, newCustomers: 0, themes: 0, via: '', notes: [] };
     rl(`Bắt đầu cào ${wins.length} khoảng: ${wins.map((w) => `${S.vn(w.from)}–${S.vn(w.to)}`).join(', ')}.`);
     for (const [i, win] of wins.entries()) {
@@ -159,6 +160,17 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
     return true;
   }
 
+  /** Cào ý kiến khách hàng cho khoảng ngày từ–đến (chỉ phần chưa cào; khách/dòng đã thấy bị loại trừ). Promise<kết quả> hoặc false nếu đang bận. */
+  function runRange({ from, to, onProgress } = {}) {
+    if (!S.parseIso(from) || !S.parseIso(to) || from > to) throw new Error('Khoảng ngày không hợp lệ (cần từ ≤ đến).');
+    if (to > S.yesterday()) throw new Error('Ngày kết thúc không được muộn hơn hôm qua.');
+    if (running) return false;
+    runLog.length = 0;
+    running = { mode: 'range', step: 'Đang chuẩn bị…', since: Date.now() };
+    return exclusive(() => wrap('Cào ý kiến khách hàng', () => doRun('range', { range: { from, to }, onProgress })))
+      .catch((e) => { running = null; ctl = null; return { ok: false, windows: 0, error: e.message }; });
+  }
+
   /** Lấy Excel "Tải Excel đầy đủ" cho một khoảng ngày bất kỳ → lưu YAML ẩn danh (data/insight/voc/). Chạy nền; false nếu đang bận. */
   function startExcel({ from, to, mode = 'saved' } = {}) {
     if (!S.parseIso(from) || !S.parseIso(to) || from > to) throw new Error('Khoảng ngày không hợp lệ (cần dạng YYYY-MM-DD, từ ≤ đến).');
@@ -226,5 +238,5 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
 
   const search = (query, limit) => S.searchKb(S.loadKb(), S.loadLedger(), query, limit);
 
-  return { status, start, startExcel, stop, ensureFresh, context, search, running: () => running };
+  return { status, start, startExcel, runRange, stop, ensureFresh, context, search, running: () => running };
 }

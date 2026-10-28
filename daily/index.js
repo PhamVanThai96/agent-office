@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { digestText, loadArticles } from '../knowledge/store.js';
-import { loadKb, TYPE_LABEL, STAGE_LABEL } from '../insight/store.js';
+import { digestText, loadArticles, loadConfig as loadKnCfg, saveConfig as saveKnCfg } from '../knowledge/store.js';
+import { insightConfig, saveInsightStart } from '../insight/index.js';
+import { loadKb, TYPE_LABEL, STAGE_LABEL, parseIso, yesterday, vn } from '../insight/store.js';
 
 // "Quét Trend & Tạo Idea": mỗi ngày gom số liệu từ nhiều nguồn (ý kiến khách hàng Enzy, Brands Vietnam 3 ngày gần nhất), nguồn nào lỗi/timeout thì BỎ QUA và làm tiếp nguồn khác,
 // rồi giao cho team viết báo cáo trend + idea mới trong ngày. Kho idea đã đề xuất (data/daily/ideas.json) được đưa vào prompt để không lặp lại qua nhiều ngày.
@@ -12,6 +13,8 @@ const HISTORY = path.join(DIR, 'ideas.json');
 const STATE = path.join(DIR, 'state.json');
 const SOURCE_TIMEOUT = { voc: 15 * 60 * 1000, brands: 20 * 60 * 1000 };
 const KEEP_DAYS = 45;
+const SCAN = path.join(DIR, 'scan.json');
+const DEFAULT_SCAN = { voc: true, brands: true, campaign: true, library: true, from: '', to: '', savedAt: '' };
 
 const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return d; } };
 const writeJson = (f, o) => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f + '.tmp', JSON.stringify(o, null, 1)); fs.renameSync(f + '.tmp', f); };
@@ -19,6 +22,42 @@ const today = () => new Date().toISOString().slice(0, 10);
 const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const tokens = (s) => new Set(norm(s).split(' ').filter((w) => w.length > 2));
 const similar = (a, b) => { const x = tokens(a), y = tokens(b); if (!x.size || !y.size) return false; let n = 0; for (const w of x) if (y.has(w)) n++; return n / Math.min(x.size, y.size) >= 0.7; };
+
+// Cấu hình quét (người dùng chọn nguồn + loại bài + khoảng ngày; lưu cần mật khẩu Admin, xem server.js/adminauth.js).
+export const loadScan = () => ({ ...DEFAULT_SCAN, ...readJson(SCAN, {}) });
+export function validateScan(c) {
+  const o = { voc: c.voc === true, brands: c.brands === true, campaign: c.campaign === true, library: c.library === true, from: String(c.from || ''), to: String(c.to || '') };
+  if (!o.voc && !o.brands) throw new Error('Chọn ít nhất một nguồn: Ý kiến khách hàng hoặc Brands Vietnam.');
+  if (o.brands && !o.campaign && !o.library) throw new Error('Brands Vietnam: chọn Campaign, Library hoặc cả hai.');
+  if (!o.brands) { o.campaign = false; o.library = false; }
+  if (o.voc) {
+    if (!parseIso(o.from) || !parseIso(o.to)) throw new Error('Ý kiến khách hàng: chọn khoảng ngày (từ – đến).');
+    if (o.from > o.to) throw new Error('Ngày bắt đầu không được sau ngày kết thúc.');
+    if (o.to > yesterday()) throw new Error('Ngày kết thúc không được muộn hơn hôm qua.');
+    if (o.from < '2020-01-01') throw new Error('Ngày bắt đầu quá xa.');
+  } else { o.from = ''; o.to = ''; }
+  return o;
+}
+export function saveScan(c) { const o = { ...validateScan(c), savedAt: new Date().toISOString() }; writeJson(SCAN, o); return o; }
+
+// Một chỗ cấu hình duy nhất: chọn nguồn + số bài mỗi lượt + tự quét hằng ngày (Brands Vietnam) + mốc ngày bắt đầu cào (Ý kiến khách hàng).
+// Phần số bài/tự quét ghi vào cấu hình của kho kiến thức, mốc ngày ghi vào enzy.json (INSIGHT.START) — nơi các module đó vẫn đọc.
+export function loadScanAll() {
+  const k = loadKnCfg();
+  return { ...loadScan(), perRun: k.perRun, autoEnabled: k.enabled, autoTime: k.time, vocStart: insightConfig().START };
+}
+export function saveScanAll(b) {
+  const o = validateScan(b);
+  const perRun = Number(b.perRun);
+  if (!Number.isInteger(perRun) || perRun < 1 || perRun > 30) throw new Error('Số bài mới mỗi lượt phải từ 1 đến 30.');
+  const time = String(b.autoTime || '');
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Giờ tự quét phải có dạng HH:MM.');
+  if (o.voc) saveInsightStart(String(b.vocStart || ''));   // tự kiểm tra và ném lỗi TRƯỚC khi ghi bất kỳ thứ gì
+  saveKnCfg({ enabled: b.autoEnabled === true, time, perRun });
+  saveScan(b);
+  return loadScanAll();
+}
+const brandsSource = (c) => (c.campaign && c.library ? 'all' : c.campaign ? 'campaign' : 'library');
 
 export const loadHistory = () => readJson(HISTORY, { ideas: [] }).ideas;
 
@@ -90,14 +129,15 @@ export function createDaily({ insight, knowledge, submit, isBusy, uploadsDir, lo
 
   async function doRun() {
     runLog.length = 0; stopReq = false;
-    const results = [];
-    await step('voc', 'Ý kiến khách hàng (Enzy)', () => withTimeout((async () => {
+    const results = [], cfg = loadScan();
+    await step('voc', 'Ý kiến khách hàng (Enzy)', () => !cfg.voc ? { status: 'skipped', note: 'đang tắt trong cấu hình quét' } : withTimeout((async () => {
       const r = await insight.ensureFresh({ onProgress: (t) => rl(t) });
       if (!r.ok) return { status: 'error', note: `${String(r.error || 'không rõ').slice(0, 160)}; dùng dữ liệu đã lưu` };
       return { status: 'ok', note: r.windows ? `chắt lọc thêm ${r.windows} khoảng, ${r.newCustomers} khách mới` : 'đã cập nhật tới hôm qua' };
     })(), SOURCE_TIMEOUT.voc, () => insight.stop()), results);
     await step('brands', 'Brands Vietnam (3 ngày gần nhất)', async () => {
-      const p = knowledge.runNow({ source: 'all', recentDays: 3 });
+      if (!cfg.brands) return { status: 'skipped', note: 'đang tắt trong cấu hình quét' };
+      const p = knowledge.runNow({ source: brandsSource(cfg), recentDays: 3 });
       if (!p) return { status: 'error', note: 'đang có lượt quét Brands Vietnam khác' };
       const r = await withTimeout(p, SOURCE_TIMEOUT.brands, () => knowledge.stop());
       if (r.stopped) return { status: 'error', note: 'đã dừng' };
@@ -155,7 +195,48 @@ Yêu cầu: (1) mở đầu nêu rõ nguồn nào cập nhật được/lỗi; (
     return true;
   }
 
+
+  // ---- Quét dữ liệu theo cấu hình đã lưu: chỉ các nguồn đã chọn; loại trừ trùng lặp (khoảng ngày đã cào, khách/dòng đã thấy, bài đã đọc) ----
+  let scanRun = null, scanStop = false;
+  const scanLog = [], sl = (text, level = '') => { scanLog.push({ at: Date.now(), text: String(text).slice(0, 400), level }); if (scanLog.length > 80) scanLog.splice(0, scanLog.length - 80); };
+  function startScan() {
+    if (running || scanRun || insight.running?.() || knowledge.running?.()) return false;
+    const c = validateScan(loadScan()), saved = loadScan();
+    if (!saved.savedAt) throw new Error('Chưa lưu cấu hình quét. Hãy bấm “Lưu” (cần mật khẩu Admin) trước.');
+    scanLog.length = 0; scanStop = false;
+    scanRun = { step: 'Đang chuẩn bị…', since: Date.now() };
+    (async () => {
+      const results = [];
+      const one = async (id, label, fn) => {
+        if (scanStop) { results.push({ id, label, status: 'skipped', note: 'Đã dừng' }); return; }
+        scanRun = { ...scanRun, step: `${label}…` }; sl(`${label}…`);
+        try { const r = await fn(); results.push({ id, label, ...r }); sl(`${label}: ${r.status === 'ok' ? 'xong' : 'lỗi'} — ${r.note}`, r.status === 'ok' ? 'ok' : 'err'); }
+        catch (e) { results.push({ id, label, status: 'error', note: e.message }); sl(`${label}: lỗi (${e.message})`, 'err'); }
+      };
+      if (c.voc) await one('voc', `Ý kiến khách hàng ${vn(c.from)}–${vn(c.to)}`, async () => {
+        const p = insight.runRange({ from: c.from, to: c.to, onProgress: (t) => { scanRun = { ...scanRun, step: t }; sl(t); } });
+        if (!p) return { status: 'error', note: 'đang có lượt cào ý kiến khách hàng khác' };
+        const r = await withTimeout(p, SOURCE_TIMEOUT.voc * 4, () => insight.stop());
+        if (r.stopped) return { status: 'error', note: 'đã dừng' };
+        if (!r.ok) return { status: 'error', note: String(r.error || 'không rõ').slice(0, 200) };
+        return { status: 'ok', note: r.windows ? `cào ${r.windows} khoảng, ${r.newCustomers} khách có tin mới (đã loại trừ phần trùng)` : (r.note || 'không có dữ liệu mới (đã loại trừ trùng lặp)') };
+      });
+      if (c.brands) await one('brands', `Brands Vietnam (${c.campaign && c.library ? 'Campaign + Library' : c.campaign ? 'Campaign' : 'Library'})`, async () => {
+        const p = knowledge.runNow({ source: brandsSource(c) });
+        if (!p) return { status: 'error', note: 'đang có lượt quét Brands Vietnam khác' };
+        const r = await withTimeout(p, SOURCE_TIMEOUT.brands, () => knowledge.stop());
+        if (r.stopped) return { status: 'error', note: 'đã dừng' };
+        if (!r.ok) return { status: 'error', note: String(r.error || '').slice(0, 200) };
+        return { status: 'ok', note: r.added ? `${r.added} bài mới (bài đã đọc được bỏ qua)` : 'không có bài mới (đã loại trừ trùng lặp)' };
+      });
+      state.lastScan = { at: new Date().toISOString(), config: c, results: results.map(({ id, label, status, note }) => ({ id, label, status, note })), ok: results.every((r) => r.status === 'ok') };
+      writeJson(STATE, state); scanRun = null;
+    })().catch((e) => { sl(`Dừng: ${e.message}`, 'err'); state.lastScan = { at: new Date().toISOString(), config: c, results: [], ok: false, error: e.message }; writeJson(STATE, state); scanRun = null; });
+    return true;
+  }
+
   function stop() {
+    if (scanRun && !running) { scanStop = true; scanRun = { ...scanRun, step: 'Đang dừng…' }; sl('Đã nhận yêu cầu dừng.', 'warn'); insight.stop(); knowledge.stop(); return true; }
     if (!running) return false;
     stopReq = true; running = { ...running, step: 'Đang dừng…' }; rl('Đã nhận yêu cầu dừng.', 'warn');
     insight.stop(); knowledge.stop();
@@ -171,6 +252,6 @@ Yêu cầu: (1) mở đầu nêu rõ nguồn nào cập nhật được/lỗi; (
       articles: arts.slice(0, 300).map((a) => ({ id: a.id, source: a.source, title: a.title, brand: a.brand, category: a.category, saved: a.saved, published: a.published, tags: a.tags, insight: a.insight, big_idea: a.big_idea, lessons: a.lessons_for_enzy, angles: a.content_angles, results: a.results, summary: a.summary, url: a.url })),
     };
   };
-  const status = () => ({ running, log: runLog.slice(-20), last: state.last, history: loadHistory().slice(-30).reverse() });
-  return { start, stop, status, vault };
+  const status = () => ({ running, log: runLog.slice(-20), last: state.last, history: loadHistory().slice(-30).reverse(), scan: { config: loadScanAll(), yesterday: yesterday(), running: scanRun, log: scanLog.slice(-20), last: state.lastScan || null } });
+  return { start, stop, status, vault, startScan, saveScan: saveScanAll };
 }

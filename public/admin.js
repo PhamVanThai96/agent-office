@@ -31,7 +31,8 @@
     return new Promise(function (resolve) {
       var done = function (v) { d.onclose = null; if (d.open) d.close(); resolve(v); };
       build(d, done);
-      d.onclose = function () { resolve(false); };
+      // Sự kiện 'close' của hộp thoại trước (vừa đóng bằng done) đến muộn: nếu hộp thoại đã mở lại cho bước kế tiếp thì bỏ qua, không coi là huỷ.
+      d.onclose = function () { if (d.open) return; resolve(false); };
       if (!d.open) d.showModal();
       var first = d.querySelector('input'); if (first) setTimeout(function () { first.focus(); }, 30);
     });

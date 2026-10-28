@@ -102,7 +102,7 @@ export async function login(req, res, id, pw) {
 }
 
 // Thao tác nhạy cảm (sửa/xoá agent): ngoài phiên đăng nhập còn phải nhập lại mật khẩu Admin cho CHÍNH thao tác đó.
-export const NEEDS_REAUTH = new Set(['/agent/save', '/agent/delete']);
+export const NEEDS_REAUTH = new Set(['/agent/save', '/agent/delete', '/daily/scan/config']);
 export async function reauth(req, pw) {
   const key = ip(req), f = fails.get(key), a = load();
   if (f && f.until > Date.now()) return { ok: false, error: `Sai quá nhiều lần, thử lại sau ${Math.ceil((f.until - Date.now()) / 60000)} phút.` };
@@ -135,7 +135,7 @@ export function change(req, res, current, newId, newPw) {
 
 // Các thao tác cần quyền Admin (sửa/xoá agent, đổi cấu hình, quyền, dữ liệu).
 const PROTECTED = new Set(['/agent/save', '/agent/delete', '/config/save', '/auth/connect', '/auth/login/start', '/auth/login/code', '/auth/login/cancel', '/auth/login/status',
-  '/enzy/config/save', '/enzy/schedule', '/insight/config', '/usage/limit', '/memory/clear', '/revoke', '/reports/delete']);
+  '/enzy/config/save', '/enzy/schedule', '/insight/config', '/daily/scan/config', '/usage/limit', '/memory/clear', '/revoke', '/reports/delete']);
 export function needsAdmin(pathname, body) {
   if (PROTECTED.has(pathname)) return true;
   if (pathname === '/learn/act') return body?.action !== 'feedback'; // đánh giá kết quả của CEO là thao tác thường

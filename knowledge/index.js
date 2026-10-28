@@ -1,8 +1,19 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { openBrowser, gotoPolite, listArticles, readArticle, politeDelay, LISTINGS } from './crawl.js';
 import { distillArticle } from './distill.js';
 import * as S from './store.js';
 
 // Quét Brands Vietnam (campaign + library) → bản tóm tắt YAML → 2 skill cho agent. Chạy nền, có nút Dừng, mỗi lượt đọc tối đa `perRun` bài MỚI.
+// Cấu hình quét chung (data/daily/scan.json): lịch tự quét chỉ chạy khi Brands Vietnam được bật và chỉ quét loại bài đã chọn.
+const SCAN_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'daily', 'scan.json');
+function scheduledSource() {
+  let c = null; try { c = JSON.parse(fs.readFileSync(SCAN_FILE, 'utf8')); } catch { /* chưa có cấu hình: quét cả hai */ }
+  if (!c) return 'all';
+  if (c.brands === false) return '';
+  return c.campaign && c.library ? 'all' : c.campaign ? 'campaign' : c.library ? 'library' : 'all';
+}
 export function createKnowledge({ log = () => {}, wrap = (label, fn) => fn() } = {}) {
   let running = null, ctl = null, stopReq = false, lastRun = null, lastDay = '';
   const runLog = [];
@@ -82,7 +93,7 @@ export function createKnowledge({ log = () => {}, wrap = (label, fn) => fn() } =
   // Lịch (mặc định tắt): mỗi ngày đúng giờ cấu hình mở Chrome quét; cần có người ở máy nếu Cloudflare đòi xác minh (không thì tự dừng sau 4 phút).
   const timer = setInterval(() => {
     const c = S.loadConfig(), now = new Date(), hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`, day = S.today();
-    if (c.enabled && !running && hm >= c.time && lastDay !== day) { lastDay = day; start({ source: 'all' }); }
+    if (c.enabled && !running && hm >= c.time && lastDay !== day) { lastDay = day; const src = scheduledSource(); if (src) start({ source: src }); }
   }, 30000);
   timer.unref?.();
 

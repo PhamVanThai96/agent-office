@@ -23,35 +23,70 @@ input[type=search],select,.note{height:32px;border-radius:8px;border:1px solid v
 .vlog{margin-top:8px;max-height:140px;overflow:auto;background:var(--soft);border-radius:10px;padding:6px 10px;font:12px/1.5 ui-monospace,Menlo,monospace}.vlog[hidden]{display:none}.vlog .ok{color:var(--good)}.vlog .err{color:var(--bad)}.vlog .warn{color:var(--warn)}
 .vrow{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-top:10px}.vrow label{display:flex;gap:6px;align-items:center;color:var(--mute);font-size:12.5px}.vrow input[type=date]{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 8px}
 .idea{padding:3px 0;border-top:1px solid var(--line)}.idea small{color:var(--mute)}a{color:var(--accent)}
+/* Kho kiến thức marketing (trước đây là knowledge.html) */
+.kn .stat b{font-size:20px;display:block}.kn .stat span{color:var(--mute);font-size:12px}.kn .knote{background:var(--soft);border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--mute)}
+.kn input[type=number],.kn input[type=time]{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 8px}
+.kn .item{border-top:1px solid var(--line);padding:8px 0}.kn .item:first-child{border-top:0}.kn .item a{font-weight:600;text-decoration:none}.kn .item small{color:var(--mute)}
+.kn .btn{height:34px;padding:0 12px}.kn .row{gap:10px 14px}
+/* Cấu hình quét + nút tương phản: Lưu = xanh dương, Quét = xanh lá, (Quét Trend & Tạo Idea = cam) */
+.btn.save{background:#2a5fd6;border-color:#2a5fd6;color:#fff;font-weight:600}.btn.scan{background:#0e8f5e;border-color:#0e8f5e;color:#fff;font-weight:600}
+.btn.save:disabled,.btn.scan:disabled{background:var(--soft);border-color:var(--line);color:var(--mute);opacity:1;font-weight:400}
+@media (prefers-color-scheme:dark){.btn.save{background:#3a74f0;border-color:#3a74f0}.btn.scan{background:#16a874;border-color:#16a874}}
+.cfg h2{margin:0 0 4px;font-size:16px}.cfg .opt{display:flex;gap:8px;align-items:center;font-size:14px;margin:8px 0 2px}.cfg .opt input,.cfg .sub2 input[type=checkbox]{width:16px;height:16px}
+.cfg .sub2{margin:2px 0 6px 26px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;color:var(--mute);font-size:13px}.cfg .sub2 label{display:flex;gap:6px;align-items:center}
+.cfg input[type=date]{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 8px}
+.cfg .row{margin-top:12px}.cfg .brk{flex-basis:100%;height:0}.cfg .vbox{flex-basis:100%;margin-top:4px;font-size:13px;color:var(--ink)}.cfg .vbox details{margin-top:8px}.cfg .vbox summary{cursor:pointer;color:var(--accent);font-size:12.5px}.cfg .vbox a{font-size:12.5px;display:inline-block;margin-top:4px}.cfg input[type=number],.cfg input[type=time]{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 8px}.dirty{color:var(--warn);font-weight:600}.saved{color:var(--good)}.board[hidden]{display:none}
 </style></head>
 <body><main>
+<div class="board" id="boardScan">
 <h1>Quét Trend &amp; Tạo Idea</h1>
 <div class="sub">Mỗi lần bấm: cập nhật <b>Ý kiến khách hàng</b> (Enzy) và <b>Brands Vietnam</b> (bài trong 3 ngày gần nhất, nếu có mới), nguồn nào lỗi/quá thời gian thì bỏ qua và làm tiếp nguồn khác, rồi team viết báo cáo trend + idea mới trong ngày. Idea đã đề xuất các ngày trước được đưa vào prompt để không lặp lại.</div>
 <div class="card"><div class="row"><button class="btn pri" id="run">🔥 Quét Trend &amp; Tạo Idea</button><button class="btn danger" id="stop" hidden>Dừng</button><button class="btn" id="vaultBtn">📚 Kho insight</button><span class="sp"></span><span id="step" class="sub" style="margin:0"></span></div>
 <div class="sub" style="margin:10px 0 0">Brands Vietnam dùng Cloudflare: nếu cửa sổ Chrome hiện trang xác minh, hãy tự bấm qua (chờ tối đa 4 phút, không thì bỏ qua nguồn này).</div></div>
-<div class="card vocc" id="voc">
-  <h2><span>💬 Ý kiến khách hàng (insight)</span><a id="vocDigest" href="#" target="_blank" rel="noopener" hidden>Xem digest</a></h2>
-  <div id="vocStatus"><div class="muted">Đang tải…</div></div>
-  <div id="vocLog" class="vlog" hidden></div>
-  <div class="vrow"><button class="btn" data-voc="next">Cào 7 ngày kế tiếp</button><button class="btn" data-voc="catchup">Cào bù tới hôm qua</button><button class="btn danger" id="vocStop" hidden>■ Dừng</button></div>
+<div class="card cfg" id="cfg">
+  <h2>⚙ Cấu hình quét dữ liệu</h2>
+  <div class="sub" style="margin:0 0 6px">Chọn nguồn cần quét (một hoặc cả hai). Cấu hình đủ rồi bấm <b>Lưu</b> (cần mật khẩu Admin), sau đó mới bấm <b>Quét dữ liệu</b>. Dữ liệu trùng lặp tự được loại trừ: khoảng ngày đã cào, khách/dòng đã thấy và bài Brands Vietnam đã đọc sẽ không bị lấy lại.</div>
+  <label class="opt"><input type="checkbox" id="cVoc"><b>💬 Ý kiến khách hàng</b> <small class="muted">(Enzy)</small></label>
+  <div class="sub2" id="cVocBox" hidden>Khoảng ngày cào dữ liệu: từ <input type="date" id="cFrom"> đến <input type="date" id="cTo"><span class="brk"></span>
+    <label title="Mốc ngày bắt đầu cho lần tự cập nhật khi bấm “Quét Trend &amp; Tạo Idea” (các ngày đã cào trước đó được bỏ qua)">Cào tự động từ ngày <input type="date" id="cStart"></label><div class="vbox"><div id="vocStatus"><div class="muted">Đang tải…</div></div>
+    <a id="vocDigest" href="#" target="_blank" rel="noopener" hidden>📄 Xem digest insight</a>
+    <div id="vocLog" class="vlog" hidden></div>
+    <details class="adv"><summary>Lấy Excel ý kiến khách hàng → file YAML ẩn danh (nâng cao)</summary>
   <div class="vrow"><label>Excel từ <input id="vxFrom" type="date"></label><label>đến <input id="vxTo" type="date"></label><button class="btn" id="vxSaved" title="Mở dữ liệu đã lưu → Tải Excel đầy đủ → lưu YAML">Mở dữ liệu đã lưu</button><button class="btn" id="vxScan" title="Quét mới từ Pancake (tối đa 7 ngày, chậm)">Quét mới</button></div>
-  <div id="vxInfo" class="sub" style="margin:6px 0 0"></div>
-  <div class="vrow"><label>Cào từ ngày <input id="vocStart" type="date"></label><button class="btn" id="vocStartSave">Lưu</button></div>
+      <div id="vxInfo" class="sub" style="margin:6px 0 0"></div><button class="btn danger" id="vocStop" hidden>■ Dừng lấy Excel</button></details></div></div>
+  <label class="opt"><input type="checkbox" id="cBr"><b>🌐 Brands Vietnam</b></label>
+  <div class="sub2" id="cBrBox" hidden>Loại bài cần quét: <label><input type="checkbox" id="cCamp"> Campaign</label><label><input type="checkbox" id="cLib"> Library</label><span class="brk"></span>
+    <label>Số bài mới mỗi lượt <input type="number" id="cPer" min="1" max="30" value="8" style="width:70px"></label>
+    <label><input type="checkbox" id="cAuto"> Tự quét mỗi ngày lúc <input type="time" id="cAutoTm" value="07:30"></label></div>
+  <div class="row"><button class="btn save" id="cSave">💾 Lưu</button><button class="btn scan" id="cScan">🔍 Quét dữ liệu và loại trừ dữ liệu trùng lặp</button><button class="btn danger" id="cStop" hidden>■ Dừng</button><span id="cState" class="sub" style="margin:0"></span></div>
+  <div id="cMsg" class="sub warnt" style="margin:8px 0 0"></div><div id="cStep" class="sub" style="margin:8px 0 0"></div><div class="log" id="cLog" hidden></div><div id="cLast" style="margin-top:8px"></div>
 </div>
-<div class="card" id="vault" hidden>
-  <div class="row"><b style="font-size:16px">📚 Kho insight</b><span class="sp"></span><input type="search" id="q" placeholder="Tìm trong bảng…" style="width:220px"><button class="btn" id="vaultClose">Đóng kho</button></div>
+<div class="card kn" id="kn">
+  <h2 style="margin:0 0 4px;font-size:16px">📚 Kho kiến thức marketing (Brands Vietnam)</h2>
+  <div class="sub" style="margin:0 0 10px">Quét case-study (<code>/campaign/</code>) và tài liệu (<code>/library/</code>) bằng Chrome có giao diện. Mỗi bài được tóm tắt thành file YAML (<code>knowledge/data/</code>, chỉ lưu tóm tắt + link nguồn) và sinh 2 skill: kho tra cứu + digest hôm nay/tuần này, để agent hiểu insight, trend và lên idea. Việc quét chọn nguồn/loại bài ở thẻ “Cấu hình quét dữ liệu” phía trên; bấm “Quét Trend &amp; Tạo Idea” cũng tự cập nhật nguồn này.</div>
+  <div class="row" id="knStats"></div>
+  <div class="knote" style="margin:10px 0">Brands Vietnam dùng Cloudflare. Khi bấm quét, một cửa sổ Chrome mở ra; nếu có trang xác minh, <b>hãy tự bấm qua trong cửa sổ đó</b> (hệ thống chờ tối đa 4 phút, không tự vượt). Phiên được nhớ trong profile riêng nên các lần sau thường không phải xác minh lại.</div>
+  <div class="row"><button class="btn danger" id="knStop" hidden>Dừng</button><span class="sp"></span><span class="sub" style="margin:0">Số bài mỗi lượt và lịch tự quét: chỉnh ở thẻ “Cấu hình quét dữ liệu”.</span></div>
+  <div id="knStep" class="sub" style="margin:10px 0 0"></div><div class="log" id="knLog" hidden></div>
+  <div style="margin-top:12px"><b>Bài mới nhất</b><div id="knRecent"></div></div>
+</div>
+<div class="card" id="lastCard"><b>Lượt gần nhất</b><div id="last" class="sub"></div><div class="log" id="log" hidden></div></div>
+</div>
+<div class="board" id="boardVault" hidden>
+<div class="card" id="vault">
+  <div class="row"><button class="btn" id="vaultClose">← Quay lại Quét Trend &amp; Tạo Idea</button><b style="font-size:18px">📚 Kho insight</b><span class="sp"></span><input type="search" id="q" placeholder="Tìm trong bảng…" style="width:220px"></div>
   <div class="tabs"><button data-t="ideas" class="on">Idea đã đề xuất</button><button data-t="themes">Insight khách hàng</button><button data-t="articles">Case-study & kiến thức</button></div>
   <div class="row" id="ideaFilter" style="margin-bottom:6px"><label>Trạng thái <select id="st"><option value="">Tất cả</option><option value="moi">Mới</option><option value="se-lam">Sẽ làm</option><option value="da-dung">Đã dùng</option><option value="bo">Bỏ</option></select></label><span class="sub" style="margin:0" id="cnt"></span></div>
   <div class="row" style="margin-bottom:6px"><span class="sub" style="margin:0">Đã chọn <b id="selN">0</b> mục (giữ nguyên khi đổi tab)</span><span class="sp"></span><select id="fmt"><option value="md">Markdown (.md)</option><option value="csv">Excel/CSV (.csv)</option><option value="yaml">YAML (.yaml)</option></select><button class="btn pri" id="exp" disabled>⬇ Tải file đã chọn</button><button class="btn" id="clr" disabled>Bỏ chọn</button></div>
   <div class="wrap" id="tbl"></div>
 </div>
-<div class="card"><b>Lượt gần nhất</b><div id="last" class="sub"></div><div class="log" id="log" hidden></div></div>
+</div>
 </main>
 <script src="admin.js"></script>
 <script>
 const $=(i)=>document.getElementById(i);const esc=(s)=>String(s??'').replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function post(p){const r=await (window.adminFetch||fetch)(p,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});const t=await r.text();if(t!=='ok')alert(t);load()}
-async function load(){const s=await (await fetch('/daily/status',{cache:'no-store'})).json();const run=!!s.running;$('run').disabled=run;$('stop').hidden=!run;$('step').textContent=run?s.running.step:'';
+async function load(){const s=await (await fetch('/daily/status',{cache:'no-store'})).json();const run=!!s.running,scanning=!!(s.scan&&s.scan.running);$('run').disabled=run||scanning;$('stop').hidden=!run;$('step').textContent=run?s.running.step:(scanning?s.scan.running.step:'');paintScan(s.scan,run);
  const l=s.last;$('last').innerHTML=l?`${esc(new Date(l.at).toLocaleString('vi-VN'))} — ${l.ok?'đã tạo báo cáo ('+l.ideas+' idea)':'chưa tạo được báo cáo: '+esc(l.error||'')}${l.report?` · <a href="/${esc(l.report)}" target="_blank">Mở báo cáo</a>`:''}`+(l.sources||[]).map(x=>`<div class="src"><span class="tag ${x.status}">${x.status==='ok'?'OK':x.status==='skipped'?'Bỏ qua':'Lỗi — bỏ qua'}</span><span><b>${esc(x.label)}</b> — ${esc(x.note)}</span></div>`).join(''):'Chưa chạy lần nào.';
  $('log').hidden=!s.log.length;$('log').innerHTML=s.log.map(x=>`<div class="${x.level}">${esc(new Date(x.at).toLocaleTimeString('vi-VN'))} ${esc(x.text)}</div>`).join('');
  }
@@ -69,7 +104,10 @@ function draw(){if(!V)return;const q=$('q').value.trim();$('ideaFilter').hidden=
  else{const rows=V.articles.filter(a=>has(a,q));n=rows.length;
   h='<table><tr><th><input type="checkbox" class="all"></th><th>Bài</th><th>Insight · big idea</th><th>Bài học cho Enzy · góc content</th><th>Thẻ</th></tr>'+rows.map(a=>`<tr><td>${ck('a:'+a.source+'/'+a.id)}</td><td><a href="${esc(a.url)}" target="_blank" rel="noopener"><b>${esc(a.title)}</b></a><div class="det">${esc(a.source)} · ${esc(a.saved)}${a.brand?' · '+esc(a.brand):''}</div></td><td class="det">${esc(a.insight||a.summary)}${a.big_idea?'\nBig idea: '+esc(a.big_idea):''}</td><td class="det">${esc([...a.lessons,...a.angles].join('\n'))}</td><td>${a.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</td></tr>`).join('')+'</table>'}
  $('cnt').textContent=n+' dòng';$('tbl').innerHTML=n?h:'<div class="sub" style="padding:12px">Chưa có dữ liệu.</div>';shown=rows_();sync()}
-$('vaultBtn').onclick=()=>{$('vault').hidden=false;loadVault()};$('vaultClose').onclick=()=>{$('vault').hidden=true};
+// Hai board: "Quét" (mặc định) và "Kho insight" (trang riêng, có #vault để mở thẳng/Back của trình duyệt)
+function showBoard(name){const v=name==='vault';$('boardScan').hidden=v;$('boardVault').hidden=!v;if(v)loadVault();window.scrollTo(0,0);try{history.replaceState(null,'',v?'#vault':location.pathname+location.search)}catch{}}
+$('vaultBtn').onclick=()=>showBoard('vault');$('vaultClose').onclick=()=>showBoard('scan');
+if(location.hash==='#vault')showBoard('vault');
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));draw()});
 $('q').oninput=$('st').onchange=draw;
 async function upd(body){const r=await (window.adminFetch||fetch)('/daily/idea',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const t=await r.text();if(t!=='ok')alert(t);loadVault()}
@@ -113,13 +151,50 @@ async function loadVoc(){
  $('vxInfo').textContent=v.excel?`File YAML gần nhất (Excel): ${v.excel} · data/insight/voc/latest.yaml`:'';
  document.querySelectorAll('#vxSaved,#vxScan').forEach(b=>{b.disabled=!v.configured||Boolean(v.running)});
  const a=$('vocDigest');a.hidden=!v.digest;if(v.digest)a.href='/'+v.digest;
- document.querySelectorAll('#voc button[data-voc]').forEach(b=>{b.disabled=!v.configured||Boolean(v.running)||(!v.next&&!v.running)});
- if(document.activeElement!==$('vocStart'))$('vocStart').value=v.start||'';
 }
 $('vocStop').onclick=()=>{$('vocStop').disabled=true;vpost('/insight/stop',{})};
-document.querySelectorAll('#voc button[data-voc]').forEach(b=>{b.onclick=()=>{b.disabled=true;vpost('/insight/run',{mode:b.dataset.voc})}});
 for(const [id,mode] of [['vxSaved','saved'],['vxScan','scan']])$(id).onclick=()=>{if(!$('vxFrom').value||!$('vxTo').value){alert('Chọn khoảng ngày (từ – đến) trước.');return}$(id).disabled=true;vpost('/insight/excel',{from:$('vxFrom').value,to:$('vxTo').value,mode})};
-$('vocStartSave').onclick=()=>vpost('/insight/config',{start:$('vocStart').value});
 loadVoc();setInterval(loadVoc,2500);
+
+// ---- Kho kiến thức marketing (Brands Vietnam): trước đây nằm ở knowledge.html ----
+async function kpost(path,body){const r=await (window.adminFetch||fetch)(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body||{})});const t=await r.text();if(!r.ok||t!=='ok')alert(t);loadKn()}
+async function loadKn(){let s;try{s=await (await fetch('/knowledge/status',{cache:'no-store'})).json()}catch{return}
+ $('knStats').innerHTML=[['Tổng bài',s.total],['Campaign',s.campaign],['Library',s.library],['Mới 7 ngày',s.week]].map(([a,b])=>`<div class="stat"><b>${b}</b><span>${a}</span></div>`).join('')+`<span class="sp"></span><span class="sub" style="margin:0">${s.lastRun?`Lượt gần nhất: ${s.lastRun.ok?'+'+s.lastRun.added+' bài':esc(s.lastRun.error||'lỗi')}`:'Chưa quét lần nào'}</span>`;
+ const run=!!s.running;$('knStop').hidden=!run;
+ $('knStep').textContent=run?s.running.step:'';$('knLog').hidden=!s.log.length;$('knLog').innerHTML=s.log.map(l=>`<div class="${l.level}">${esc(new Date(l.at).toLocaleTimeString('vi-VN'))} ${esc(l.text)}</div>`).join('');
+ $('knRecent').innerHTML=s.recent.length?s.recent.map(a=>`<div class="item"><a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.title)}</a> <small>${esc(a.source)} · ${esc(a.saved)}${a.brand?' · '+esc(a.brand):''}</small><div>${esc(a.insight)}</div></div>`).join(''):'<div class="sub">Chưa có bài nào. Bấm “Quét” để bắt đầu.</div>'}
+$('knStop').onclick=()=>kpost('/knowledge/stop');
+loadKn();setInterval(loadKn,2500);
+
+// ---- Cấu hình quét dữ liệu: chọn nguồn/loại/khoảng ngày → Lưu (mật khẩu Admin) → Quét + loại trừ trùng lặp ----
+let SC=null,touched=false,scanBusy=false,dailyBusy=false;
+const cform=()=>{const voc=$('cVoc').checked,br=$('cBr').checked;return{voc,brands:br,campaign:br&&$('cCamp').checked,library:br&&$('cLib').checked,from:voc?$('cFrom').value:'',to:voc?$('cTo').value:'',vocStart:$('cStart').value,perRun:Number($('cPer').value)||0,autoEnabled:$('cAuto').checked,autoTime:$('cAutoTm').value}};
+const cnorm=(c)=>JSON.stringify({voc:!!c.voc,brands:!!c.brands,campaign:!!c.brands&&!!c.campaign,library:!!c.brands&&!!c.library,from:c.voc?c.from||'':'',to:c.voc?c.to||'':'',vocStart:c.voc?c.vocStart||'':'',perRun:Number(c.perRun)||0,autoEnabled:!!c.autoEnabled,autoTime:c.autoTime||''});
+function cerr(f){if(!f.voc&&!f.brands)return'Chọn ít nhất một nguồn: Ý kiến khách hàng hoặc Brands Vietnam.';
+ if(f.brands&&!f.campaign&&!f.library)return'Brands Vietnam: chọn Campaign, Library hoặc cả hai.';
+ if(f.voc){if(!f.from||!f.to)return'Ý kiến khách hàng: chọn khoảng ngày (từ – đến).';if(f.from>f.to)return'Ngày bắt đầu không được sau ngày kết thúc.';if(SC&&f.to>SC.yesterday)return'Ngày kết thúc không được muộn hơn hôm qua.';if(f.vocStart&&SC&&f.vocStart>SC.yesterday)return'Ngày bắt đầu cào tự động không được muộn hơn hôm qua.'}
+ if(f.perRun<1||f.perRun>30)return'Số bài mới mỗi lượt phải từ 1 đến 30.';if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(f.autoTime))return'Giờ tự quét chưa hợp lệ (HH:MM).';return''}
+function cfill(c){$('cVoc').checked=!!c.voc;$('cBr').checked=!!c.brands;$('cCamp').checked=!!c.campaign;$('cLib').checked=!!c.library;$('cFrom').value=c.from||'';$('cTo').value=c.to||'';$('cStart').value=c.vocStart||'';$('cPer').value=c.perRun||8;$('cAuto').checked=!!c.autoEnabled;$('cAutoTm').value=c.autoTime||'07:30'}
+function cpaint(){const f=cform(),e=cerr(f),saved=SC?SC.config:null,hasSaved=!!(saved&&saved.savedAt),dirty=!saved||cnorm(f)!==cnorm(saved);
+ $('cVocBox').hidden=!f.voc;$('cBrBox').hidden=!f.brands;
+ if(SC){$('cFrom').max=$('cTo').max=$('cStart').max=SC.yesterday}
+ $('cMsg').textContent=(touched||!hasSaved)?e:'';
+ $('cSave').disabled=!!e||scanBusy||dailyBusy||(hasSaved&&!dirty);
+ $('cScan').disabled=!hasSaved||dirty||!!e||scanBusy||dailyBusy;
+ $('cState').className='sub '+(dirty&&touched?'dirty':'saved');$('cState').style.margin='0';
+ $('cState').textContent=!hasSaved?'Chưa lưu cấu hình — bấm “Lưu” trước khi quét.':dirty?'● Có thay đổi chưa lưu — bấm “Lưu” để quét theo cấu hình mới.':'✓ Đã lưu '+new Date(saved.savedAt).toLocaleString('vi-VN')+' — sẵn sàng quét.'}
+function paintScan(sc,dailyRun){if(!sc)return;SC=sc;const r=sc.running;scanBusy=!!r;dailyBusy=!!dailyRun;
+ if(!touched)cfill(sc.config);
+ $('cStop').hidden=!r;$('cStep').textContent=r?r.step:'';
+ $('cLog').hidden=!sc.log.length;$('cLog').innerHTML=sc.log.map(x=>`<div class="${x.level}">${esc(new Date(x.at).toLocaleTimeString('vi-VN'))} ${esc(x.text)}</div>`).join('');
+ const l=sc.last;$('cLast').innerHTML=l?`<b>Lượt quét gần nhất</b> <span class="sub">${esc(new Date(l.at).toLocaleString('vi-VN'))}${l.error?' — '+esc(l.error):''}</span>`+(l.results||[]).map(x=>`<div class="src"><span class="tag ${x.status}">${x.status==='ok'?'OK':'Lỗi'}</span><span><b>${esc(x.label)}</b> — ${esc(x.note)}</span></div>`).join(''):'';
+ cpaint()}
+['cVoc','cBr','cCamp','cLib','cFrom','cTo','cStart','cPer','cAuto','cAutoTm'].forEach(id=>$(id).addEventListener(id==='cPer'?'input':'change',()=>{touched=true;cpaint()}));
+$('cSave').onclick=async()=>{touched=true;const f=cform(),e=cerr(f);if(e){cpaint();return}
+ const pw=await window.adminConfirm('Lưu cấu hình quét','Nhập mật khẩu Admin để lưu cấu hình quét dữ liệu.');if(!pw)return;
+ const r=await (window.adminFetch||fetch)('/daily/scan/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...f,adminPassword:pw})});const t=await r.text();
+ if(r.ok&&t==='ok'){touched=false;await load();return}
+ let m=t;try{m=JSON.parse(t).message||m}catch{}alert(m||'Không lưu được cấu hình.')};
+$('cScan').onclick=()=>post('/daily/scan');$('cStop').onclick=()=>post('/daily/stop');
 $('run').onclick=()=>post('/daily/run');$('stop').onclick=()=>post('/daily/stop');load();setInterval(load,2500);
 </script></body></html>
