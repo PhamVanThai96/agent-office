@@ -16,7 +16,8 @@ const DROP = /^(kh[aá]ch h[aà]ng|nh[aâ]n vi[eê]n|t[eê]n|ho t[eê]n|sdt|s[o�
 
 /** opts: { url, user, pass, brand, system, from, to (YYYY-MM-DD), mode: 'saved'|'scan', ctl } → { rows, shown, metrics } */
 export async function fetchVocExcel(opts) {
-  const browser = await chromium.launch({ channel: 'chrome', headless: opts.headless !== false });
+  // Playwright mặc định tắt ThirdPartyStoragePartitioning; trang Enzy (Streamlit + component trong iframe) khi đó nhận mật khẩu đúng nhưng KHÔNG đăng nhập được → bật lại.
+  const browser = await chromium.launch({ channel: 'chrome', headless: opts.headless !== false, args: ['--enable-features=ThirdPartyStoragePartitioning'] });
   if (opts.ctl) { opts.ctl.browser = browser; if (opts.ctl.stopped) { await browser.close().catch(() => {}); throw new Error('Đã dừng theo yêu cầu.'); } }
   try {
     const page = await browser.newPage({ viewport: { width: 1600, height: 1200 }, locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh', acceptDownloads: true });

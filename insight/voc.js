@@ -29,7 +29,8 @@ export function parseVoc(code) {
 
 /** opts: { url, user, pass, brand, system, from, to (YYYY-MM-DD), headless } → { code, found, scanned, alerts } */
 export async function scrapeVoc(opts) {
-  const browser = await chromium.launch({ channel: 'chrome', headless: opts.headless !== false });
+  // Playwright mặc định tắt ThirdPartyStoragePartitioning; trang Enzy (Streamlit + component trong iframe) khi đó nhận mật khẩu đúng nhưng KHÔNG đăng nhập được → bật lại.
+  const browser = await chromium.launch({ channel: 'chrome', headless: opts.headless !== false, args: ['--enable-features=ThirdPartyStoragePartitioning'] });
   // opts.ctl = { stopped, browser }: nút Dừng đóng trình duyệt này để mọi thao tác đang chờ thoát ngay.
   if (opts.ctl) { opts.ctl.browser = browser; if (opts.ctl.stopped) { await browser.close().catch(() => {}); throw new Error('Đã dừng theo yêu cầu.'); } }
   try {

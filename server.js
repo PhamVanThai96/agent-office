@@ -527,11 +527,17 @@ const server = http.createServer(async (req, res) => {
           // Tính kết quả TRƯỚC khi ghi header: enqueue ném lỗi khi kỳ/loại báo cáo không hợp lệ, lúc đó phải trả 400 chứ không được làm sập server.
           // output: 'both' (mặc định: báo cáo + dashboard) | 'report' (chỉ báo cáo) | 'dashboard' (chỉ dashboard, không AI); `dashboard:true` là cách gọi cũ.
           const out = String(b.output || '').toLowerCase();
+          if (out === 'rebuild') {   // dựng lại dashboard từ dữ liệu đã lưu, CHỈ đúng loại được chọn (không cào Enzy, không đụng loại khác)
+            if (!['daily', 'weekly', 'monthly'].includes(String(b.kind))) throw new Error('Loại báo cáo phải là daily, weekly hoặc monthly.');
+            const made = enzy.rebuildDashboards([String(b.kind)]);
+            res.writeHead(200).end(made.length ? `Đã dựng lại dashboard (${made[0]}) từ dữ liệu đã lưu — không cào lại Enzy.` : 'Chưa có dữ liệu đã lưu cho loại báo cáo này: hãy tạo báo cáo/dashboard bằng cách lấy số liệu trước.');
+            return;
+          }
           const queued = enzy.enqueue(String(b.kind), 'chạy tay', out === 'dashboard' || b.dashboard === true, b.pick && typeof b.pick === 'object' ? b.pick : null, out === 'report');
           res.writeHead(200).end(queued ? 'ok' : 'Báo cáo này đang chạy hoặc đã xếp hàng.');
         }
         else if (url.pathname === '/enzy/config/get') res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzyConfig()));
-        else if (url.pathname === '/enzy/config/save') { saveEnzyConfig(b); const made = enzy.rebuildDashboards(); agentsVer++; res.writeHead(200).end(made.length ? `ok: đã dựng lại ${made.length} dashboard` : 'ok'); }
+        else if (url.pathname === '/enzy/config/save') { saveEnzyConfig(b); agentsVer++; res.writeHead(200).end('ok'); }   // không tự dựng lại dashboard: chọn loại ở "Tạo báo cáo" → "Dựng lại từ dữ liệu đã lưu"
         else { saveSchedule(b); res.writeHead(200).end('ok'); }
       } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
       return;

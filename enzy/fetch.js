@@ -297,7 +297,8 @@ async function pickDates(page, from, to) {
  * Trả về dữ liệu thô: { range, period, updated, metrics, grid, code, notes, accounts: {selected, missing} }
  */
 export async function fetchEnzy(opts) {
-  const browser = await chromium.launch({ channel: 'chrome', headless: opts.headless !== false });
+  // Playwright mặc định tắt ThirdPartyStoragePartitioning; trang Enzy (Streamlit + component trong iframe) khi đó nhận mật khẩu đúng nhưng KHÔNG đăng nhập được → bật lại.
+  const browser = await chromium.launch({ channel: 'chrome', headless: opts.headless !== false, args: ['--enable-features=ThirdPartyStoragePartitioning'] });
   try {
     const page = await browser.newPage({ viewport: { width: 3600, height: 1400 }, locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh' });
     await page.goto(opts.url, { waitUntil: 'domcontentloaded', timeout: 120000 });

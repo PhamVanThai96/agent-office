@@ -41,10 +41,10 @@ export function keywordsOf(name, keywords) {
 // Lọc quảng cáo: giữ quảng cáo khớp BẤT KỲ từ khoá nào. Danh sách từ khoá rỗng = không lọc.
 export function filterByKeywords(ads, keywords) {
   const list = cleanKw(keywords);
-  const total = ads.reduce((t, a) => t + a.sp, 0);
-  if (!list.length) return { ads, info: { list: [], matched: ads.length, all: ads.length, spendMatched: total, spendAll: total } };
+  const total = ads.reduce((t, a) => t + a.sp, 0), revTotal = ads.reduce((t, a) => t + a.rv, 0);   // revAll/spendAll = TOÀN tài khoản (trước khi lọc từ khoá) để báo cáo luôn có tổng đúng
+  if (!list.length) return { ads, info: { list: [], matched: ads.length, all: ads.length, spendMatched: total, spendAll: total, revMatched: revTotal, revAll: revTotal } };
   const kept = ads.filter((a) => keywordsOf(a.name, list).length);
-  return { ads: kept, info: { list, matched: kept.length, all: ads.length, spendMatched: kept.reduce((t, a) => t + a.sp, 0), spendAll: total } };
+  return { ads: kept, info: { list, matched: kept.length, all: ads.length, spendMatched: kept.reduce((t, a) => t + a.sp, 0), spendAll: total, revMatched: kept.reduce((t, a) => t + a.rv, 0), revAll: revTotal } };
 }
 
 const sumOf = (rows) => rows.reduce((t, r) => ({ n: t.n + 1, sp: t.sp + r.sp, im: t.im + r.im, ck: t.ck + r.ck, lk: t.lk + r.lk, od: t.od + r.od, ld: t.ld + r.ld, rv: t.rv + r.rv }), { n: 0, sp: 0, im: 0, ck: 0, lk: 0, od: 0, ld: 0, rv: 0 });
@@ -213,7 +213,7 @@ export function ownerSummaryMarkdown(g, periodLabel) {
   const line = (name, t) => `| ${name} | ${pct(t.sp, all.sp)} | ${t.n} | ${vnd(t.sp)} | ${vnd(t.rv)} | ${pct(t.sp, t.rv)} | ${t.od} | ${t.od ? vnd(t.sp / t.od) : '–'} | ${t.ld} | ${t.ld ? vnd(t.sp / t.ld) : '–'} |`;
   const L = [`## So sánh người thực hiện${periodLabel ? ` — ${periodLabel}` : ''}`, '',
     'Gán theo tên người ở cuối tên quảng cáo; người khác hoặc chưa gắn tên gộp thành "Người còn lại".', '',
-    ...(g.kw?.list?.length ? [`**Chỉ tính quảng cáo có từ khoá trong tên: ${g.kw.list.join(', ')}** — ${g.kw.matched}/${g.kw.all} quảng cáo, chi tiêu ${vnd(g.kw.spendMatched)}/${vnd(g.kw.spendAll)} đ (${pct(g.kw.spendMatched, g.kw.spendAll)} tổng chi tiêu).`, ''] : []),
+    ...(g.kw?.list?.length ? [`**Chỉ tính quảng cáo có từ khoá trong tên: ${g.kw.list.join(', ')}** — ${g.kw.matched}/${g.kw.all} quảng cáo, chi tiêu ${vnd(g.kw.spendMatched)}/${vnd(g.kw.spendAll)} đ (${pct(g.kw.spendMatched, g.kw.spendAll)} tổng chi tiêu), doanh thu ${vnd(g.kw.revMatched || 0)}/${vnd(g.kw.revAll || 0)} đ. **Doanh thu toàn tài khoản (mọi quảng cáo): ${vnd(g.kw.revAll || 0)} đ.**`, ''] : []),
     '| Nhóm | % chi tiêu | Content | Chi tiêu (đ) | Doanh thu (đ) | NS/DT | Đơn | CPA (đ) | Lead | CPL (đ) |', '|---|---|---|---|---|---|---|---|---|---|'];
   for (const o of g.owners) L.push(line(o === OTHER ? 'Người còn lại' : o, sum(g.rows.filter((r) => r.o === o))));
   L.push(line(g.kw?.list?.length ? '**Tổng quảng cáo khớp từ khoá**' : '**Toàn bộ tài khoản**', all), '');
@@ -347,7 +347,7 @@ function head(){
   var n=D.reduce(function(s,x){return s+x.ad},0);
   $("sub").textContent=DATA.period+" · "+n+" quảng cáo, "+D.length+" content";
   if(!D.length){$("hero").innerHTML='Chưa có quảng cáo có chi tiêu cho <span class="n">'+esc(label())+'</span> trong kỳ này.';$("kpis").innerHTML="";return}
-  $("hero").innerHTML='Cứ 100đ doanh thu, '+esc(label())+' chi <span class="n">'+(T.ns==null?NA:Math.round(T.ns*100)+'đ')+'</span>.<small>Chi '+mil(T.sp)+' cho doanh thu '+mil(T.rv)+', được '+T.od+' đơn và '+T.ld+' lead.</small>';
+  $("hero").innerHTML='Cứ 100đ doanh thu, '+esc(label())+' chi <span class="n">'+(T.ns==null?NA:Math.round(T.ns*100)+'đ')+'</span>.<small>Chi '+mil(T.sp)+' cho doanh thu '+mil(T.rv)+', được '+T.od+' đơn và '+T.ld+' lead.'+(DATA.acct?'<br><b>Toàn tài khoản (tất cả '+DATA.acct.ads+' quảng cáo, mọi người thực hiện): doanh thu '+mil(DATA.acct.rev)+', chi '+mil(DATA.acct.sp)+'.</b>':'')+'</small>';
   var K=[["Ngân sách đã chi",mil(T.sp)],["Doanh thu",mil(T.rv)],["Ngân sách/Doanh thu",pct(T.ns,1)],["CPA",T.cpa==null?NA:num(T.cpa)+"đ"],["CPL",T.cpl==null?NA:num(T.cpl)+"đ"],["CTR",pct(T.ctr,2)],["CTR link",pct(T.ctl,2)],["Lượt mua / Lead",T.od+" / "+T.ld]];
   $("kpis").innerHTML=K.map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join("");
 }
@@ -397,7 +397,7 @@ export function buildOwnerDashboard(data) {
   const share = data.total ? Math.round((data.owned / data.total) * 100) : 0;
   const kwList = data.kw?.list || [];
   const rowsOut = data.rows.map((r) => ({ ...r, kws: [...new Set(r.ads.flatMap((a) => keywordsOf(a.n, kwList)))] }));   // từ khoá có trong tên (ít nhất một quảng cáo của content) → nút lọc nhanh
-  const payload = { period: data.period, owners: data.owners, rows: rowsOut, mode: data.mode || 'owner', kw: kwList, targets: normTargets(data.targets) };
+  const payload = { period: data.period, owners: data.owners, rows: rowsOut, mode: data.mode || 'owner', kw: kwList, targets: normTargets(data.targets), acct: kwList.length && data.kw ? { rev: data.kw.revAll || 0, sp: data.kw.spendAll || 0, ads: data.kw.all || 0 } : null };   // acct = tổng TOÀN tài khoản (trước khi lọc từ khoá)
   const vnd = (n) => Math.round(n).toLocaleString('vi-VN');
   const pc = (n, d = 1) => (n == null ? '–' : `${(n * 100).toFixed(d).replace('.', ',')}%`);
   // Phần "So sánh hiệu quả theo từ khoá" (tĩnh, SVG): khi lọc cả từ khoá lẫn người thực hiện.
@@ -421,7 +421,8 @@ export function buildOwnerDashboard(data) {
 <section class="hero"><p id="hero"></p></section>
 <section class="critpanel" id="crit" aria-label="Tiêu chí và ngưỡng đánh giá content"></section>
 <div class="kpis" id="kpis"></div>
-${data.kw?.list?.length ? `<p class="note"><b>Lọc theo từ khoá trong tên quảng cáo: ${esc(data.kw.list.join(', '))}</b> — chỉ tính ${data.kw.matched}/${data.kw.all} quảng cáo khớp (chi tiêu ${Math.round(data.kw.spendMatched).toLocaleString('vi-VN')}/${Math.round(data.kw.spendAll).toLocaleString('vi-VN')} đ).</p>` : ''}
+${data.kw?.list?.length ? `<p class="note"><b>Lọc theo từ khoá trong tên quảng cáo: ${esc(data.kw.list.join(', '))}</b> — chỉ tính ${data.kw.matched}/${data.kw.all} quảng cáo khớp (chi tiêu ${Math.round(data.kw.spendMatched).toLocaleString('vi-VN')}/${Math.round(data.kw.spendAll).toLocaleString('vi-VN')} đ).</p>
+<p class="note tot"><b>💰 Doanh thu toàn tài khoản (tất cả ${data.kw.all} quảng cáo, mọi người thực hiện): ${Math.round(data.kw.revAll || 0).toLocaleString('vi-VN')} đ</b> · chi tiêu ${Math.round(data.kw.spendAll).toLocaleString('vi-VN')} đ${data.kw.revAll ? ` · ROAS ${(data.kw.revAll / data.kw.spendAll).toFixed(2).replace('.', ',')}` : ''}. Nhóm đang lọc [${esc(data.kw.list.join(', '))}] có doanh thu ${Math.round(data.kw.revMatched || 0).toLocaleString('vi-VN')} đ${data.kw.revAll ? ` (${((data.kw.revMatched || 0) / data.kw.revAll * 100).toFixed(1).replace('.', ',')}% doanh thu toàn tài khoản)` : ''}.</p>` : ''}
 ${kwBlock}
 ${kwMode ? '<h2>So sánh các từ khoá</h2>' : '<h2>So sánh các nhóm người thực hiện</h2>'}
 ${kwMode ? `<p class="note">Mỗi quảng cáo được xếp vào từ khoá đầu tiên (theo thứ tự cấu hình) mà tên quảng cáo chứa; ${data.multi || 0} quảng cáo chứa nhiều từ khoá chỉ tính một lần. Lọc nhóm bằng các nút bên dưới.</p>` : `<p class="note">Quảng cáo được gán cho người có tên ở cuối tên quảng cáo, ví dụ “… 13.08_HNC TẠI SAO ĐẮT (${esc(data.listed[0] || 'TÊN')})”. ${esc(data.listed.join(' + '))} chiếm ${share}% tổng chi tiêu; ${100 - share}% còn lại (người khác hoặc chưa gắn tên) được gộp thành nhóm “Người còn lại” để đối chiếu. Màu đỏ/xanh so với mặt bằng toàn tài khoản.</p>`}

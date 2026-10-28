@@ -358,9 +358,10 @@ export function createEnzy(deps) {
   }
 
   // Dựng lại dashboard từ dữ liệu từng quảng cáo đã lưu của kỳ gần nhất (vd sau khi đổi danh sách người thực hiện), không cần lấy lại từ trang.
-  function rebuildDashboards() {
+  // Dựng lại dashboard từ dữ liệu ĐÃ LƯU (không cào Enzy). `kinds` = chỉ các loại cần dựng ('daily' | 'weekly' | 'monthly'); mặc định cả ba (chỉ dùng khi thật sự cần).
+  function rebuildDashboards(kinds = KINDS) {
     const cfg = loadConfig(), out = [];
-    for (const kind of KINDS) {
+    for (const kind of [].concat(kinds).filter((k) => KINDS.includes(k))) {
       try {
         const files = fs.readdirSync(path.join(DATA, kind)).filter((f) => /^\d{8}-ads\.json$/.test(f)).sort();
         const key = files.at(-1)?.slice(0, 8);

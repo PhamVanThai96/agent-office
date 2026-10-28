@@ -87,6 +87,7 @@ td .e{color:var(--warn);font-size:12.5px;word-break:break-word}
           <option value="both">Báo cáo + Dashboard content (mặc định)</option>
           <option value="report">Chỉ báo cáo (có AI nhận định)</option>
           <option value="dashboard">Chỉ Dashboard content (không dùng AI)</option>
+          <option value="rebuild">Dựng lại Dashboard từ dữ liệu đã lưu (nhanh, không cào Enzy)</option>
         </select>
       </label>
       <label>Tháng (cho báo cáo tuần / tháng)
@@ -175,7 +176,7 @@ td .e{color:var(--warn);font-size:12.5px;word-break:break-word}
   }
   function labels() {
     var p = pick(), out = $('out').value;
-    var what = { both: 'báo cáo + dashboard', report: 'báo cáo', dashboard: 'dashboard' }[out] || 'báo cáo';
+    var what = { both: 'báo cáo + dashboard', report: 'báo cáo', dashboard: 'dashboard', rebuild: 'dựng lại dashboard (từ dữ liệu đã lưu)' }[out] || 'báo cáo';
     var set = function (k, text, title) { var b = document.querySelector('.run[data-kind="' + k + '"]'); b.textContent = text; b.title = title; };
     set('daily', 'Chạy ngày', 'Tạo ' + what + ' cho hôm qua');
     set('weekly', p ? 'Tuần ' + p.week + '/' + p.month + '/' + p.year : 'Tuần', p ? 'Tạo ' + what + ' tuần ' + p.week + ' tháng ' + p.month + '/' + p.year : 'Tạo ' + what + ' tuần gần nhất');
@@ -183,7 +184,8 @@ td .e{color:var(--warn);font-size:12.5px;word-break:break-word}
     $('hint').textContent = {
       both: 'Tạo báo cáo (số liệu + biểu đồ + nhận định của #analyst) và Dashboard content theo người thực hiện. Thường mất vài phút.',
       report: 'Chỉ tạo báo cáo có nhận định của #analyst (vẫn có bảng so sánh người thực hiện, không dựng file dashboard).',
-      dashboard: 'Chỉ tải dữ liệu và dựng Dashboard content, không giao #analyst nên không tốn token AI. Cần đã cấu hình người thực hiện.'
+      dashboard: 'Chỉ tải dữ liệu và dựng Dashboard content, không giao #analyst nên không tốn token AI. Cần đã cấu hình người thực hiện.',
+      rebuild: 'Dựng lại Dashboard content CHỈ của loại bạn bấm (Ngày/Tuần/Tháng) từ số liệu đã lưu lần trước — rất nhanh, không đăng nhập hay cào lại Enzy, không đụng các loại khác. Dùng sau khi đổi từ khoá/người thực hiện/KPI để xem thay đổi. Luôn dùng số liệu gần nhất đã lưu của loại đó (không theo tháng/tuần chọn ở trên).'
     }[out];
     buttons();
   }
@@ -301,7 +303,7 @@ td .e{color:var(--warn);font-size:12.5px;word-break:break-word}
     for (var i = 0; i < 12; i++) { var d = new Date(now.getFullYear(), now.getMonth() - i, 1); opts.push(new Option('Tháng ' + (d.getMonth() + 1) + '/' + d.getFullYear(), d.getFullYear() + '-' + (d.getMonth() + 1))); }
     $('month').replaceChildren.apply($('month'), opts);
     var saved = null; try { saved = localStorage.getItem('ao.enzyOut'); } catch (e) { /* bỏ qua */ }
-    if (['both', 'report', 'dashboard'].indexOf(saved) >= 0) $('out').value = saved;
+    if (['both', 'report', 'dashboard', 'rebuild'].indexOf(saved) >= 0) $('out').value = saved;
     fillWeeks(); labels();
     $('month').onchange = function () { fillWeeks(); labels(); };
     $('week').onchange = labels;
