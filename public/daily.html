@@ -17,6 +17,11 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;v
 .tabs{display:flex;gap:6px;margin:10px 0}.tabs button{height:32px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 14px;cursor:pointer}.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 input[type=search],select,.note{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 8px}.note{width:100%;min-width:120px}
 .det{white-space:pre-wrap;color:var(--mute);font-size:12.5px;max-width:520px}.chip{font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--mute);display:inline-block;margin:1px 2px 1px 0}.wrap{overflow:auto;max-height:62vh}
+.vocc h2{margin:0 0 8px;font-size:16px;display:flex;align-items:center;gap:10px}.vocc h2 span{flex:1}.vocc h2 a{font-size:12px;font-weight:400}
+#vocStatus>div{margin:2px 0;font-size:13px}.muted{color:var(--mute)}.warnt{color:var(--bad)}.runt{color:var(--accent);font-weight:600}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes sp{to{transform:rotate(360deg)}}
+.vlog{margin-top:8px;max-height:140px;overflow:auto;background:var(--soft);border-radius:10px;padding:6px 10px;font:12px/1.5 ui-monospace,Menlo,monospace}.vlog[hidden]{display:none}.vlog .ok{color:var(--good)}.vlog .err{color:var(--bad)}.vlog .warn{color:var(--warn)}
+.vrow{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-top:10px}.vrow label{display:flex;gap:6px;align-items:center;color:var(--mute);font-size:12.5px}.vrow input[type=date]{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:0 8px}
 .idea{padding:3px 0;border-top:1px solid var(--line)}.idea small{color:var(--mute)}a{color:var(--accent)}
 </style></head>
 <body><main>
@@ -24,6 +29,15 @@ input[type=search],select,.note{height:32px;border-radius:8px;border:1px solid v
 <div class="sub">Mỗi lần bấm: cập nhật <b>Ý kiến khách hàng</b> (Enzy) và <b>Brands Vietnam</b> (bài trong 3 ngày gần nhất, nếu có mới), nguồn nào lỗi/quá thời gian thì bỏ qua và làm tiếp nguồn khác, rồi team viết báo cáo trend + idea mới trong ngày. Idea đã đề xuất các ngày trước được đưa vào prompt để không lặp lại.</div>
 <div class="card"><div class="row"><button class="btn pri" id="run">🔥 Quét Trend &amp; Tạo Idea</button><button class="btn danger" id="stop" hidden>Dừng</button><button class="btn" id="vaultBtn">📚 Kho insight</button><span class="sp"></span><span id="step" class="sub" style="margin:0"></span></div>
 <div class="sub" style="margin:10px 0 0">Brands Vietnam dùng Cloudflare: nếu cửa sổ Chrome hiện trang xác minh, hãy tự bấm qua (chờ tối đa 4 phút, không thì bỏ qua nguồn này).</div></div>
+<div class="card vocc" id="voc">
+  <h2><span>💬 Ý kiến khách hàng (insight)</span><a id="vocDigest" href="#" target="_blank" rel="noopener" hidden>Xem digest</a></h2>
+  <div id="vocStatus"><div class="muted">Đang tải…</div></div>
+  <div id="vocLog" class="vlog" hidden></div>
+  <div class="vrow"><button class="btn" data-voc="next">Cào 7 ngày kế tiếp</button><button class="btn" data-voc="catchup">Cào bù tới hôm qua</button><button class="btn danger" id="vocStop" hidden>■ Dừng</button></div>
+  <div class="vrow"><label>Excel từ <input id="vxFrom" type="date"></label><label>đến <input id="vxTo" type="date"></label><button class="btn" id="vxSaved" title="Mở dữ liệu đã lưu → Tải Excel đầy đủ → lưu YAML">Mở dữ liệu đã lưu</button><button class="btn" id="vxScan" title="Quét mới từ Pancake (tối đa 7 ngày, chậm)">Quét mới</button></div>
+  <div id="vxInfo" class="sub" style="margin:6px 0 0"></div>
+  <div class="vrow"><label>Cào từ ngày <input id="vocStart" type="date"></label><button class="btn" id="vocStartSave">Lưu</button></div>
+</div>
 <div class="card" id="vault" hidden>
   <div class="row"><b style="font-size:16px">📚 Kho insight</b><span class="sp"></span><input type="search" id="q" placeholder="Tìm trong bảng…" style="width:220px"><button class="btn" id="vaultClose">Đóng kho</button></div>
   <div class="tabs"><button data-t="ideas" class="on">Idea đã đề xuất</button><button data-t="themes">Insight khách hàng</button><button data-t="articles">Case-study & kiến thức</button></div>
@@ -77,5 +91,35 @@ function build(fmt,rows){
 $('exp').onclick=()=>{const rows=picked();if(!rows.length)return;const fmt=$('fmt').value,mime={md:'text/markdown',csv:'text/csv',yaml:'text/yaml'}[fmt];
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([build(fmt,rows)],{type:mime+';charset=utf-8'}));a.download=`kho-insight-${new Date().toISOString().slice(0,10)}.${fmt}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)};
 $('clr').onclick=()=>{sel.clear();draw()};
+
+// ---- Ý kiến khách hàng (insight): trước đây nằm ở cột phải của trang chính ----
+const vnDate=(s)=>s?s.split('-').reverse().join('/'):'';
+async function vpost(path,body){const r=await (window.adminFetch||fetch)(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const t=await r.text();if(t!=='ok')alert(t);loadVoc()}
+let vocKey='';
+async function loadVoc(){
+ let v;try{v=await (await fetch('/insight/status',{cache:'no-store'})).json()}catch{return}
+ const key=JSON.stringify(v);if(key===vocKey)return;vocKey=key;
+ const L=[];const ln=(h,c)=>L.push(`<div${c?` class="${c}"`:''}>${h}</div>`);
+ if(!v.configured)ln('Chưa có tài khoản đăng nhập trang Enzy: mở ⚙ Cấu hình → 📊 Dữ liệu Enzy để nhập.','warnt');
+ if(v.coverage)ln(`Đã cào: ${vnDate(v.coverage.from)} → ${vnDate(v.coverage.to)} · ${v.coverage.customers} khách · ${v.themes} chủ đề`);else ln('Chưa cào lần nào.','muted');
+ if(v.running)ln(`<i class="spin"></i>${esc(v.running.step)}`,'runt');
+ else if(v.next)ln(`Khoảng kế tiếp: ${vnDate(v.next.from)} → ${vnDate(v.next.to)}${v.behindDays>7?` · còn ${v.behindDays} ngày chưa cào`:''}`,'muted');
+ else ln('Đã cập nhật tới hôm qua ✅','muted');
+ ln(`Khi lên idea, team tự cập nhật tối đa ${v.autoWindows} khoảng ngày mới nhất.`,'muted');
+ if(v.lastError&&!v.running)ln(`⚠️ Lỗi gần nhất: ${esc(v.lastError)}`,'warnt');
+ $('vocStatus').innerHTML=L.join('');
+ const rows=v.log||[],lg=$('vocLog');lg.hidden=!rows.length;lg.innerHTML=rows.map(e=>`<div class="${esc(e.level||'')}">${esc(new Date(e.at).toTimeString().slice(0,8))} ${esc(e.text)}</div>`).join('');lg.scrollTop=lg.scrollHeight;
+ const sb=$('vocStop');sb.hidden=!v.running;sb.disabled=Boolean(v.running?.stopping);sb.textContent=v.running?.stopping?'Đang dừng…':'■ Dừng';
+ $('vxInfo').textContent=v.excel?`File YAML gần nhất (Excel): ${v.excel} · data/insight/voc/latest.yaml`:'';
+ document.querySelectorAll('#vxSaved,#vxScan').forEach(b=>{b.disabled=!v.configured||Boolean(v.running)});
+ const a=$('vocDigest');a.hidden=!v.digest;if(v.digest)a.href='/'+v.digest;
+ document.querySelectorAll('#voc button[data-voc]').forEach(b=>{b.disabled=!v.configured||Boolean(v.running)||(!v.next&&!v.running)});
+ if(document.activeElement!==$('vocStart'))$('vocStart').value=v.start||'';
+}
+$('vocStop').onclick=()=>{$('vocStop').disabled=true;vpost('/insight/stop',{})};
+document.querySelectorAll('#voc button[data-voc]').forEach(b=>{b.onclick=()=>{b.disabled=true;vpost('/insight/run',{mode:b.dataset.voc})}});
+for(const [id,mode] of [['vxSaved','saved'],['vxScan','scan']])$(id).onclick=()=>{if(!$('vxFrom').value||!$('vxTo').value){alert('Chọn khoảng ngày (từ – đến) trước.');return}$(id).disabled=true;vpost('/insight/excel',{from:$('vxFrom').value,to:$('vxTo').value,mode})};
+$('vocStartSave').onclick=()=>vpost('/insight/config',{start:$('vocStart').value});
+loadVoc();setInterval(loadVoc,2500);
 $('run').onclick=()=>post('/daily/run');$('stop').onclick=()=>post('/daily/stop');load();setInterval(load,2500);
 </script></body></html>

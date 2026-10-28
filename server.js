@@ -246,6 +246,10 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzy.statusFull()));
     return;
   }
+  if (req.method === 'GET' && url.pathname === '/insight/status') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(insight.status()));
+    return;
+  }
   if (req.method === 'GET' && url.pathname === '/daily/status') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(daily.status()));
     return;
