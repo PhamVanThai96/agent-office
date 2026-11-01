@@ -78,6 +78,7 @@ input[type=search],select,.note{height:32px;border-radius:8px;border:1px solid v
   <div class="tabs"><button data-t="ideas" class="on">Idea đã đề xuất</button><button data-t="themes">Insight khách hàng</button><button data-t="articles">Case-study & kiến thức</button></div>
   <div class="row" id="ideaFilter" style="margin-bottom:6px"><label>Trạng thái <select id="st"><option value="">Tất cả</option><option value="moi">Mới</option><option value="se-lam">Sẽ làm</option><option value="da-dung">Đã dùng</option><option value="bo">Bỏ</option></select></label><span class="sub" style="margin:0" id="cnt"></span></div>
   <div class="row" style="margin-bottom:6px"><span class="sub" style="margin:0">Đã chọn <b id="selN">0</b> mục (giữ nguyên khi đổi tab)</span><span class="sp"></span><select id="fmt"><option value="md">Markdown (.md)</option><option value="csv">Excel/CSV (.csv)</option><option value="yaml">YAML (.yaml)</option></select><button class="btn pri" id="exp" disabled>⬇ Tải file đã chọn</button><button class="btn" id="clr" disabled>Bỏ chọn</button></div>
+  <div class="row" style="margin-bottom:6px"><button class="btn" id="gitBtn">☁ Push kho lên GitHub</button><label class="sub" style="margin:0"><input type="checkbox" id="gq"> kèm trích dẫn khách (không khuyến nghị)</label><span class="sub" style="margin:0" id="gitInfo"></span></div>
   <div class="wrap" id="tbl"></div>
 </div>
 </div>
@@ -128,6 +129,13 @@ function build(fmt,rows){
  return `# Kho insight — xuất ${new Date().toLocaleString('vi-VN')}\n\n`+rows.map(r=>`## ${r.tieu_de}\n*${r.loai}${r.ngay?' · '+r.ngay:''}${r.trang_thai?' · '+r.trang_thai:''}*\n\n${r.noi_dung}\n${r.ghi_chu?'\nGhi chú: '+r.ghi_chu+'\n':''}${r.nguon?'\nNguồn: '+r.nguon+'\n':''}`).join('\n---\n\n')}
 $('exp').onclick=()=>{const rows=picked();if(!rows.length)return;const fmt=$('fmt').value,mime={md:'text/markdown',csv:'text/csv',yaml:'text/yaml'}[fmt];
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([build(fmt,rows)],{type:mime+';charset=utf-8'}));a.download=`kho-insight-${new Date().toISOString().slice(0,10)}.${fmt}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)};
+async function gitInfo(){try{const g=await (await fetch('/daily/vault/git',{cache:'no-store'})).json();window._g=g;$('gitInfo').textContent=g.error?'Git: '+g.error:`→ ${g.remote} (${g.branch})${g.visibility?' · '+(g.visibility==='public'?'CÔNG KHAI':g.visibility):''}${g.last?' · push gần nhất '+g.last:''}`}catch{}}
+$('vaultBtn').addEventListener('click',gitInfo);
+$('gitBtn').onclick=async()=>{await gitInfo();const g=window._g||{};const pub=g.visibility==='public';
+ if(!confirm(`Push KHO INSIGHT lên GitHub?\n\nRepo: ${g.remote||'?'} (nhánh ${g.branch||'?'})${pub?'\n⚠ Repo này đang CÔNG KHAI: ai cũng đọc được idea, insight khách hàng và tóm tắt case-study.':g.visibility?'':'\n(Không xác định được repo công khai hay riêng tư — hãy tự kiểm tra.)'}\n\nChỉ thư mục vault/ được commit và push (không đụng file khác).${$('gq').checked?'\nCó KÈM trích dẫn nguyên văn của khách.':'\nKhông kèm trích dẫn nguyên văn của khách.'}`))return;
+ $('gitBtn').disabled=true;$('gitBtn').textContent='Đang push…';
+ try{const r=await (window.adminFetch||fetch)('/daily/vault/push',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({quotes:$('gq').checked})});const j=await r.json().catch(()=>({error:'Phản hồi không hợp lệ'}));alert(j.ok?`${j.note}\n(${j.counts.ideas} idea · ${j.counts.themes} chủ đề · ${j.counts.articles} case-study)`:'Không push được: '+(j.error||'lỗi'))}catch(e){alert('Không push được: '+e.message)}
+ $('gitBtn').disabled=false;$('gitBtn').textContent='☁ Push kho lên GitHub';gitInfo()};
 $('clr').onclick=()=>{sel.clear();draw()};
 
 // ---- Ý kiến khách hàng (insight): trước đây nằm ở cột phải của trang chính ----

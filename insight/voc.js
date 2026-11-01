@@ -1,5 +1,5 @@
 import { chromium } from 'playwright-core';
-import { settle, selectBox, login, fillDateRange } from '../enzy/fetch.js';
+import { settle, selectBox, login, fillDateRange, gotoRetry, openEnzyPage } from '../enzy/fetch.js';
 import { parseIso, vnFull } from './store.js';
 
 // Cào mục "Ý kiến khách hàng" của trang Enzy (Streamlit): chọn khoảng ngày (tối đa 7 ngày) → "Bắt đầu bóc tách Dữ liệu (Inbox + Comment)"
@@ -30,12 +30,11 @@ export function parseVoc(code) {
 /** opts: { url, user, pass, brand, system, from, to (YYYY-MM-DD), headless } → { code, found, scanned, alerts } */
 export async function scrapeVoc(opts) {
   // Playwright mặc định tắt ThirdPartyStoragePartitioning; trang Enzy (Streamlit + component trong iframe) khi đó nhận mật khẩu đúng nhưng KHÔNG đăng nhập được → bật lại.
-  const browser = await chromium.launch({ channel: 'chrome', headless: opts.headless !== false, args: ['--enable-features=ThirdPartyStoragePartitioning'] });
+  const { browser, page } = await openEnzyPage(opts, { viewport: { width: 1600, height: 1200 } });
   // opts.ctl = { stopped, browser }: nút Dừng đóng trình duyệt này để mọi thao tác đang chờ thoát ngay.
   if (opts.ctl) { opts.ctl.browser = browser; if (opts.ctl.stopped) { await browser.close().catch(() => {}); throw new Error('Đã dừng theo yêu cầu.'); } }
   try {
-    const page = await browser.newPage({ viewport: { width: 1600, height: 1200 }, locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh' });
-    await page.goto(opts.url, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await gotoRetry(page, opts.url, { ctl: opts.ctl, onRetry: opts.onRetry });
     await login(page, opts);
     await page.locator('[data-testid="stMain"] h1, [data-testid="stMain"] h2').first().waitFor({ timeout: 120000 }).catch(() => {});
     if (opts.brand) await selectBox(page, 'Thương hiệu', opts.brand);

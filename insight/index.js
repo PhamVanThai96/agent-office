@@ -47,7 +47,7 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
   const exclusive = (fn) => { const p = chain.then(fn); chain = p.catch(() => {}); return p; };
 
   // Dữ liệu của một khoảng: thật (Chrome) hoặc giả lập khi thử (INSIGHT_FAKE_DIR/<từ-ngày>.txt hoặc default.txt).
-  async function fetchWindow(cfg, win, c) {
+  async function fetchWindow(cfg, win, c, onProgress) {
     const dir = process.env.INSIGHT_FAKE_DIR;
     if (dir) {
       // INSIGHT_FAKE_DELAY_MS: giả lập trang chậm để thử nút Dừng.
@@ -58,7 +58,7 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
     }
     const { user, pass } = cfg.creds;
     if (!user || !pass) throw new Error('Chưa có tài khoản đăng nhập trang Enzy (điền USER/PASS ở 📊 Dữ liệu Enzy).');
-    return scrapeVoc({ url: cfg.c.URL, user, pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from: win.from, to: win.to, ctl: c });
+    return scrapeVoc({ url: cfg.c.URL, user, pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from: win.from, to: win.to, ctl: c, onRetry: (t) => { rl(t, 'warn'); onProgress?.(t); } });
   }
 
   function planWindows(mode, cfg, ledger, max, range) {
@@ -90,7 +90,7 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
       rl(running.step);
       onProgress?.(running.step);
       try {
-        const res = await fetchWindow(cfg, win, ctl);
+        const res = await fetchWindow(cfg, win, ctl, onProgress);
         if (ctl.stopped) { done.stopped = true; break; }
         const entries = parseVoc(res.code);
         rl(`Trang trả về ${entries.length} khách cho ${label}.`);
@@ -188,7 +188,7 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
         if (!cfg.creds.user || !cfg.creds.pass) throw new Error('Chưa có tài khoản đăng nhập trang Enzy (điền USER/PASS ở 📊 Dữ liệu Enzy).');
         running = { ...running, step: `Đang tải Excel ý kiến khách hàng ${label} (${mode === 'scan' ? 'quét mới' : 'dữ liệu đã lưu'})…` };
         rl(running.step); log(running.step);
-        const res = await fetchVocExcel({ url: cfg.c.URL, user: cfg.creds.user, pass: cfg.creds.pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from, to, mode, ctl });
+        const res = await fetchVocExcel({ url: cfg.c.URL, user: cfg.creds.user, pass: cfg.creds.pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from, to, mode, ctl, onRetry: (t) => { rl(t, 'warn'); log(t); } });
         const w = readVocWorkbook(res.buf);
         const y = vocToYaml({ rows: w.rows, from, to, mode, metrics: { ...res.metrics, ...w.info } });
         const file = saveVocYaml(y);

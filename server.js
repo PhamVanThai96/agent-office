@@ -20,6 +20,7 @@ import { createEnzy, saveSchedule, saveConfig as saveEnzyConfig, publicConfig as
 import { createInsight, saveInsightStart } from './insight/index.js';
 import { createKnowledge } from './knowledge/index.js';
 import { createDaily, updateIdea } from './daily/index.js';
+import * as vaultGit from './daily/vaultpush.js';
 import { saveConfig as saveKnowledgeConfig } from './knowledge/store.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -252,6 +253,10 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/daily/status') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(daily.status()));
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/daily/vault/git') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(await vaultGit.info()));
     return;
   }
   if (req.method === 'GET' && url.pathname === '/daily/vault') {
@@ -559,6 +564,18 @@ const server = http.createServer(async (req, res) => {
         else if (url.pathname === '/insight/run') { const started = insight.start(String(b.mode)); res.writeHead(200).end(started ? 'ok' : 'Đang cào ý kiến khách hàng, hãy chờ xong.'); }
         else { saveInsightStart(b.start); res.writeHead(200).end('ok'); }
       } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
+      return;
+    }
+    if (url.pathname === '/enzy/auth/start' || url.pathname === '/enzy/auth/stop') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      const ok = url.pathname.endsWith('start') ? enzy.startAuth() : enzy.stopAuth();
+      res.writeHead(200).end(ok ? 'ok' : url.pathname.endsWith('start') ? 'Đang có cửa sổ đăng nhập mở.' : 'Không có cửa sổ đăng nhập nào đang mở.');
+      return;
+    }
+    if (url.pathname === '/daily/vault/push') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      try { const r = await vaultGit.push(daily.vault(), { quotes: b.quotes === true }); res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(r)); }
+      catch (e) { res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify({ ok: false, error: e.message })); }
       return;
     }
     if (url.pathname === '/daily/idea') {

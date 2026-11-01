@@ -656,6 +656,32 @@ async function openEnzyCfg() {
   ezDlg.showModal();
 }
 $('openEnzy').onclick = openEnzyCfg;
+// Đăng nhập Streamlit Cloud một lần bằng Chrome có giao diện (profile riêng) khi ứng dụng Enzy ở chế độ riêng tư.
+let ezAuthTimer = null, ezAuthWas = false;
+async function ezAuthPoll() {
+  try {
+    const a = (await (await fetch('/enzy/status', { cache: 'no-store' })).json()).auth || {};
+    const when = a.at ? ` (${new Date(a.at).toLocaleString('vi-VN')})` : '';
+    const [icon, color, text] = a.running ? ['⏳', '#a15c00', a.msg || 'Đang chờ bạn đăng nhập trong cửa sổ Chrome…']
+      : a.ok === true ? ['✅', '#14795f', `Đăng nhập thành công${when}. ${a.msg || ''}`]
+      : a.ok === false ? ['❌', '#b3261e', `Đăng nhập thất bại${when}: ${a.msg || 'không rõ lý do'}`]
+      : ['⚪', '', 'Chưa đăng nhập. Dùng khi báo cáo báo "yêu cầu đăng nhập Streamlit Cloud".'];
+    $('ezAuthIcon').textContent = icon; $('ezAuthMsg').textContent = text; $('ezAuthMsg').style.color = color;
+    if (ezAuthWas && !a.running && a.ok !== null) addSys(a.ok ? '✅ Đăng nhập Streamlit thành công, đã lưu phiên.' : `❌ Đăng nhập Streamlit thất bại: ${a.msg}`);
+    ezAuthWas = a.running;
+    $('ezAuth').textContent = a.running ? 'Dừng / đóng cửa sổ đăng nhập' : 'Đăng nhập Streamlit (một lần)';
+    if (!a.running && ezAuthTimer) { clearInterval(ezAuthTimer); ezAuthTimer = null; }
+  } catch { /* bỏ qua */ }
+}
+$('ezAuth').onclick = async () => {
+  const running = $('ezAuth').textContent.startsWith('Dừng');
+  const r = await fetch(running ? '/enzy/auth/stop' : '/enzy/auth/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+  const t = await r.text(); if (t !== 'ok') { $('ezAuthIcon').textContent = '⚠️'; $('ezAuthMsg').textContent = t; }
+  if (!ezAuthTimer) ezAuthTimer = setInterval(ezAuthPoll, 1500);
+  ezAuthPoll();
+};
+ezDlg.addEventListener('close', () => { if (ezAuthTimer) { clearInterval(ezAuthTimer); ezAuthTimer = null; } });
+$('openEnzy').addEventListener('click', ezAuthPoll);
 $('openCfg').onclick = () => openConfig();
 $('ezCancel').onclick = () => ezDlg.close();
 $('ezForm').onsubmit = async (ev) => {

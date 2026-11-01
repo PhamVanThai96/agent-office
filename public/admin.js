@@ -127,3 +127,27 @@
   window.adminPanel = panel;
   window.adminStatus = function () { return api('admin/status'); };
 })();
+
+// Ô mật khẩu nào cũng có nút con mắt để xem lại điều vừa nhập (kể cả ô tạo động trong hộp thoại Admin).
+(function () {
+  var EYE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var OFF = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.1-5.9M9.9 5.1A10.6 10.6 0 0 1 12 5c7 0 11 7 11 7a18.5 18.5 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2"/><path d="M1 1l22 22"/></svg>';
+  var st = document.createElement('style');
+  st.textContent = '.pwWrap{position:relative;display:block;width:100%}.pwWrap>input{width:100%;padding-right:38px!important}.pwEye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:6px;background:transparent;color:#667085;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}.pwEye:hover{color:#232834;background:rgba(127,127,127,.15)}@media (prefers-color-scheme:dark){.pwEye{color:#9aa8b6}.pwEye:hover{color:#e8edf2}}';
+  document.head.appendChild(st);
+  function enhance(i) {
+    if (i.dataset.pwEye || !i.parentNode) return;
+    i.dataset.pwEye = '1';
+    var w = document.createElement('span'); w.className = 'pwWrap';
+    i.parentNode.insertBefore(w, i); w.appendChild(i);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'pwEye'; b.tabIndex = -1;
+    var set = function (shown) { i.type = shown ? 'text' : 'password'; b.innerHTML = shown ? OFF : EYE; b.title = b.ariaLabel = shown ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'; };
+    set(false);
+    b.addEventListener('click', function (e) { e.preventDefault(); set(i.type === 'password'); i.focus(); });
+    b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    w.appendChild(b);
+  }
+  function scan(root) { (root.querySelectorAll ? root.querySelectorAll('input[type=password]') : []).forEach(enhance); }
+  new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { if (n.matches && n.matches('input[type=password]')) enhance(n); else scan(n); } }); }); }).observe(document.documentElement, { childList: true, subtree: true });
+  scan(document);
+})();

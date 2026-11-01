@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fetchEnzy } from './fetch.js';
+import { fetchEnzy, streamlitLogin } from './fetch.js';
 import { parseEnzy, buildDataMarkdown, snapshot, kindLabel } from './metrics.js';
 import { normalizeAds, filterByKeywords, groupByKeyword, keywordStats, keywordSummaryMarkdown, criteriaMarkdown, normTargets, groupByOwner, buildOwnerDashboard, ownerSummaryMarkdown } from './owners.js';
 
@@ -244,7 +244,7 @@ export function createEnzy(deps) {
     // ENZY_FAKE_RAW=<file.json>: dùng dữ liệu thô đã lưu thay cho trang thật (chỉ để thử nghiệm).
     const raw = process.env.ENZY_FAKE_RAW ? { ...readJson(process.env.ENZY_FAKE_RAW, {}), range: RANGE[kind] } : await fetchEnzy({
       url: cfg.URL, user: process.env.ENZY_USER || cfg.USER, pass: process.env.ENZY_PASS || cfg.PASS,
-      brand: cfg.BRAND, system: cfg.SYSTEM, store: cfg.STORE, accounts: cfg.ACCOUNTS, range: RANGE[kind], dates: calendarRange(kind, new Date(), pick),
+      brand: cfg.BRAND, system: cfg.SYSTEM, store: cfg.STORE, accounts: cfg.ACCOUNTS, range: RANGE[kind], dates: calendarRange(kind, new Date(), pick), onRetry: (t) => note(t, 'warn'),
     });
     const d = parseEnzy(raw);
     if (d.totals.spend == null) throw new Error('Không đọc được số liệu tổng từ trang báo cáo (cấu trúc trang có thể đã thay đổi).');
@@ -376,7 +376,25 @@ export function createEnzy(deps) {
   }
 
   // Trạng thái đầy đủ cho bảng "Tạo báo cáo" (kèm nhật ký); /poll chỉ dùng status() cho nhẹ.
-  const statusFull = () => ({ ...status(), now: Date.now(), log: logs.slice(-200) });
+  // Đăng nhập Streamlit Cloud một lần (khi ứng dụng riêng tư): mở Chrome có giao diện với profile riêng, người dùng tự đăng nhập.
+  const AUTH_FILE = path.join(DATA, 'auth.json'); // kết quả lần đăng nhập gần nhất (còn sau khi khởi động lại server)
+  const last = readJson(AUTH_FILE, {});
+  const auth = { running: false, msg: last.msg || '', ok: last.ok ?? null, at: last.at || 0, ctl: null };
+  function startAuth() {
+    if (auth.running) return false;
+    Object.assign(auth, { running: true, msg: 'Đang mở Chrome…', ok: null, ctl: { stopped: false } });
+    streamlitLogin({ url: loadConfig().URL, say: (t) => { auth.msg = t; }, ctl: auth.ctl })
+      .then(() => { auth.ok = true; auth.msg = 'Đã đăng nhập Streamlit và lưu phiên. Có thể chạy báo cáo.'; })
+      .catch((e) => { auth.ok = false; auth.msg = e.message; })
+      .finally(() => {
+        auth.running = false; auth.ctl = null; auth.at = Date.now();
+        try { writeJson(AUTH_FILE, { ok: auth.ok, msg: auth.msg, at: auth.at }); } catch { /* không ghi được thì bỏ qua */ }
+        note(auth.ok ? 'Đăng nhập Streamlit: thành công, đã lưu phiên.' : `Đăng nhập Streamlit: thất bại — ${auth.msg}`, auth.ok ? 'ok' : 'err');
+      });
+    return true;
+  }
+  const stopAuth = () => { if (!auth.running) return false; auth.ctl.stopped = true; auth.ctl.browser?.close(); return true; };
+  const statusFull = () => ({ ...status(), now: Date.now(), log: logs.slice(-200), auth: { running: auth.running, msg: auth.msg, ok: auth.ok, at: auth.at } });
 
-  return { enqueue, status, statusFull, due, rebuildDashboards };
+  return { enqueue, status, statusFull, due, rebuildDashboards, startAuth, stopAuth };
 }
