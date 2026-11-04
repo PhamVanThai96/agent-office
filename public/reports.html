@@ -139,7 +139,7 @@ async function open(item, btn) {
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(e)) {
     const img = document.createElement('img'); img.src = url; img.alt = item.name; view.append(img);
   } else if (['html', 'htm', 'md', 'markdown'].includes(e)) {
-    const f = document.createElement('iframe'); f.setAttribute('sandbox', /^enzy\/[^/]+\/\d{8}-dashboard-content\.html$/.test(item.name) ? 'allow-popups allow-scripts' : 'allow-popups'); f.src = url; view.append(f);
+    const f = document.createElement('iframe'); f.setAttribute('sandbox', /^enzy\/[^/]+\/\d{8}(?:-\d{8})?-dashboard-content\.html$/.test(item.name) ? 'allow-popups allow-scripts' : 'allow-popups'); f.src = url; view.append(f);
   } else if (e === 'docx') {
     const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'File Word (.docx) không xem trước được trên web. Bấm "Tải báo cáo" để tải về và mở bằng Word.'; view.append(d);
   } else {
@@ -161,9 +161,9 @@ const sel = new Set();       // báo cáo đang được chọn (đường dẫn
 let all = [], shown = [], current = '';
 const closed = new Set(JSON.parse(sessionStorage.getItem('rp-closed') || '[]'));
 const mlabel = (m) => 'Tháng ' + m.slice(5) + '/' + m.slice(0, 4);
-const KIND_NAME = { daily: 'Enzy · ngày', weekly: 'Enzy · tuần', monthly: 'Enzy · tháng' };
+const KIND_NAME = { daily: 'Enzy · ngày', weekly: 'Enzy · tuần', monthly: 'Enzy · tháng', custom: 'Enzy · khoảng ngày' };
 // Nhãn loại: theo thư mục enzy/<kỳ>/ (số liệu, dashboard) hoặc theo thẻ [Daily]/[Weekly]/[Monthly] ở đầu tiêu đề (báo cáo cuối).
-const kindOf = (n, title = '') => { const m = n.match(/^enzy\/(daily|weekly|monthly)\//) || String(title).match(/^\[(Daily|Weekly|Monthly)\]/i); return m ? KIND_NAME[m[1].toLowerCase()] : ''; };
+const kindOf = (n, title = '') => { const m = n.match(/^enzy\/(daily|weekly|monthly|custom)\//) || String(title).match(/^\[(Daily|Weekly|Monthly|Custom)\]/i); return m ? KIND_NAME[m[1].toLowerCase()] : ''; };
 
 function updateBar() {
   const n = sel.size;

@@ -230,3 +230,17 @@ Quy trình 9 bước ↔ agent (thêm `assistant` = Trợ lý hỏi đáp: câu 
 - Sửa đăng nhập Streamlit: `streamlitLogin` giờ mở Chrome BÌNH THƯỜNG (spawn, không gắn Playwright; không bị coi là trình duyệt tự động/ẩn danh) với thư mục hồ sơ riêng `data/enzy/profile`; người dùng đăng nhập (kể cả đăng nhập Chrome bằng tài khoản Google) rồi ĐÓNG cửa sổ; sau đó Chrome ẩn kiểm tra phiên → ✅/❌. Không dùng được hồ sơ Chrome mặc định của máy: Chrome không cho điều khiển thư mục mặc định và hồ sơ đó đang bị khoá khi Chrome mở.
 - Khoá hồ sơ Chrome: `freeProfile()` (enzy/fetch.js) chạy trước mỗi lần mở hồ sơ Enzy — nếu SingletonLock còn trỏ tới Chrome dùng đúng thư mục `data/enzy/profile` (Chrome vẫn chạy ngầm sau khi đóng cửa sổ trên macOS, hoặc bị sập) thì đóng nó và xoá khoá cũ; tiến trình lạ thì báo lỗi. `streamlitLogin` mở Chrome bình thường kèm `--remote-debugging-port` (chỉ 127.0.0.1) chỉ để biết khi nào mọi cửa sổ đã đóng, rồi tự tắt Chrome và kiểm tra phiên bằng Chrome ẩn.
 - Đăng nhập Streamlit tự nhận biết thành công: trong lúc chờ, `streamlitLogin` hỏi trang qua cổng gỡ lỗi (`cdpEval`, chỉ đọc) xem đã vào được trang Enzy chưa (ô "Tài khoản"/tiêu đề báo cáo/nút "Đăng xuất"); thấy 2 lần liên tiếp thì tự đóng Chrome và kiểm tra phiên → ✅. Người dùng vẫn có thể tự đóng cửa sổ.
+
+
+## Văn phòng 3D (public/office3d/)
+- Giao diện 3D lấy từ my-office (MIT, github.com/khanh020905/my-office): engine three.js thuần JS ở `public/office3d/js/` (chép nguyên từ `src/` của my-office), three 0.160 ở `vendor/three/`, CSS ở `css/`. Trang chính `index.html` nhúng `/office3d/` trong một iframe (chỉ nạp khi đang ở chế độ 3D); `?motion=1` bật lại chuyển động đầy đủ.
+- Backend không đổi: `bridge.js` hỏi `/poll` như `app.js` rồi đổi agent → "nhân viên" (mỗi phòng = một khu làm việc), sự kiện status/think/msg/plan/task → tin `{k:'snap'|'sess'|'ev'}` của engine. `shim.js` chặn các `/api/*` riêng của my-office và mọi yêu cầu ra ngoài.
+- Đứng yên (`js/office/core/still.js`): agent ngồi tại bàn, bỏ nhân vật phụ/sinh hoạt/thời tiết, phố chạy thử 30 s mô phỏng rồi đứng im, đồ hoạ mặc định "Tiết kiệm" (`scene/quality.js`). Xe cứu thương/cứu hoả bị ẩn, xe nào nằm trong toà nhà cũng ẩn (`street-life.js`).
+- Chỉ giữ nền thành phố (đã xoá đồng quê, bãi biển). Đường nối nét đứt khi giao việc: `people/task-links.js` (bridge gọi `window.__officeLink(from,to,kind)`).
+- Sửa mã trong `public/office3d/js/`, `bridge.js` hay `boot.js` thì chạy `./scripts/build-office3d.sh` để gộp lại `dist/boot.js` (trang chỉ tải file này). Server nén gzip + ETag cho tệp tĩnh.
+- Panel giao việc/cấu hình bên phải dùng `theme3d.css` (cùng bảng màu với 3D) khi ở chế độ 3D.
+
+## Báo cáo Enzy: khoảng thời gian bất kỳ
+- Thêm loại thứ tư `custom` bên cạnh ngày/tuần/tháng (`enzy/index.js`): `pick = { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }`. "Đến" muộn hơn hôm qua thì cắt về hôm qua; "từ" sau hôm qua hoặc khoảng dài quá 366 ngày thì báo lỗi ngay lúc xếp hàng (`customRange`).
+- Khoá dữ liệu của custom là `<từ>-<đến>` (YYYYMMDD) nên hai khoảng cùng ngày cuối không ghi đè nhau; không có lịch sử so sánh kỳ trước, không có lịch tự động, và không hỗ trợ "Dựng lại Dashboard từ dữ liệu đã lưu". Tệp nằm ở `data/enzy/custom/` và `reports/enzy/custom/`, báo cáo gắn nhãn `[Custom]`.
+- Giao diện: ô "Từ ngày / Đến ngày" và nút "Khoảng đã chọn" trong `public/enzyreport.html` (mục 1).

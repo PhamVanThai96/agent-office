@@ -11,12 +11,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CONFIG_FILE = path.join(ROOT, 'enzy.json');
 const DATA = path.join(ROOT, 'data', 'enzy');
 const STATE = path.join(DATA, 'state.json');
-export const KINDS = ['daily', 'weekly', 'monthly'];
-const KIND_LABEL = { daily: 'Báo cáo ngày', weekly: 'Báo cáo tuần', monthly: 'Báo cáo tháng' };
+export const KINDS = ['daily', 'weekly', 'monthly', 'custom'];   // custom: khoảng ngày bất kỳ do người dùng chọn (không có lịch tự động)
+const KIND_LABEL = { daily: 'Báo cáo ngày', weekly: 'Báo cáo tuần', monthly: 'Báo cáo tháng', custom: 'Báo cáo khoảng thời gian' };
 // Nhãn đặt trước tiêu đề báo cáo để dễ tìm/lọc: [Daily] / [Weekly] / [Monthly].
-const KIND_TAG = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' };
+const KIND_TAG = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', custom: 'Custom' };
 // Tuần/tháng lấy theo lịch (xem calendarRange), nhãn dưới đây chỉ để hiển thị.
-const RANGE = { daily: 'Hôm qua (trọn ngày)', weekly: 'Tuần theo lịch (1–7, 8–14, 15–21, 22–28, 29–cuối tháng)', monthly: 'Tháng dương lịch' };
+const RANGE = { daily: 'Hôm qua (trọn ngày)', weekly: 'Tuần theo lịch (1–7, 8–14, 15–21, 22–28, 29–cuối tháng)', monthly: 'Tháng dương lịch', custom: 'Khoảng ngày tuỳ chọn' };
 
 const DEFAULTS = {
   URL: 'https://enzyfood.streamlit.app/~/+/',
@@ -162,6 +162,7 @@ const fmtDay = (d) => `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYea
 export function calendarRange(kind, now = new Date(), pick = null) {
   if (kind === 'daily') return null;
   const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if (kind === 'custom') return customRange(pick, y);
   if (pick) {
     const py = Number(pick.year), pm = Number(pick.month) - 1;
     if (!Number.isInteger(py) || py < 2020 || py > 2100 || !Number.isInteger(pm) || pm < 0 || pm > 11) throw new Error('Tháng hoặc năm không hợp lệ.');
@@ -185,8 +186,22 @@ export function calendarRange(kind, now = new Date(), pick = null) {
 }
 export const WEEK_START_DAYS = [1, 8, 15, 22, 29];
 
+// Khoảng ngày bất kỳ: pick = { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }. Dữ liệu chỉ có tới hết hôm qua (y): "đến" muộn hơn thì cắt về hôm qua.
+const parseIso = (v) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || '')); if (!m) return null; const d = new Date(+m[1], +m[2] - 1, +m[3]); return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3] ? d : null; };
+export const MAX_CUSTOM_DAYS = 366;
+function customRange(pick, y) {
+  const from = parseIso(pick?.from), to = parseIso(pick?.to);
+  if (!from || !to) throw new Error('Hãy chọn đủ "Từ ngày" và "Đến ngày" hợp lệ (định dạng ngày/tháng/năm).');
+  if (from.getFullYear() < 2020) throw new Error('Ngày bắt đầu không hợp lệ.');
+  if (to < from) throw new Error('"Đến ngày" phải sau hoặc trùng "Từ ngày".');
+  if (from > y) throw new Error(`Chưa có dữ liệu: dữ liệu chỉ có tới hết hôm qua (${fmtDay(y)}).`);
+  const end = to > y ? y : to;
+  if (Math.round((end - from) / 864e5) + 1 > MAX_CUSTOM_DAYS) throw new Error(`Khoảng chọn dài quá ${MAX_CUSTOM_DAYS} ngày, hãy chọn ngắn hơn.`);
+  return { from, to: end };
+}
+
 const p2 = (n) => String(n).padStart(2, '0');
-const pickLabel = (kind, pick) => (!pick ? '' : kind === 'weekly' ? `tuần ${pick.week} tháng ${pick.month}/${pick.year}` : `tháng ${pick.month}/${pick.year}`);
+const pickLabel = (kind, pick) => (!pick ? '' : kind === 'custom' ? `từ ${fmtDay(parseIso(pick.from))} đến ${fmtDay(parseIso(pick.to))}` : kind === 'weekly' ? `tuần ${pick.week} tháng ${pick.month}/${pick.year}` : `tháng ${pick.month}/${pick.year}`);
 const dayKey = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 // Ngày cuối kỳ từ "00:00 17/10/2026 đến 23:59 23/10/2026" → 20261023
 function periodKey(period) {
@@ -248,7 +263,8 @@ export function createEnzy(deps) {
     });
     const d = parseEnzy(raw);
     if (d.totals.spend == null) throw new Error('Không đọc được số liệu tổng từ trang báo cáo (cấu trúc trang có thể đã thay đổi).');
-    const key = periodKey(d.period);
+    // custom: khoá gồm cả ngày đầu và ngày cuối (hai khoảng cùng ngày cuối không ghi đè nhau)
+    const key = kind === 'custom' ? `${String(pick.from).replace(/-/g, '')}-${periodKey(d.period)}` : periodKey(d.period);
     if (raw.adsRows?.length) writeJson(path.join(DATA, kind, `${key}-ads.json`), raw.adsRows);
     if (dashOnly) {
       // Chỉ dựng dashboard (không lưu số liệu kỳ, không giao #analyst, không tốn token AI).
@@ -323,8 +339,9 @@ export function createEnzy(deps) {
   }
 
   const enqueue = (kind, reason = 'chạy tay', dashOnly = false, pick = null, noDash = false) => {
-    if (!KINDS.includes(kind)) throw new Error('Loại báo cáo phải là daily, weekly hoặc monthly.');
+    if (!KINDS.includes(kind)) throw new Error('Loại báo cáo phải là daily, weekly, monthly hoặc custom.');
     if (kind === 'daily') pick = null;
+    else if (kind === 'custom') { calendarRange(kind, new Date(), pick); pick = { from: String(pick.from), to: String(pick.to) }; }   // báo lỗi ngay nếu khoảng không hợp lệ
     else if (pick) { calendarRange(kind, new Date(), pick); pick = { year: Number(pick.year), month: Number(pick.month), ...(kind === 'weekly' ? { week: Number(pick.week) } : {}) }; } // báo lỗi ngay nếu kỳ không hợp lệ/chưa có dữ liệu
     if ((state.running?.kind === kind && !!state.running.dashOnly === dashOnly) || queue.some((q) => q.kind === kind && !!q.dashOnly === dashOnly)) return false;
     queue.push({ kind, reason, dashOnly, pick, noDash: !dashOnly && noDash });
@@ -359,7 +376,7 @@ export function createEnzy(deps) {
 
   // Dựng lại dashboard từ dữ liệu từng quảng cáo đã lưu của kỳ gần nhất (vd sau khi đổi danh sách người thực hiện), không cần lấy lại từ trang.
   // Dựng lại dashboard từ dữ liệu ĐÃ LƯU (không cào Enzy). `kinds` = chỉ các loại cần dựng ('daily' | 'weekly' | 'monthly'); mặc định cả ba (chỉ dùng khi thật sự cần).
-  function rebuildDashboards(kinds = KINDS) {
+  function rebuildDashboards(kinds = ['daily', 'weekly', 'monthly']) {
     const cfg = loadConfig(), out = [];
     for (const kind of [].concat(kinds).filter((k) => KINDS.includes(k))) {
       try {

@@ -1,4 +1,5 @@
 import http from 'node:http';
+import zlib from 'node:zlib';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -99,9 +100,9 @@ async function saveReport(ev) {
 // Tiêu đề hiển thị trong danh sách: <title> / "Lệnh:" của báo cáo HTML, dòng "# " đầu của file markdown.
 // Báo cáo Enzy tự động được gắn nhãn [Daily]/[Weekly]/[Monthly] ở đầu tiêu đề (cả báo cáo cũ chưa có nhãn) để dễ tìm.
 function tagKind(rel, title) {
-  if (!title || /^\[(Daily|Weekly|Monthly)\]/.test(title)) return title;
-  const k = rel.match(/^enzy\/(daily|weekly|monthly)\//)?.[1]
-    || { 'ngày': 'daily', 'tuần': 'weekly', 'tháng': 'monthly' }[(title.match(/Báo cáo (ngày|tuần|tháng) quảng cáo Enzy/i) || [])[1]?.toLowerCase()];
+  if (!title || /^\[(Daily|Weekly|Monthly|Custom)\]/.test(title)) return title;
+  const k = rel.match(/^enzy\/(daily|weekly|monthly|custom)\//)?.[1]
+    || { 'ngày': 'daily', 'tuần': 'weekly', 'tháng': 'monthly', 'khoảng thời gian': 'custom' }[(title.match(/Báo cáo (ngày|tuần|tháng|khoảng thời gian) quảng cáo Enzy/i) || [])[1]?.toLowerCase()];
   return k ? `[${k[0].toUpperCase()}${k.slice(1)}] ${title}` : title;
 }
 function titleOf(rel) { return tagKind(rel, rawTitleOf(rel)); }
@@ -120,7 +121,7 @@ function rawTitleOf(rel) {
 }
 
 // Dashboard do chính app dựng (enzy/**/…-dashboard-content.html): được chạy script trong sandbox không cùng origin.
-const DASH = /^enzy\/[^/]+\/\d{8}-dashboard-content\.html$/;
+const DASH = /^enzy\/[^/]+\/\d{8}(?:-\d{8})?-dashboard-content\.html$/;
 
 // Ngày của báo cáo để phân loại theo tháng: ngày trong tên file (bao-cao-20261024-…, 20261023-so-lieu…) nếu có, không thì ngày sửa file.
 function dayOf(rel, mtime) {
@@ -221,7 +222,7 @@ const readJson = (req) => new Promise((resolve) => {
   req.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve({}); } });
 });
 
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json; charset=utf-8', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml' };
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json; charset=utf-8', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.mjs': 'text/javascript' };
 const rmime = {
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8', '.csv': 'text/csv; charset=utf-8', '.json': 'application/json; charset=utf-8',
@@ -639,14 +640,25 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   const pub = path.join(dir, 'public');
-  const file = path.join(pub, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
+  const file = path.join(pub, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname));   // (thư mục con như /office3d/ → index.html)
   if (!file.startsWith(pub + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     res.writeHead(404).end('not found');
     return;
   }
-  res.writeHead(200, { 'content-type': mime[path.extname(file)] || 'application/octet-stream' });
+  // Tệp tĩnh: ETag theo mtime+size (tải lại thì trả 304), nén gzip các loại văn bản (bản nén giữ trong bộ nhớ, tính một lần mỗi lần tệp đổi)
+  const st = fs.statSync(file), etag = `"${st.mtimeMs.toString(36)}-${st.size.toString(36)}"`, ext = path.extname(file);
+  const head = { 'content-type': mime[ext] || 'application/octet-stream', etag, 'cache-control': /\/office3d\/(assets|vendor|css\/fonts)\//.test(url.pathname) ? 'public, max-age=3600' : 'no-cache' };
+  if (req.headers['if-none-match'] === etag) { res.writeHead(304, head).end(); return; }
+  if (['.html', '.js', '.css', '.json', '.svg'].includes(ext) && st.size > 1024 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+    let z = gzCache.get(file);
+    if (!z || z.etag !== etag) { z = { etag, buf: zlib.gzipSync(fs.readFileSync(file), { level: 6 }) }; gzCache.set(file, z); }
+    res.writeHead(200, { ...head, 'content-encoding': 'gzip', vary: 'accept-encoding', 'content-length': z.buf.length }).end(z.buf);
+    return;
+  }
+  res.writeHead(200, head);
   fs.createReadStream(file).pipe(res);
 });
+const gzCache = new Map();
 
 // Cổng đang bận (vd chạy 2 bản, hoặc app khác giữ cổng 3000) thì tự thử cổng kế tiếp thay vì báo lỗi.
 server.once('listening', () => {

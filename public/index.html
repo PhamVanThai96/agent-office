@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agent Office</title>
+<link rel="modulepreload" href="office3d/dist/boot.js?v=fdcdc9fb">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="town.css">
+<link rel="stylesheet" href="office3d/css/fonts.css">
+<link rel="stylesheet" href="theme3d.css">
 </head>
 <body>
 <main id="office">
@@ -20,12 +22,7 @@
       <div id="pop" hidden></div>
     </div>
   </div>
-  <div id="town" hidden>
-    <div id="townGL"></div><div id="townLabels"></div>
-    <div id="townLoading"><i class="spin"></i></div>
-    <div id="townCard" hidden></div>
-    <button id="townStill" type="button">⏸ Dừng chuyển động</button><button id="townFix" type="button">🔒 Cố định góc nhìn</button>
-  </div>
+  <div id="o3" hidden><iframe id="o3Frame" title="Văn phòng 3D" allow="fullscreen" tabindex="0"></iframe></div>
 </main>
 <div id="split" title="Kéo để đổi độ rộng"></div>
 <aside id="side">
@@ -106,8 +103,7 @@
   </div>
   <div class="gfx">
     <h4>🎨 Cấu hình đồ hoạ</h4>
-    <div id="viewSw"><button type="button" data-v="2d" class="on">🏢 Văn phòng 2D</button><button type="button" data-v="3d">🏡 Khu vườn mèo</button></div>
-    <label class="gfxSw"><input type="checkbox" id="townLock"><i></i><span>Cố định góc nhìn khu vườn <small>(bật = khoá, không phóng to/kéo được)</small></span></label>
+    <div id="viewSw"><button type="button" data-v="3d" class="on">🏙️ Văn phòng 3D</button><button type="button" data-v="2d">🏢 Văn phòng 2D</button></div>
   </div>
 </dialog>
 <dialog id="memDlg">
@@ -121,6 +117,10 @@
 <dialog id="usDlg">
   <div class="usHead"><b>Giám sát token</b><span></span><a id="usOpen" href="usage.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="usClose" type="button" class="ghost">Đóng</button></div>
   <iframe id="usFrame" title="Giám sát token"></iframe>
+</dialog>
+<dialog id="rpDlg">
+  <div class="usHead"><b>Báo cáo</b><span></span><a href="reports.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="rpClose" type="button" class="ghost">Đóng</button></div>
+  <iframe id="rpFrame" title="Báo cáo"></iframe>
 </dialog>
 <dialog id="erDlg">
   <div class="usHead"><b>Tạo báo cáo quảng cáo Enzy</b><span></span><a id="erOpen" href="enzyreport.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="erClose" type="button" class="ghost">Đóng</button></div>
@@ -190,15 +190,29 @@
 <script src="admin.js"></script>
 <script src="app.js"></script>
 <script>
-// Bấm "Thị trấn 3D" trước khi module 3D nạp xong: vẫn hiện khung + biểu tượng loading; module sẽ tiếp quản khi sẵn sàng.
-document.getElementById('viewSw').addEventListener('click', function (e) {
-  var b = e.target.closest('button');
-  if (!b || window.townReady || b.dataset.v !== '3d') return;
-  window.__townWant = true;
-  document.getElementById('town').hidden = false; document.getElementById('stage').hidden = true; document.getElementById('legend').hidden = true;
-  Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x.dataset.v === '3d'); });
-});
+// Hai giao diện: 3D (my-office, nhúng /office3d/ trong khung riêng, chỉ nạp khi đang xem để không tốn RAM ở 2D) và 2D cũ.
+(function () {
+  var sw = document.getElementById('viewSw'), o3 = document.getElementById('o3'), fr = document.getElementById('o3Frame');
+  function setView(v) {
+    var is3 = v === '3d';
+    o3.hidden = !is3; document.getElementById('stage').hidden = is3; document.getElementById('legend').hidden = is3;
+    document.body.classList.toggle('v3', is3);
+    if (is3) { if (!fr.getAttribute('src')) fr.src = 'office3d/?v=fdcdc9fb'; } else fr.removeAttribute('src');
+    Array.prototype.forEach.call(sw.children, function (b) { b.classList.toggle('on', b.dataset.v === v); });
+    try { localStorage.setItem('ao.view3', v); } catch (e) { /* bỏ qua */ }
+  }
+  sw.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; setView(b.dataset.v); var d = document.getElementById('offDlg'); if (d && d.open) d.close(); });
+  var v = '3d'; try { v = localStorage.getItem('ao.view3') === '2d' ? '2d' : '3d'; } catch (e) { /* mặc định 3D */ }
+  setView(v);
+  // bấm CEO trong văn phòng 3D → xem các báo cáo
+  var rp = document.getElementById('rpDlg'), rf = document.getElementById('rpFrame');
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || e.data.ao !== 'report') return;
+    rf.src = 'reports.html'; if (!rp.open) rp.showModal();
+  });
+  document.getElementById('rpClose').onclick = function () { rp.close(); };
+  rp.addEventListener('close', function () { rf.removeAttribute('src'); });
+})();
 </script>
-<script src="town25d.js"></script>
 </body>
 </html>

@@ -1,0 +1,22 @@
+// The small panel (app/panel, src/panel/main.js): the editor's side bar, the Mac's menu bar
+export default {
+  connecting: 'Connecting to the office…',
+  open3d: 'Open the office',
+  open2d: 'List view',
+  now: 'just now',
+  answerInOffice: 'Answer in the office',
+  until: 'Back to the IDE in {s} s',
+  failed: "Couldn't send. Try again.",
+  openWindow: 'Bring its window to the front',
+  status: { wait: 'Waiting for you', work: 'Working', done: 'Done', rest: 'Resting' },
+  subs: { one: '{n} subagent at work', other: '{n} subagents at work' },
+  working: '{n} working',
+  waiting: { one: '{n} waits for you', other: '{n} wait for you' },
+  bar: { wait: '{name} is waiting for you', done: '{name} is done', quit: 'Hide this icon (until the office starts again)' },
+  quiet: 'All quiet',
+  needsYou: 'Needs you ({n})',
+  sessions: 'Sessions',
+  mac: { title: '{Mac}' },
+  noSessions: 'No Claude session open. Start one and it shows here.',
+  offline: "The office isn't running. Start it with: my-office start",
+};

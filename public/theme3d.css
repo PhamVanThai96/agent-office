@@ -1,0 +1,88 @@
+/* Giao diện 3D: panel cấu hình/giao việc bên phải cùng bảng màu, phông và độ bo với sân khấu 3D (my-office, nền tối + coral).
+   Chỉ áp dụng khi đang ở chế độ 3D (body.v3). */
+body.v3 {
+  --bg:#0D1219; --panel:#131922; --line:rgba(255,255,255,.08); --text:#E8ECF4; --muted:#8D97AA;
+  --card:#18202B; --card2:#1E2734; --card3:#263040; --line2:rgba(255,255,255,.14);
+  --accent:#EF8A5F; --accent-hi:#F5A07A; --on-accent:#2A1307; --green:#3DDC84; --red:#FF5F5F; --amber:#F2B544;
+  font-family:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif; color-scheme:dark; -webkit-font-smoothing:antialiased;
+}
+body.v3 button, body.v3 input, body.v3 select, body.v3 textarea { font-family:inherit; }
+body.v3 #office { background:var(--bg); }
+body.v3 #side { background:var(--panel); border-left:1px solid var(--line); }
+body.v3 #split:hover, body.v3 #split.drag { background:rgba(239,138,95,.4); }
+body.v3 h4 { color:var(--muted); }
+
+/* nút chung */
+body.v3 button { background:var(--card3); color:var(--text); font-weight:600; }
+body.v3 button:hover:not(:disabled) { background:#2F3B4F; }
+body.v3 .ghost, body.v3 .mini { background:var(--card2); color:var(--text); border:1px solid var(--line2); }
+body.v3 #go, body.v3 .edBtns button[type=submit], body.v3 #cfSave, body.v3 #ezSave, body.v3 #edSave { background:var(--accent); color:var(--on-accent); }
+body.v3 #go:hover:not(:disabled), body.v3 .edBtns button[type=submit]:hover { background:var(--accent-hi); }
+
+/* thanh công cụ */
+body.v3 #tools button { background:var(--card); color:var(--text); border:1px solid var(--line2); border-radius:12px; box-shadow:none; }
+body.v3 #tools button:hover { background:var(--card2); box-shadow:none; transform:none; border-color:var(--accent); }
+body.v3 #tools button.main { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+body.v3 #tools button.main:hover { background:var(--accent-hi); }
+body.v3 #tools button#openReport { background:rgba(255,95,95,.14); border-color:rgba(255,95,95,.5); color:#FFC4C4; box-shadow:none; }
+body.v3 #tools button#openReport:hover { background:rgba(255,95,95,.22); }
+body.v3 #tools button#openIdea { background:rgba(242,181,68,.13); border-color:rgba(242,181,68,.5); color:#FFE2A8; box-shadow:none; }
+body.v3 #tools button#openIdea:hover { background:rgba(242,181,68,.22); }
+
+/* trạng thái AI, token */
+body.v3 #mode.mp { background:var(--card); border-color:var(--line2); color:var(--text); }
+body.v3 #mode.mp.real { background:rgba(61,220,132,.09); border-color:rgba(61,220,132,.4); }
+body.v3 #mode.mp.mock { background:rgba(255,95,95,.09); border-color:rgba(255,95,95,.4); color:var(--text); }
+body.v3 #mode .mn { border-top-color:var(--line2); }
+body.v3 #tkn { background:var(--card); border-color:var(--line2); }
+body.v3 #tkn:hover { border-color:var(--accent); }
+body.v3 #tkn .tm { background:rgba(255,255,255,.1); }
+body.v3 #tkn .tm i { background:var(--green); }
+body.v3 #tkn.warn { background:rgba(242,181,68,.1); border-color:rgba(242,181,68,.45); }
+body.v3 #tkn.bad { background:rgba(255,95,95,.1); border-color:rgba(255,95,95,.45); }
+body.v3 #tkn .ts { color:var(--muted); }
+
+/* báo cáo, bảng task, nhật ký */
+body.v3 #final { background:rgba(61,220,132,.07); border-color:rgba(61,220,132,.35); }
+body.v3 #finalText { border-bottom-color:rgba(61,220,132,.35); }
+body.v3 #final h4 a { color:var(--accent-hi); }
+body.v3 #finalLinks a.flink { background:rgba(61,220,132,.1); border-color:rgba(61,220,132,.35); color:#8FEDB8; }
+body.v3 #tasks { border-bottom-color:var(--line2); }
+body.v3 .msg { background:var(--card); }
+body.v3 .msg .mh { color:#C3CBDA; }
+body.v3 .sys { color:var(--muted); }
+body.v3 #allowed button { background:var(--card2); color:var(--muted); }
+body.v3 .fb { color:var(--muted); }
+body.v3 .fb input, body.v3 #fbText { background:var(--card); border:1px solid var(--line2); color:var(--text); }
+body.v3 .fbb.on { background:var(--accent); color:var(--on-accent); }
+
+/* ô giao việc */
+body.v3 #f { background:var(--panel); box-shadow:0 -8px 18px rgba(0,0,0,.35); }
+body.v3 #task { background:var(--card); border:1px solid var(--line2); color:var(--text); }
+body.v3 #task:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(239,138,95,.18); }
+body.v3 #task::placeholder, body.v3 input::placeholder, body.v3 textarea::placeholder { color:var(--muted); }
+body.v3 #tpl button, body.v3 .fchip { background:var(--card); color:#C3CBDA; border:1px solid var(--line2); }
+body.v3 #tpl button:hover { border-color:var(--accent); background:var(--card2); }
+body.v3 .fchip.err { background:rgba(255,95,95,.1); border-color:rgba(255,95,95,.4); color:#FFB4B4; }
+body.v3 #asks, body.v3 #perm { background:transparent; }
+body.v3 #asks { background:var(--panel); }
+
+/* hộp thoại cấu hình */
+body.v3 dialog { background:var(--panel); color:var(--text); border:1px solid var(--line2); box-shadow:0 24px 60px rgba(0,0,0,.6); }
+body.v3 dialog::backdrop { background:rgba(5,8,12,.6); }
+body.v3 dialog label, body.v3 dialog h3, body.v3 dialog legend { color:var(--text); }
+body.v3 dialog input, body.v3 dialog select, body.v3 dialog textarea { background:var(--card); color:var(--text); border:1px solid var(--line2); border-radius:10px; }
+body.v3 dialog input:focus, body.v3 dialog select:focus, body.v3 dialog textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(239,138,95,.18); }
+body.v3 dialog fieldset { border-color:var(--line2); }
+body.v3 .offGrid button { background:var(--card); border:1px solid var(--line2); color:var(--text); }
+body.v3 .offGrid button:hover { background:var(--card2); border-color:var(--accent); }
+body.v3 .offGrid button i { background:var(--card3); border-color:var(--line2); }
+body.v3 .offGrid button small { color:var(--muted); }
+body.v3 .usHead { color:var(--text); border-bottom-color:var(--line); }
+body.v3 .usHead a { color:var(--accent-hi); }
+body.v3 dialog iframe { background:#fff; border-radius:10px; }
+body.v3 .gfx { border-top-color:var(--line); }
+body.v3 #viewSw button { background:var(--card2); color:var(--muted); border:1px solid var(--line2); }
+body.v3 #viewSw button.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+body.v3 #cfErr, body.v3 #edErr, body.v3 #ezErr { color:#FF9C9C; }
+body.v3 .toolsBox span, body.v3 #cfNote, body.v3 #cfAuthNote, body.v3 .ezHint { color:var(--muted); }

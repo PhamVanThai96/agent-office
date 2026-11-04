@@ -1,0 +1,16 @@
+/* tuỳ biến cho Agent Office (nạp sau office.css) */
+
+/* Chỉ còn sân khấu 3D: bỏ panel phiên làm việc (trái), panel Hoạt động (phải) và các chip đo máy Mac / gói Claude */
+#app { grid-template-columns: minmax(0, 1fr) !important; grid-template-areas: "top" "stage" !important; }
+.side-left, #feed, #btn-mac, #btn-plan, .pop-plan, #dr-mac { display: none !important; }
+
+#ao-loading { position: fixed; inset: 0; z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #0D1219; color: #8D97AA; font: 500 13px "Be Vietnam Pro", system-ui, sans-serif; transition: opacity .3s; }
+#ao-loading i { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(239,138,95,.2); border-top-color: #EF8A5F; animation: aoSpin .9s linear infinite; }
+@keyframes aoSpin { to { transform: rotate(360deg); } }
+
+/* thu phóng cố định: ẩn nút +/− */
+#zoom-in, #zoom-out { display: none !important; }
+
+/* nhãn gọn hơn, bỏ chip "Nhóm …": tên từng agent đứng đúng chỗ ngồi, không chồng lên nhau */
+.team-tag { display: none !important; }
+.tag { font-size: 11px; padding: 4px 9px 4px 7px; gap: 6px; }

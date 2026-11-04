@@ -179,17 +179,26 @@ export async function login(page, cfg) {
   if (!cfg.user || !cfg.pass) throw new Error('Chưa có tài khoản đăng nhập Enzy: điền USER/PASS trong enzy.json (hoặc biến môi trường ENZY_USER/ENZY_PASS).');
   const pass = page.locator('input[type="password"]');
   const submitted = async (ms) => { await page.waitForTimeout(ms); return !(await pass.count()); };
+  // Form đăng nhập có thể biến mất giữa chừng (Streamlit tự khôi phục phiên đã lưu rồi chạy lại trang): lúc đó đã vào được app, đừng chờ ô mật khẩu nữa.
+  const inApp = () => appReady.waitFor({ state: 'visible', timeout: 15000 }).then(() => true, () => false);
+  if (!(await pass.count()) && (await inApp())) return;
   // Trang Streamlit đôi khi chậm/bỏ qua lần gửi đầu: thử tối đa 3 lần (điền lại cả hai ô) trước khi báo sai tài khoản.
   for (let attempt = 0; attempt < 3 && (await pass.count()); attempt++) {
-    await user.fill(cfg.user);
-    await user.press('Tab'); // Streamlit chỉ ghi nhận giá trị ô nhập khi rời ô / nhấn Enter; bấm nút ngay sau fill sẽ gửi giá trị cũ (rỗng).
-    await settle(page, 400);
-    await pass.fill(cfg.pass);
-    await pass.press('Enter');
+    try {
+      await user.fill(cfg.user, { timeout: 10000 });
+      await user.press('Tab'); // Streamlit chỉ ghi nhận giá trị ô nhập khi rời ô / nhấn Enter; bấm nút ngay sau fill sẽ gửi giá trị cũ (rỗng).
+      await settle(page, 400);
+      await pass.fill(cfg.pass, { timeout: 10000 });
+      await pass.press('Enter', { timeout: 10000 });
+    } catch (e) {
+      if (!(await pass.count()) && (await inApp())) return;   // form đã biến mất vì đã vào được app
+      continue;                                               // còn form mà điền chưa được: thử lại vòng sau
+    }
     if (await submitted(3000)) break;
-    await page.getByRole('button', { name: 'Đăng nhập' }).click().catch(() => {});
+    await page.getByRole('button', { name: 'Đăng nhập' }).click({ timeout: 5000 }).catch(() => {});
     for (let i = 0; i < 10 && !(await submitted(1500)); i++);
   }
+  if (!(await pass.count()) && (await inApp())) return;
   if (await pass.count()) throw new Error('Đăng nhập Enzy thất bại: kiểm tra USER/PASS (trang không chấp nhận hoặc không phản hồi).');
 }
 
