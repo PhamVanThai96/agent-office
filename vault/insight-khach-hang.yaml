@@ -1,2 +1,98 @@
-# Kho insight Agent Office — xuất 2026-10-28. File sinh tự động, sửa trong app rồi push lại.
-themes: []
+# Kho insight Agent Office — xuất 2026-11-06. File sinh tự động, sửa trong app rồi push lại.
+themes:
+  - label: Mua thử nhỏ trước, ổn mới ủng hộ tiếp
+    type: Tình huống dùng
+    stage: Quyết định
+    product: ""
+    customers: 12
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Khuyến khích mua gói nhỏ trải nghiệm, hẹn follow-up hỏi cảm nhận sau vài ngày dùng.
+  - label: Lo hàng giả, không chính hãng
+    type: Lo ngại
+    stage: Cân nhắc
+    product: ""
+    customers: 11
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Chủ động gửi hình ảnh/video xưởng, mã truy xuất, kênh bán chính thức để xác thực hàng.
+  - label: Hỏi chi tiết khuyến mãi/tặng kèm
+    type: Câu hỏi
+    stage: Quyết định
+    product: ""
+    customers: 10
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Ghi rõ điều kiện combo/tặng kèm ngay đầu tin, tránh khách hỏi lại nhiều lần.
+  - label: Lo hạn sử dụng/dùng lâu hết hạn
+    type: Lo ngại
+    stage: Cân nhắc
+    product: ""
+    customers: 6
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Chủ động ghi rõ HSD, gợi ý mua size nhỏ phù hợp nhà ít người.
+  - label: So sánh giá trên Shopee/kênh khác
+    type: Câu hỏi
+    stage: Cân nhắc
+    product: ""
+    customers: 5
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Giải thích chênh giá do khuyến mãi/kênh, cam kết giá inbox có ưu đãi riêng.
+  - label: Hạt nêm lâu tan khi nêm vào nước
+    type: Phản đối
+    stage: Sau mua
+    product: hạt nêm
+    customers: 4
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Hướng dẫn cách nêm/khuấy đúng để tan nhanh, giải thích lý do kết cấu hạt.
+  - label: Bé nhỏ dùng được không
+    type: Câu hỏi
+    stage: Cân nhắc
+    product: ""
+    customers: 4
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Nêu rõ độ tuổi phù hợp và thành phần an toàn cho trẻ nhỏ khi tư vấn.
+  - label: Sợ bột ngọt/mì chính, dị ứng
+    type: Lo ngại
+    stage: Cân nhắc
+    product: ""
+    customers: 3
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Nhấn mạnh thành phần không chứa bột ngọt, công khai bảng thành phần chi tiết.
+  - label: Ăn chay/không chay dùng chung được không
+    type: Câu hỏi
+    stage: Cân nhắc
+    product: ""
+    customers: 3
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Khẳng định rõ sản phẩm dùng được cho cả người ăn chay và không chay.
+  - label: Thông tin ship/thời gian giao hàng
+    type: Câu hỏi
+    stage: Quyết định
+    product: ""
+    customers: 3
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Chủ động gửi thông tin shipper, thời gian giao dự kiến ngay khi xác nhận đơn.
+  - label: Muốn đồng kiểm trước thanh toán
+    type: Mong muốn
+    stage: Quyết định
+    product: ""
+    customers: 2
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Ghi rõ chính sách đồng kiểm/cho xem hàng trước khi thanh toán trong tin xác nhận.
+  - label: Hỏi cách dùng/liều lượng nêm
+    type: Câu hỏi
+    stage: Sau mua
+    product: hạt nêm
+    customers: 2
+    first_seen: 2026-11-01
+    last_seen: 2026-11-05
+    touchpoint: Gửi kèm hướng dẫn liều lượng/cách nêm chuẩn khi giao hàng.

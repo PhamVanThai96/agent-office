@@ -1,2 +1,62 @@
-# Kho insight Agent Office — xuất 2026-10-28. File sinh tự động, sửa trong app rồi push lại.
-ideas: []
+# Kho insight Agent Office — xuất 2026-11-06. File sinh tự động, sửa trong app rồi push lại.
+ideas:
+  - day: 2026-11-06
+    title: Nêm nếm kỹ – cách một người lớn trong nhà "làm gương"
+    status: moi
+    detail: |-
+      - Insight: nền khách hàng chính là nữ 40–60 tuổi chăm lo gia đình; mượn cơ chế OMO (gắn sản phẩm vào khoảnh khắc làm gương sống tích cực) để kể chuyện người chọn kỹ gia vị không phải vì sợ, mà vì muốn dạy con cháu ăn sạch.
+      - Hook 3s: "Mẹ không nêm bừa, vì mẹ đang dạy con điều gì là sạch."
+      - Kênh/định dạng: video kể chuyện 60–75s, Facebook + TikTok nhân bản, giọng kể thật (không diễn).
+      - Cấu trúc: hook → cảnh người nội trợ chọn hạt nêm chay, giải thích ngắn lý do (không bột ngọt – theo công bố Enzy) → cảnh con/cháu ăn cùng → chữ chốt "sạch từ bữa ăn nhỏ nhất".
+      - CTA: nhắn tin để được tư vấn chọn hạt nêm phù hợp bữa nhà mình.
+      - Tránh: không claim "tốt cho sức khỏe con" dạng y tế; chỉ nói về thành phần/thói quen chọn lựa.
+    note: ""
+    report: reports/bao-cao-20261106-224413-quet-trend-tao-idea-2026-11-06-du-lieu-cac-nguon.html
+  - day: 2026-11-06
+    title: Nhìn vùng nguyên liệu, biết hàng thật
+    status: moi
+    detail: |-
+      - Insight: 5 khách so sánh giá Shopee, 11 khách sợ hàng giả → thay vì giải thích chênh giá (rủi ro so sánh), dùng hình ảnh quen thuộc để khách *tự* nhận diện hàng chính hãng (cơ chế VALORANT: bản sắc không cần giải thích dài).
+      - Hook 3s: cảnh đồi ngưu bàng Gia Lai, chữ "Đây là nơi hạt nêm của bạn bắt đầu".
+      - Kênh/định dạng: TikTok/Reels 40s, quay thật tại vùng nguyên liệu + nhà máy Hòa Khánh.
+      - Cấu trúc: hook vùng nguyên liệu → cắt sang nhà máy đóng gói → chữ "chỉ có ở kênh chính thức Enzy" → không nhắc giá, không chê kênh khác.
+      - CTA: nhắn tin để được hướng dẫn mua đúng kênh chính thức.
+      - Tránh: tuyệt đối không nêu tên/so sánh hạ thấp Shopee hay kênh khác.
+    note: ""
+    report: reports/bao-cao-20261106-224413-quet-trend-tao-idea-2026-11-06-du-lieu-cac-nguon.html
+  - day: 2026-11-06
+    title: Nhà mấy người, mỗi tháng cần mấy hộp?
+    status: moi
+    detail: |-
+      - Insight: 6 khách lo mua nhiều rồi hết hạn → thật ra là lo *mua sai lượng dùng*, không phải lo chất lượng. Lấy cơ chế Văn Phú: kể lối sống thay vì liệt kê HSD.
+      - Hook 3s: "Nhà 2 người, nhà 5 người – ai cũng nên nêm khác nhau."
+      - Kênh/định dạng: video ngắn 45–60s, bối cảnh bếp nhà thật, 2 gia đình mẫu.
+      - Cấu trúc: hook → cảnh 1 gia đình ít người dùng lượng nhỏ mỗi lần → cảnh gia đình đông người → chốt gợi ý chọn số hộp theo nhịp bếp nhà, không nói con số HSD cụ thể.
+      - CTA: nhắn tin để được gợi ý số hộp phù hợp nhà mình.
+      - Tránh: không nêu số ngày HSD cụ thể nếu chưa xác thực lại.
+    note: ""
+    report: reports/bao-cao-20261106-224413-quet-trend-tao-idea-2026-11-06-du-lieu-cac-nguon.html
+  - day: 2026-11-06
+    title: 3 câu hỏi khuyến mãi khách hỏi nhiều nhất – giải nhanh 1 lần
+    status: moi
+    detail: |-
+      - Insight: 10 khách hỏi lại cách tính combo/tặng kèm (dễ hiểu nhầm số hộp – phí ship).
+      - Hook 3s: chữ lớn "Mua 2 tặng 1 là tặng gì?" (nêu thẳng câu hỏi thật).
+      - Kênh/định dạng: carousel Facebook 4 ảnh hoặc video dọc TikTok 20s, dạng FAQ.
+      - Cấu trúc: liệt 3 câu hỏi inbox thật → trả lời bằng 1 bảng số hộp – giá – phí rõ ràng (khớp enzy.vn lúc đăng) → chốt 1 câu dễ nhớ.
+      - CTA: nhắn tin để được tư vấn số hộp phù hợp.
+      - Tránh: số/ưu đãi phải đối chiếu enzy.vn trước khi đăng, không tự bịa combo.
+    note: ""
+    report: reports/bao-cao-20261106-224413-quet-trend-tao-idea-2026-11-06-du-lieu-cac-nguon.html
+  - day: 2026-11-06
+    title: Hộp đầu tiên – thử trước khi tin
+    status: moi
+    detail: |-
+      - Insight: 12 khách nói sẽ ủng hộ tiếp *sau khi* dùng thử; 11 khách lo mua nhầm hàng giả → mâu thuẫn là khách muốn "thử rẻ" nhưng không tin nguồn trước khi thử.
+      - Hook 3s: "Trước khi tin Enzy, hãy nghi ngờ Enzy đã" (người Enzy tự mời khách kiểm tra).
+      - Kênh/định dạng: TikTok/Reels 30–45s, quay tại nhà máy.
+      - Cấu trúc: hook nghi ngờ → chỉ cách nhận hàng thật (đồng kiểm, mã/kênh chính thức theo công bố Enzy) → mời dùng 1 hộp hạt nêm chay trải nghiệm → hẹn hỏi lại cảm nhận sau vài ngày.
+      - CTA: nhắn tin đặt 1 hộp dùng thử.
+      - Tránh: không nói "cam kết hoàn tiền"/claim chưa xác nhận; không dùng số liệu vi chất chưa kiểm chứng.
+    note: ""
+    report: reports/bao-cao-20261106-224413-quet-trend-tao-idea-2026-11-06-du-lieu-cac-nguon.html
