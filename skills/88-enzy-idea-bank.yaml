@@ -1,0 +1,61 @@
+# File SINH TỰ ĐỘNG từ data/enzyidea/ideas.json — không sửa tay.
+id: 88-enzy-idea-bank
+title: Kho idea Enzy đã trích xuất (5 idea, từ trang "Nghiên cứu Content")
+summary: Các Big Idea có thể triển khai mà trang Enzy gợi ý (mâu thuẫn khách hàng, niềm tin cần thay đổi, vai trò riêng của Enzy…). Dùng để HỌC CÁCH LẬP LUẬN và lấy cảm hứng, không chép nguyên văn; tra bằng skill_search.
+agents: [signal, planner, writer, analyst, manager]
+exclude: [assistant]
+when: [kho idea enzy, idea bank enzy]
+tags: [idea, big idea, enzy, content]
+order: 88
+updated: 2026-11-06
+sections:
+  - id: idea-mw52wxdd4
+    title: Lần này, chọn bằng tên vị
+    tags: [Content branding, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+    text: |-
+      Nhóm: Content branding
+      Big Idea: Lần này, chọn rắc cơm Enzy bằng tên vị.
+      Cách hiểu đang thử: Tên vị không nổi trong bài/nhãn nên không nhớ.
+      Lời khách: “Cô mua mấy lần nhưng k để ý có mấy vị”
+      Cũng có thể là: Mua lại theo quen một vị nên không để ý vị khác.
+      Từ trang Enzy 2026-11-06.
+  - id: idea-mw52wxdc3
+    title: Món quen, lần đầu với Enzy
+    tags: [Content chuyển đổi, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+    text: |-
+      Nhóm: Content chuyển đổi
+      Big Idea: Món quen ở lại, Enzy là điều bạn tự thử: lần đầu có thể đặt riêng một hộp.
+      Cách hiểu đang thử: Sợ mua nhiều rồi vị không hợp nhà mình.
+      Lời khách: “chưa ăn nên không dám mua nhiều”
+      Cũng có thể là: Nhà nấu ít nên ngại giữ nhiều hũ, không phải sợ vị.
+      Từ trang Enzy 2026-11-06.
+  - id: idea-mw52wxdc2
+    title: Tìm hạt nêm thuần chay để nấu món mặn?
+    tags: [Content chuyển đổi, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+    text: |-
+      Nhóm: Content chuyển đổi
+      Big Idea: Đặt tiêu chí của bếp mình cạnh hũ Enzy: hợp điều đang tìm thì chọn phần hàng để mua.
+      Cách hiểu đang thử: Chưa thấy tiêu chí khác biệt nên chưa thấy lý do trả thêm.
+      Lời khách: “Cảm ơn shop. Giá cao vượt khả năng của mình nên mình ko mua đc ạ.”
+      Cũng có thể là: Lấy hạt nêm phổ thông làm mốc nên thấy giá cao. Tổng chi một lần vượt ngân sách lúc này, không phải chê giá trị.
+      Từ trang Enzy 2026-11-06.
+  - id: idea-mw52wxdb1
+    title: Gia Lai hay Đà Nẵng? Hai địa danh của Enzy
+    tags: [Content branding, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+    text: |-
+      Nhóm: Content branding
+      Big Idea: Gia Lai là vùng nguyên liệu; Hòa Khánh là nhà máy Enzy.
+      Cách hiểu đang thử: Muốn biết ai đứng sau, làm ở đâu trước khi tin.
+      Lời khách: “Có đúng chất lượng như vậy ko?Cô sợ như cty Kera chị em rọt gì đó?”
+      Cũng có thể là: Lo quảng cáo nói quá so với sản phẩm. Muốn dấu hiệu hàng đang sản xuất, ngày rõ, thay lời hứa chất lượng.
+      Từ trang Enzy 2026-11-06.
+  - id: idea-mw52wxda0
+    title: Lần này, bạn cần một, ba hay năm hộp Enzy?
+    tags: [Content chuyển đổi, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+    text: |-
+      Nhóm: Content chuyển đổi
+      Big Idea: Chọn số hộp Enzy trên cùng một bảng: phần hàng, giá và phí luôn đi cùng nhau.
+      Cách hiểu đang thử: Nhớ tên gói khác (phối rắc cơm, 3 tặng 1) nên kỳ vọng phần khác.
+      Lời khách: “Hạt Nêm Chay Enzy - Cải Thiện Sức Khoẻ Cho Người Ăn Chay mua2 hộp mà không tặng gì cả vậy là nói dối để bán hàng à”
+      Cũng có thể là: Tên 'mua 2 tặng 1' đọc thành trả 2 hộp là có quà. Có sai lệch thật ở tư vấn hoặc đóng gói, không chỉ cách đọc ưu đãi.
+      Từ trang Enzy 2026-11-06.

@@ -21,6 +21,8 @@ import { createEnzy, saveSchedule, saveConfig as saveEnzyConfig, publicConfig as
 import { createInsight, saveInsightStart } from './insight/index.js';
 import { createKnowledge } from './knowledge/index.js';
 import { createDaily, updateIdea } from './daily/index.js';
+import { createEnzyIdea } from './enzyidea/index.js';
+import { publicContentConfig, saveContentConfig } from './enzyidea/store.js';
 import * as vaultGit from './daily/vaultpush.js';
 import { saveConfig as saveKnowledgeConfig } from './knowledge/store.js';
 
@@ -209,9 +211,12 @@ const enzy = createEnzy({
   log: (text) => emit({ type: 'log', from: 'Enzy', text }),
 });
 
+// Nguồn "Idea Enzy": cào idea từ trang Enzy bằng tài khoản content, lưu kho (loại trùng); báo cáo idea do daily tạo từ các nguồn được chọn: enzyidea/index.js.
+const enzyIdea = createEnzyIdea({ log: (text) => emit({ type: 'log', from: 'Idea Enzy', text }) });
+
 // Quét Trend & Tạo Idea hằng ngày (nhiều nguồn, nguồn lỗi thì bỏ qua, chống trùng idea): daily/index.js.
 const daily = createDaily({
-  insight, knowledge, isBusy: () => busy, uploadsDir: UPLOADS,
+  insight, knowledge, enzyIdea, isBusy: () => busy, uploadsDir: UPLOADS,
   submit: (task, ids, opts) => startRun(task, attachmentsOf(ids), opts),
   log: (text) => emit({ type: 'log', from: 'Trend & Idea', text }),
 });
@@ -254,6 +259,14 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/daily/status') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(daily.status()));
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/enzyidea/status') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(enzyIdea.status()));
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/enzyidea/config/get') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }).end(JSON.stringify(publicContentConfig()));
     return;
   }
   if (req.method === 'GET' && url.pathname === '/daily/vault/git') {
@@ -567,6 +580,20 @@ const server = http.createServer(async (req, res) => {
       } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
       return;
     }
+    if (url.pathname === '/enzyidea/auth/start' || url.pathname === '/enzyidea/auth/stop') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      const ok = url.pathname.endsWith('start') ? enzyIdea.startAuth() : enzyIdea.stopAuth();
+      res.writeHead(200).end(ok ? 'ok' : url.pathname.endsWith('start') ? 'Đang có cửa sổ đăng nhập hoặc lượt quét idea đang chạy.' : 'Không có cửa sổ đăng nhập nào đang mở.');
+      return;
+    }
+    if (url.pathname === '/enzyidea/stop' || url.pathname === '/enzyidea/config/save') {
+      if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
+      try {
+        if (url.pathname === '/enzyidea/config/save') { saveContentConfig(b); res.writeHead(200).end('ok'); }
+        else res.writeHead(200).end(enzyIdea.stop() ? 'ok' : 'Không có lượt quét nào đang chạy.');
+      } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
+      return;
+    }
     if (url.pathname === '/enzy/auth/start' || url.pathname === '/enzy/auth/stop') {
       if (!sameOrigin(req)) { res.writeHead(403).end('Yêu cầu phải xuất phát từ giao diện cùng máy chủ.'); return; }
       const ok = url.pathname.endsWith('start') ? enzy.startAuth() : enzy.stopAuth();
@@ -593,7 +620,7 @@ const server = http.createServer(async (req, res) => {
       try {
         if (url.pathname === '/daily/stop') res.writeHead(200).end(daily.stop() ? 'ok' : 'Không có lượt quét nào đang chạy.');
         else if (url.pathname === '/daily/scan') res.writeHead(200).end(daily.startScan() ? 'ok' : 'Đang có lượt quét khác, hãy chờ xong.');
-        else res.writeHead(200).end((await daily.start()) ? 'ok' : 'Đang quét, hãy chờ xong.');
+        else res.writeHead(200).end((await daily.start({ scanMissing: b.scanMissing !== false })) ? 'ok' : 'Đang quét, hãy chờ xong.');
       } catch (e) { if (!res.headersSent) res.writeHead(400); res.end(e.message); }
       return;
     }

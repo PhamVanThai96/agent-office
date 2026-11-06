@@ -13,6 +13,8 @@ const STEP_MS = 60000;
 // Chrome dùng PROFILE RIÊNG (data/enzy/profile) để phiên đăng nhập Streamlit Cloud (khi ứng dụng ở chế độ riêng tư) được giữ lại giữa các lần chạy.
 // Một profile chỉ mở được bởi một Chrome tại một thời điểm → các lần mở xếp hàng qua `lock`; browser.close() nhả khoá.
 export const ENZY_PROFILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'enzy', 'profile');
+// Hồ sơ riêng cho tài khoản content (quét idea): phiên của tài khoản ads và tài khoản content không đè lên nhau
+export const CONTENT_PROFILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'enzy', 'profile-content');
 let lock = Promise.resolve();
 
 // Chrome còn chạy ngầm sau khi đóng cửa sổ (macOS giữ ứng dụng) hoặc bị sập sẽ để lại SingletonLock → lần mở sau lỗi "ProcessSingleton / File exists".
@@ -20,26 +22,27 @@ let lock = Promise.resolve();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
 const cmdOf = (pid) => new Promise((resolve) => execFile('ps', ['-o', 'command=', '-p', String(pid)], (e, o) => resolve(e ? '' : String(o))));
-async function freeProfile() {
+async function freeProfile(dir = ENZY_PROFILE) {
   let pid = 0;
-  try { pid = Number(fs.readlinkSync(path.join(ENZY_PROFILE, 'SingletonLock')).split('-').pop()); } catch { return; }
+  try { pid = Number(fs.readlinkSync(path.join(dir, 'SingletonLock')).split('-').pop()); } catch { return; }
   if (pid && alive(pid)) {
-    if (!(await cmdOf(pid)).includes(ENZY_PROFILE)) throw new Error(`Một tiến trình khác (PID ${pid}) đang giữ hồ sơ Chrome của Enzy. Hãy đóng nó rồi thử lại.`);
+    if (!(await cmdOf(pid)).includes(dir)) throw new Error(`Một tiến trình khác (PID ${pid}) đang giữ hồ sơ Chrome của Enzy. Hãy đóng nó rồi thử lại.`);
     try { process.kill(pid, 'SIGTERM'); } catch { /* đã thoát */ }
     for (let i = 0; i < 16 && alive(pid); i++) await sleep(500);
     if (alive(pid)) { try { process.kill(pid, 'SIGKILL'); } catch { /* đã thoát */ } await sleep(500); }
   }
-  for (const n of ['SingletonLock', 'SingletonCookie', 'SingletonSocket']) { try { fs.unlinkSync(path.join(ENZY_PROFILE, n)); } catch { /* không có */ } }
+  for (const n of ['SingletonLock', 'SingletonCookie', 'SingletonSocket']) { try { fs.unlinkSync(path.join(dir, n)); } catch { /* không có */ } }
 }
 export async function openEnzyPage(opts = {}, extra = {}) {
   let release; const prev = lock; lock = new Promise((r) => { release = r; });
   await prev;
   let ctx;
   try {
-    fs.mkdirSync(ENZY_PROFILE, { recursive: true });
-    await freeProfile();
+    const dir = opts.profile || ENZY_PROFILE;
+    fs.mkdirSync(dir, { recursive: true });
+    await freeProfile(dir);
     // ThirdPartyStoragePartitioning: Playwright mặc định tắt nên trang Enzy (Streamlit + component trong iframe) nhận mật khẩu đúng nhưng KHÔNG đăng nhập được → bật lại.
-    ctx = await chromium.launchPersistentContext(ENZY_PROFILE, { channel: 'chrome', headless: opts.headless !== false, args: ['--enable-features=ThirdPartyStoragePartitioning'], locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh', viewport: extra.viewport, acceptDownloads: extra.acceptDownloads });
+    ctx = await chromium.launchPersistentContext(dir, { channel: 'chrome', headless: opts.headless !== false, args: ['--enable-features=ThirdPartyStoragePartitioning'], locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh', viewport: extra.viewport, acceptDownloads: extra.acceptDownloads });
   } catch (e) { release(); throw e; }
   let closed = false;
   const browser = { close: async () => { if (closed) return; closed = true; try { await ctx.close(); } catch { /* đã đóng */ } release(); } };
@@ -60,18 +63,18 @@ export const cdpEval = (wsUrl, expression) => new Promise((resolve) => {
 });
 const LOGGED_IN = `location.hostname.endsWith('enzyfood.streamlit.app') && !/\\/-\\/auth/.test(location.pathname) && Boolean(document.querySelector('input[aria-label*="Tài khoản"]') || document.querySelector('[data-testid="stMain"] h1') || document.body.innerText.includes('Đăng xuất'))`;
 const chromePath = () => [process.env.CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe', '/usr/bin/google-chrome'].find((p) => p && fs.existsSync(p));
-export async function streamlitLogin({ url, say = () => {}, waitMs = 15 * 60000, ctl = {} }) {
+export async function streamlitLogin({ url, say = () => {}, waitMs = 15 * 60000, ctl = {}, profile = ENZY_PROFILE }) {
   const bin = chromePath();
   if (!bin) throw new Error('Không tìm thấy Google Chrome (đặt biến môi trường CHROME_PATH nếu cài ở chỗ khác).');
   let release; const prev = lock; lock = new Promise((r) => { release = r; });
   await prev;
   try {
-    fs.mkdirSync(ENZY_PROFILE, { recursive: true });
-    await freeProfile();
+    fs.mkdirSync(profile, { recursive: true });
+    await freeProfile(profile);
     say('Đã mở Chrome bình thường: hãy đăng nhập Streamlit (có thể đăng nhập Chrome bằng tài khoản Google của bạn). Hệ thống tự đóng cửa sổ khi thấy đăng nhập xong (hoặc bạn tự đóng).');
     // Cổng gỡ lỗi chỉ để biết khi nào BẠN đã đóng hết cửa sổ (Chrome vẫn chạy ngầm sau đó): chỉ nghe ở 127.0.0.1, đóng ngay khi xong; không gắn điều khiển nên không bị coi là trình duyệt tự động.
     const port = 9300 + Math.floor(Math.random() * 600);
-    const child = spawn(bin, [`--user-data-dir=${ENZY_PROFILE}`, `--remote-debugging-port=${port}`, '--no-first-run', '--no-default-browser-check', '--window-size=1200,850', url], { stdio: 'ignore' });
+    const child = spawn(bin, [`--user-data-dir=${profile}`, `--remote-debugging-port=${port}`, '--no-first-run', '--no-default-browser-check', '--window-size=1200,850', url], { stdio: 'ignore' });
     let exited = false; child.once('exit', () => { exited = true; });
     child.once('error', () => { exited = true; });
     const kill = async () => { try { child.kill('SIGTERM'); } catch { /* đã thoát */ } for (let i = 0; i < 16 && !exited; i++) await sleep(500); if (!exited) { try { child.kill('SIGKILL'); } catch { /* đã thoát */ } } };
@@ -90,10 +93,10 @@ export async function streamlitLogin({ url, say = () => {}, waitMs = 15 * 60000,
       }
     } finally { await kill(); }
     if (ctl.stopped) throw new Error('Đã dừng.');
-    await freeProfile();
+    await freeProfile(profile);
   } finally { release(); }
   say('Đã đóng cửa sổ, đang kiểm tra phiên đăng nhập…');
-  const { browser, page } = await openEnzyPage({}, { viewport: { width: 1200, height: 850 } });
+  const { browser, page } = await openEnzyPage({ profile }, { viewport: { width: 1200, height: 850 } });
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 }).catch(() => {});
     const ok = await page.locator('input[type="text"][aria-label*="Tài khoản"], [data-testid="stMain"] h1').first().waitFor({ timeout: 60000 }).then(() => true).catch(() => false);
@@ -113,17 +116,28 @@ export async function settle(page, ms = 800) {
 
 const combo = (page, label) => page.locator(`input[role="combobox"][aria-label*="${label}"]`).first();
 
+// So khớp "lỏng": bỏ emoji, dấu tiếng Việt, ký tự lạ và khác biệt hoa/thường ("Nghiên cứu Content 🌿" ≈ "nghien cuu content").
+const loose = (s) => norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim();
+// Lỗi kèm danh sách lựa chọn thật đang có, để biết ngay trang đặt tên khác thế nào.
+export class OptionMissing extends Error { constructor(msg, available) { super(msg); this.available = available; } }
+
 async function pickOption(page, text) {
-  const want = norm(text);
+  const want = norm(text), wantLoose = loose(text);
   const opts = page.locator('[role="option"]');
   await opts.first().waitFor({ timeout: STEP_MS });
-  const all = await opts.allInnerTexts();
-  let i = all.findIndex((t) => norm(t) === want);
-  if (i < 0) i = all.findIndex((t) => norm(t).startsWith(want));
-  if (i < 0) i = all.findIndex((t) => norm(t).includes(want));
-  if (i < 0) { await page.keyboard.press('Escape'); return null; }
-  await opts.nth(i).click();
-  return all[i];
+  let all = [];
+  // Danh sách có thể còn đang nạp (Streamlit chạy lại trang sau khi đăng nhập/đổi thương hiệu): đọc lại tối đa 3 lần
+  for (let round = 0; round < 3; round++) {
+    all = await opts.allInnerTexts();
+    let i = all.findIndex((t) => norm(t) === want);
+    if (i < 0) i = all.findIndex((t) => norm(t).startsWith(want));
+    if (i < 0) i = all.findIndex((t) => norm(t).includes(want));
+    if (i < 0) i = all.findIndex((t) => loose(t) === wantLoose || loose(t).includes(wantLoose) || (loose(t) && wantLoose.includes(loose(t))));
+    if (i >= 0) { await opts.nth(i).click(); return all[i]; }
+    await page.waitForTimeout(1500);
+  }
+  await page.keyboard.press('Escape');
+  throw new OptionMissing(`Không tìm thấy lựa chọn "${text}". Các lựa chọn đang có: ${all.map((t) => `"${t.replace(/\s+/g, ' ').trim()}"`).join(', ') || '(trống)'}.`, all);
 }
 
 // Chọn giá trị cho selectbox nếu đang khác (so sánh bỏ emoji, không phân biệt hoa thường).
@@ -132,9 +146,9 @@ export async function selectBox(page, label, value) {
   await box.waitFor({ timeout: STEP_MS });
   if (norm(await box.inputValue()).includes(norm(value))) return true;
   await box.click();
-  const ok = await pickOption(page, value);
+  try { await pickOption(page, value); }
+  catch (e) { if (e instanceof OptionMissing) throw new Error(`Ô "${label}": ${e.message}`); throw e; }
   await settle(page);
-  if (!ok) throw new Error(`Không tìm thấy lựa chọn "${value}" trong ô "${label}".`);
   return true;
 }
 
@@ -173,9 +187,21 @@ export async function login(page, cfg) {
   await page.waitForLoadState('load', { timeout: 20000 }).catch(() => {});
   if (/share\.streamlit\.io|\/-\/auth/.test(page.url())) throw new Error('Trang Enzy đang yêu cầu đăng nhập Streamlit Cloud (ứng dụng không còn công khai). Hãy bấm "Đăng nhập Streamlit" trong 📊 Dữ liệu Enzy để đăng nhập một lần (hoặc đặt ứng dụng ở chế độ công khai).');
   const user = page.locator('input[type="text"][aria-label*="Tài khoản"]');
-  const appReady = page.locator('[data-testid="stMain"] h1', { hasText: 'Báo Cáo' });
+  // Đã đăng nhập = thấy tiêu đề "Báo Cáo" của tài khoản ads HOẶC nút "Đăng xuất" ở thanh bên (tài khoản content không có tiêu đề "Báo Cáo")
+  const appReady = page.locator('[data-testid="stMain"] h1:has-text("Báo Cáo"), button:has-text("Đăng xuất")').first();
   await Promise.race([user.waitFor({ timeout: 90000 }), appReady.waitFor({ timeout: 90000 })]);
-  if (!(await user.count())) return;
+  if (!(await user.count())) {
+    // Hồ sơ Chrome riêng giữ phiên cũ: trang tự vào luôn, có thể bằng TÀI KHOẢN KHÁC (vd tài khoản ads khi đang cần tài khoản content). Có tài khoản để đăng nhập
+    // thì đăng xuất rồi đăng nhập lại đúng tài khoản; không thấy nút đăng xuất thì giữ phiên hiện có như trước.
+    const out = page.getByRole('button', { name: /Đăng xuất/ });
+    if (!cfg.user) return;
+    await out.first().waitFor({ timeout: 12000 }).catch(() => {});   // (thanh bên có thể hiện chậm hơn phần chính)
+    if (!(await out.count())) { cfg.say?.('Trang đã vào sẵn bằng phiên cũ và không thấy nút "Đăng xuất": giữ nguyên phiên này.'); return; }
+    cfg.say?.('Trang đang giữ phiên đăng nhập cũ: đăng xuất rồi đăng nhập lại đúng tài khoản…');
+    await out.first().click();
+    await user.waitFor({ timeout: 60000 }).catch(() => {});
+    if (!(await user.count())) return;
+  }
   if (!cfg.user || !cfg.pass) throw new Error('Chưa có tài khoản đăng nhập Enzy: điền USER/PASS trong enzy.json (hoặc biến môi trường ENZY_USER/ENZY_PASS).');
   const pass = page.locator('input[type="password"]');
   const submitted = async (ms) => { await page.waitForTimeout(ms); return !(await pass.count()); };

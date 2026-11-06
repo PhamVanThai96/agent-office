@@ -46,7 +46,8 @@ export function createOrchestrator({ emit, state, ask, insight }) {
     return a;
   }
 
-  // opts.label: dòng hiển thị thay cho lệnh dài (vd prompt báo cáo tự động); opts.appendix: phần chi tiết thêm vào báo cáo (số liệu do code tính).
+  // opts.label: dòng hiển thị thay cho lệnh dài (vd prompt báo cáo tự động); opts.appendix: phần chi tiết thêm vào báo cáo (số liệu do code tính);
+  // opts.focus: danh sách id agent mà báo cáo CHỈ hiển thị kết quả của họ (vd ['planner']), bỏ phần tổng hợp và các agent khác.
   async function run(raw, attachments = [], opts = {}) {
     let command = raw;
     let direct = null;
@@ -250,7 +251,7 @@ export function createOrchestrator({ emit, state, ask, insight }) {
     const items = tasks.map((t) => {
       const { status, text, rounds, blocked } = results[t.id];
       const note = rounds ? ` (sau ${rounds} vòng sửa${blocked ? ', vẫn chưa đạt' : ''})` : '';
-      return { agent: byId[t.assignee].name, title: t.title + note, status, text };
+      return { id: t.assignee, agent: byId[t.assignee].name, title: t.title + note, status, text };
     });
     let text;
     try {
@@ -259,7 +260,7 @@ export function createOrchestrator({ emit, state, ask, insight }) {
       text = `Không tổng hợp được báo cáo: ${e.message}`;
     }
     msg(CEO, 'user', 'final', short(text, 140));
-    const fin = { type: 'final', text, artifacts, links: opts.links, details: [...(opts.appendix || []), ...items], tasks: items.map((i) => ({ agent: i.agent, title: i.title, status: i.status })) };
+    const fin = { type: 'final', text, artifacts, links: opts.links, focus: opts.focus, refs: opts.refs, details: [...(opts.appendix || []), ...items], tasks: items.map((i) => ({ agent: i.agent, title: i.title, status: i.status })) };
     await emit(fin);
     try { opts.onFinal?.(fin); } catch { /* chỉ để bên gọi biết tên file báo cáo */ } // fin.file do server gán khi lưu báo cáo
     try { remember({ command: planText, summary: text, items, artifacts }); } catch { /* không lưu được thì bỏ qua */ }

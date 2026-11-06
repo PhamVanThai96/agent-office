@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadConfig, CONFIG_FILE } from '../enzy/index.js';
+import { loadContentConfig } from '../enzyidea/store.js';
+import { CONTENT_PROFILE } from '../enzy/fetch.js';
 import { scrapeVoc, parseVoc } from './voc.js';
 import { distill } from './distill.js';
 import { fetchVocExcel, readVocWorkbook, vocToYaml, saveVocYaml, VOC_DIR } from './excel.js';
@@ -20,7 +22,8 @@ export function insightConfig() {
     START: /^\d{4}-\d{2}-\d{2}$/.test(i.START || '') ? i.START : '',
     SYSTEM: String(i.SYSTEM || 'Ý kiến khách hàng'),
     AUTO_WINDOWS: Number.isFinite(n) ? Math.min(Math.max(n, 0), 4) : 2,
-    creds: { user: process.env.ENZY_USER || c.USER, pass: process.env.ENZY_PASS || c.PASS }, c,
+    // Mục "Ý kiến khách hàng" chỉ có ở TÀI KHOẢN CONTENT (tài khoản ads không có hệ thống này): dùng tài khoản + hồ sơ Chrome của content, không phải tài khoản báo cáo ads
+    creds: { user: loadContentConfig().USER, pass: loadContentConfig().PASS }, profile: CONTENT_PROFILE, c,
   };
 }
 
@@ -57,8 +60,8 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
       return { code, found: parseVoc(code).length, scanned: NaN, alerts: [] };
     }
     const { user, pass } = cfg.creds;
-    if (!user || !pass) throw new Error('Chưa có tài khoản đăng nhập trang Enzy (điền USER/PASS ở 📊 Dữ liệu Enzy).');
-    return scrapeVoc({ url: cfg.c.URL, user, pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from: win.from, to: win.to, ctl: c, onRetry: (t) => { rl(t, 'warn'); onProgress?.(t); } });
+    if (!user || !pass) throw new Error('Chưa có tài khoản đăng nhập trang Enzy (⚙ Cấu hình → Cấu hình content Enzy: Ý kiến khách hàng dùng tài khoản content).');
+    return scrapeVoc({ url: cfg.c.URL, user, pass, profile: cfg.profile, brand: cfg.c.BRAND, system: cfg.SYSTEM, from: win.from, to: win.to, ctl: c, onRetry: (t) => { rl(t, 'warn'); onProgress?.(t); } });
   }
 
   function planWindows(mode, cfg, ledger, max, range) {
@@ -185,10 +188,10 @@ export function createInsight({ log = () => {}, wrap = (label, fn) => fn() } = {
     exclusive(() => wrap('Lấy Excel ý kiến khách hàng', async () => {
       try {
         const cfg = insightConfig();
-        if (!cfg.creds.user || !cfg.creds.pass) throw new Error('Chưa có tài khoản đăng nhập trang Enzy (điền USER/PASS ở 📊 Dữ liệu Enzy).');
+        if (!cfg.creds.user || !cfg.creds.pass) throw new Error('Chưa có tài khoản đăng nhập trang Enzy (⚙ Cấu hình → Cấu hình content Enzy: Ý kiến khách hàng dùng tài khoản content).');
         running = { ...running, step: `Đang tải Excel ý kiến khách hàng ${label} (${mode === 'scan' ? 'quét mới' : 'dữ liệu đã lưu'})…` };
         rl(running.step); log(running.step);
-        const res = await fetchVocExcel({ url: cfg.c.URL, user: cfg.creds.user, pass: cfg.creds.pass, brand: cfg.c.BRAND, system: cfg.SYSTEM, from, to, mode, ctl, onRetry: (t) => { rl(t, 'warn'); log(t); } });
+        const res = await fetchVocExcel({ url: cfg.c.URL, user: cfg.creds.user, pass: cfg.creds.pass, profile: cfg.profile, brand: cfg.c.BRAND, system: cfg.SYSTEM, from, to, mode, ctl, onRetry: (t) => { rl(t, 'warn'); log(t); } });
         const w = readVocWorkbook(res.buf);
         const y = vocToYaml({ rows: w.rows, from, to, mode, metrics: { ...res.metrics, ...w.info } });
         const file = saveVocYaml(y);

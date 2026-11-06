@@ -125,19 +125,19 @@ button { padding:8px 16px; border:0; border-radius:999px; background:#34517a; co
 button:disabled { opacity:.5; cursor:default; }
 .req .no, #pop .off { background:#8a3a37; }
 
-#ed, #cfgDlg, #ezDlg { border:0; border-radius:16px; padding:18px 20px; width:min(440px, 92vw); box-shadow:0 20px 50px rgba(30,40,70,.4); }
-#ed::backdrop, #cfgDlg::backdrop, #ezDlg::backdrop { background:rgba(30,35,50,.45); }
-#ed h3, #cfgDlg h3, #ezDlg h3 { margin:0 0 10px; font-size:16px; }
-#ed label, #cfgDlg label, #ezDlg label { display:block; font-size:12px; color:var(--muted); margin-bottom:8px; }
-#ed input, #ed select, #ed textarea, #cfgDlg input:not([type=checkbox]), #cfgDlg select, #ezDlg input:not([type=checkbox]), #ezDlg select { display:block; width:100%; box-sizing:border-box; margin-top:3px; padding:7px 9px; border:1px solid #d9d6cc; border-radius:8px; font:inherit; font-size:13px; color:#222; background:#fff; }
+#ed, #cfgDlg, #ezDlg, #ecDlg { border:0; border-radius:16px; padding:18px 20px; width:min(440px, 92vw); box-shadow:0 20px 50px rgba(30,40,70,.4); }
+#ed::backdrop, #cfgDlg::backdrop, #ezDlg::backdrop, #ecDlg::backdrop { background:rgba(30,35,50,.45); }
+#ed h3, #cfgDlg h3, #ezDlg h3, #ecDlg h3 { margin:0 0 10px; font-size:16px; }
+#ed label, #cfgDlg label, #ezDlg label, #ecDlg label { display:block; font-size:12px; color:var(--muted); margin-bottom:8px; }
+#ed input, #ed select, #ed textarea, #cfgDlg input:not([type=checkbox]), #cfgDlg select, #ezDlg input:not([type=checkbox]), #ezDlg select, #ecDlg input:not([type=checkbox]), #ecDlg select { display:block; width:100%; box-sizing:border-box; margin-top:3px; padding:7px 9px; border:1px solid #d9d6cc; border-radius:8px; font:inherit; font-size:13px; color:#222; background:#fff; }
 #ed input[type=color] { padding:2px; height:34px; }
-#ed .row2, #cfgDlg .row2, #ezDlg .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+#ed .row2, #cfgDlg .row2, #ezDlg .row2, #ecDlg .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 #ed input:read-only { background:#f1efe8; }
 #edErr, #cfErr { color:#8a3a37; font-size:12px; min-height:16px; }
 .edBtns { display:flex; gap:8px; align-items:center; margin-top:6px; }
 .edBtns span { flex:1; }
 .ghost { background:#eeece5; color:#3a4150; }
-#edForm, #cfgForm, #ezForm { display:block; padding:0; border:0; }
+#edForm, #cfgForm, #ezForm, #ecForm { display:block; padding:0; border:0; }
 #ed .off { background:#8a3a37; }
 
 /* Hộp suy nghĩ trên đầu agent: nền tối, 2 dòng mới nhất; bấm vào để mở log đầy đủ */
@@ -169,7 +169,7 @@ button:disabled { opacity:.5; cursor:default; }
 .unit .think.down::after { bottom:auto; top:-6px; transform:rotate(225deg); }
 .unit.working .think .tl.last > span::after { content:"…"; animation:blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity:0; } }
-#cfgDlg input[type=checkbox], #ezDlg input[type=checkbox] { display:inline; width:auto; margin-right:6px; }
+#cfgDlg input[type=checkbox], #ezDlg input[type=checkbox], #ecDlg input[type=checkbox] { display:inline; width:auto; margin-right:6px; }
 #cfNote { font-size:11.5px; color:#7b6a2a; margin:4px 0 6px; }
 
 /* Nút trong thẻ thông tin: cùng cỡ, xếp đều */
@@ -266,12 +266,12 @@ body.dropping #dropzone { display:flex; }
 .offGrid button span { display:flex; flex-direction:column; gap:2px; min-width:0; }
 .offGrid button b { font-size:14.5px; font-weight:700; }
 .offGrid button small { font-size:12px; color:#667085; font-weight:400; line-height:1.35; }
-#ezNote, #ezErr { font-size:12px; color:var(--muted); margin-top:4px; } #ezErr { color:#8a3a37; }
-#ezDlg textarea { display:block; width:100%; box-sizing:border-box; margin-top:3px; padding:7px 9px; border:1px solid #d9d6cc; border-radius:8px; font:inherit; font-size:13px; resize:vertical; }
-#ezDlg label.chk { display:flex; gap:6px; align-items:center; } #ezDlg label.chk input { width:auto; margin:0; flex:none; }
-#ezDlg .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-#ezDlg .edBtns { display:flex; gap:8px; margin-top:10px; } #ezDlg .edBtns span { flex:1; }
-#ezDlg[open] { display:block; }
+#ezNote, #ezErr, #ecNote, #ecErr { font-size:12px; color:var(--muted); margin-top:4px; } #ezErr, #ecErr { color:#8a3a37; }
+#ezDlg textarea, #ecDlg textarea { display:block; width:100%; box-sizing:border-box; margin-top:3px; padding:7px 9px; border:1px solid #d9d6cc; border-radius:8px; font:inherit; font-size:13px; resize:vertical; }
+#ezDlg label.chk, #ecDlg label.chk { display:flex; gap:6px; align-items:center; } #ezDlg label.chk input, #ecDlg label.chk input { width:auto; margin:0; flex:none; }
+#ezDlg .row2, #ecDlg .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+#ezDlg .edBtns, #ecDlg .edBtns { display:flex; gap:8px; margin-top:10px; } #ezDlg .edBtns span, #ecDlg .edBtns span { flex:1; }
+#ezDlg[open], #ecDlg[open] { display:block; }
 
 /* Dashboard token (hộp thoại lớn, nhúng usage.html) */
 #usDlg, #memDlg, #erDlg, #idDlg, #rpDlg { border:0; border-radius:16px; padding:0; width:min(1240px, 96vw); height:min(900px, 92vh); box-shadow:0 20px 50px rgba(30,40,70,.45); overflow:hidden; }
@@ -352,11 +352,11 @@ body.dropping #dropzone { display:flex; }
 .enzyBtns button.stopb { background:#8f2f33; color:#fff; }
 .enzyBtns button.stopb[hidden] { display:none; }
 
-#ezDlg .ezTg { border:2px solid #ffc83d; border-radius:12px; padding:8px 12px 10px; margin:6px 0 10px; }
-#ezDlg .ezTg legend { font-weight:700; font-size:13px; padding:0 6px; }
-#ezDlg .ezHint { font-size:11.5px; color:var(--muted); margin:2px 0 8px; line-height:1.4; }
-#ezDlg .ezTgRow { display:grid; grid-template-columns:100px 64px 1fr; gap:8px; align-items:center; margin-bottom:6px; font-size:12.5px; }
-#ezDlg .ezTgRow select, #ezDlg .ezTgRow input { margin:0; }
+#ezDlg .ezTg, #ecDlg .ezTg { border:2px solid #ffc83d; border-radius:12px; padding:8px 12px 10px; margin:6px 0 10px; }
+#ezDlg .ezTg legend, #ecDlg .ezTg legend { font-weight:700; font-size:13px; padding:0 6px; }
+#ezDlg .ezHint, #ecDlg .ezHint { font-size:11.5px; color:var(--muted); margin:2px 0 8px; line-height:1.4; }
+#ezDlg .ezTgRow, #ecDlg .ezTgRow { display:grid; grid-template-columns:100px 64px 1fr; gap:8px; align-items:center; margin-bottom:6px; font-size:12.5px; }
+#ezDlg .ezTgRow select, #ezDlg .ezTgRow input, #ecDlg .ezTgRow select, #ecDlg .ezTgRow input { margin:0; }
 
 /* Giao diện 3D (my-office) nhúng bằng khung: phủ kín vùng văn phòng */
 body.v3 #office { padding:0; overflow:hidden; }
@@ -365,3 +365,4 @@ body.v3 #office { padding:0; overflow:hidden; }
 #o3 iframe { position:absolute; inset:0; width:100%; height:100%; border:0; display:block; }
 #legend[hidden], #stage[hidden] { display:none; }
 body.v3 #office { min-width:0; }
+#ecClearRow[hidden] { display:none !important; }

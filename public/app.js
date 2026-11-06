@@ -693,6 +693,51 @@ $('ezForm').onsubmit = async (ev) => {
   if (r.ok) { const t = await r.text(); $('ezPass').value = ''; ezDlg.close(); addSys('Đã lưu cấu hình Enzy. Áp dụng từ lần chạy báo cáo kế tiếp.' + (t.startsWith('ok:') ? ' ' + t.slice(4) + '.' : '')); } else $('ezErr').textContent = await r.text();
 };
 
+// Cấu hình tài khoản content Enzy (quét idea): ghi vào enzy.json khoá CONTENT; cần mật khẩu Admin như các cấu hình khác.
+const ecDlg = $('ecDlg');
+$('openEzContent').onclick = async () => {
+  $('ecErr').textContent = '';
+  const r = await fetch('enzyidea/config/get', { cache: 'no-store' });
+  if (!r.ok) { addSys(await r.text()); return; }
+  const c = await r.json();
+  $('ecUser').value = c.USER; $('ecPass').value = ''; $('ecClear').checked = false;
+  $('ecPass').placeholder = c.hasPass ? 'Đã lưu — để trống = giữ nguyên' : 'Nhập mật khẩu';
+  $('ecClearRow').hidden = !c.hasPass; $('ecBrand').value = c.BRAND; $('ecSystem').value = c.SYSTEM;
+  ecDlg.showModal();
+};
+// Đăng nhập Streamlit Cloud một lần cho hồ sơ Chrome RIÊNG của tài khoản content (khi ứng dụng Enzy ở chế độ riêng tư).
+let ecAuthTimer = null, ecAuthWas = false;
+async function ecAuthPoll() {
+  try {
+    const a = (await (await fetch('/enzyidea/status', { cache: 'no-store' })).json()).auth || {};
+    const when = a.at ? ` (${new Date(a.at).toLocaleString('vi-VN')})` : '';
+    const [icon, color, text] = a.running ? ['⏳', '#a15c00', a.msg || 'Đang chờ bạn đăng nhập trong cửa sổ Chrome…']
+      : a.ok === true ? ['✅', '#14795f', `Đăng nhập thành công${when}. ${a.msg || ''}`]
+      : a.ok === false ? ['❌', '#b3261e', `Đăng nhập thất bại${when}: ${a.msg || 'không rõ lý do'}`]
+      : ['⚪', '', 'Chưa đăng nhập. Dùng khi quét idea báo "yêu cầu đăng nhập Streamlit Cloud".'];
+    $('ecAuthIcon').textContent = icon; $('ecAuthMsg').textContent = text; $('ecAuthMsg').style.color = color;
+    if (ecAuthWas && !a.running && a.ok !== null) addSys(a.ok ? '✅ Đăng nhập Streamlit (hồ sơ content) thành công, đã lưu phiên.' : `❌ Đăng nhập Streamlit (hồ sơ content) thất bại: ${a.msg}`);
+    ecAuthWas = a.running;
+    $('ecAuth').textContent = a.running ? 'Dừng / đóng cửa sổ đăng nhập' : 'Đăng nhập Streamlit cho hồ sơ content (một lần)';
+    if (!a.running && ecAuthTimer) { clearInterval(ecAuthTimer); ecAuthTimer = null; }
+  } catch { /* bỏ qua */ }
+}
+$('ecAuth').onclick = async () => {
+  const running = $('ecAuth').textContent.startsWith('Dừng');
+  const r = await fetch(running ? '/enzyidea/auth/stop' : '/enzyidea/auth/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+  const t = await r.text(); if (t !== 'ok') { $('ecAuthIcon').textContent = '⚠️'; $('ecAuthMsg').textContent = t; }
+  if (!ecAuthTimer) ecAuthTimer = setInterval(ecAuthPoll, 1500);
+  ecAuthPoll();
+};
+ecDlg.addEventListener('close', () => { if (ecAuthTimer) { clearInterval(ecAuthTimer); ecAuthTimer = null; } });
+$('openEzContent').addEventListener('click', ecAuthPoll);
+$('ecCancel').onclick = () => ecDlg.close();
+$('ecForm').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const r = await post('enzyidea/config/save', { USER: $('ecUser').value, PASS: $('ecPass').value, clearPass: $('ecClear').checked, BRAND: $('ecBrand').value, SYSTEM: $('ecSystem').value });
+  if (r.ok) { $('ecPass').value = ''; ecDlg.close(); addSys('Đã lưu cấu hình content Enzy. Dùng cho nút “Quét Idea Enzy”.'); } else $('ecErr').textContent = await r.text();
+};
+
 // ---- Ô giao việc: nhiều dòng, mẫu quy trình, đính kèm file (kéo thả / dán / chọn) ----
 const input = $('task');
 const files = []; // { id, name, size, status: 'up'|'ok'|'err', el }

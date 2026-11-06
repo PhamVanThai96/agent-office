@@ -84,5 +84,17 @@ body.v3 dialog iframe { background:#fff; border-radius:10px; }
 body.v3 .gfx { border-top-color:var(--line); }
 body.v3 #viewSw button { background:var(--card2); color:var(--muted); border:1px solid var(--line2); }
 body.v3 #viewSw button.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
-body.v3 #cfErr, body.v3 #edErr, body.v3 #ezErr { color:#FF9C9C; }
+body.v3 #cfErr, body.v3 #edErr, body.v3 #ezErr, body.v3 #ecErr { color:#FF9C9C; }
 body.v3 .toolsBox span, body.v3 #cfNote, body.v3 #cfAuthNote, body.v3 .ezHint { color:var(--muted); }
+
+/* khung hỏi lại của agent (.ask) và xin quyền (.req): nền sáng cũ làm chữ sáng của giao diện tối bị chìm → đổi sang nền tối, viền hổ phách */
+body.v3 .ask, body.v3 .req { background:rgba(242,181,68,.09); border:1px solid rgba(242,181,68,.45); color:var(--text); }
+body.v3 .ask h5 { color:#FFE2A8; }
+body.v3 .ask p, body.v3 .ask .aq span, body.v3 .req .why { color:var(--muted); }
+body.v3 .ask .aq b { color:var(--text); }
+body.v3 .ask .aq input { background:var(--card); border:1px solid var(--line2); color:var(--text); }
+body.v3 .ask .aq input::placeholder { color:var(--muted); opacity:1; }
+body.v3 .ask .aq input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(239,138,95,.18); }
+body.v3 .ask .aerr { color:#FF9C9C; }
+body.v3 .req code { background:rgba(255,255,255,.07); color:#FFE2A8; }
+body.v3 .ask .btns button.alt, body.v3 .req .btns button.alt { background:#2f6f55; color:#fff; }

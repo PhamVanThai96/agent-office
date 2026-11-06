@@ -100,6 +100,7 @@
     <button id="openAdmin" type="button"><i>🔐</i><span><b>Quản trị (Admin)</b><small>Admin ID &amp; mật khẩu bảo vệ việc sửa/xoá agent và đổi cấu hình; đổi mật khẩu, đăng xuất</small></span></button>
     <button id="openMemory" type="button"><i>🧠</i><span><b>Trí nhớ &amp; kỹ năng agent</b><small>Sổ tay kinh nghiệm tự cập nhật của từng agent, bài học, nén skill</small></span></button>
     <button id="openEnzy" type="button"><i>📊</i><span><b>Dữ liệu Enzy</b><small>Tài khoản đăng nhập, tài khoản quảng cáo, người thực hiện, prompt báo cáo</small></span></button>
+    <button id="openEzContent" type="button"><i>✍️</i><span><b>Cấu hình content Enzy</b><small>Tài khoản content để quét idea trên trang Enzy (hệ thống “Nghiên cứu Content”)</small></span></button>
   </div>
   <div class="gfx">
     <h4>🎨 Cấu hình đồ hoạ</h4>
@@ -125,6 +126,25 @@
 <dialog id="erDlg">
   <div class="usHead"><b>Tạo báo cáo quảng cáo Enzy</b><span></span><a id="erOpen" href="enzyreport.html" target="_blank" rel="noopener">Mở tab mới ↗</a><button id="erClose" type="button" class="ghost">Đóng</button></div>
   <iframe id="erFrame" title="Tạo báo cáo quảng cáo Enzy"></iframe>
+</dialog>
+<dialog id="ecDlg">
+  <form id="ecForm" method="dialog">
+    <h3>Cấu hình content Enzy</h3>
+    <p class="ezHint">Tài khoản dùng để vào trang Enzy và đọc các “Big Idea có thể triển khai” (hệ thống làm việc “Nghiên cứu Content”). Dùng cho nút “Quét Idea Enzy” ở board “Quét Trend &amp; Tạo Idea”.</p>
+    <div class="row2">
+      <label>Tài khoản content <input id="ecUser" autocomplete="off" required></label>
+      <label>Mật khẩu <input id="ecPass" type="password" autocomplete="new-password"></label>
+    </div>
+    <label id="ecClearRow" class="chk"><input id="ecClear" type="checkbox"> Xoá mật khẩu đã lưu</label>
+    <div class="row2">
+      <label>Thương hiệu <input id="ecBrand" required></label>
+      <label>Hệ thống làm việc <input id="ecSystem" required></label>
+    </div>
+    <div class="chk" id="ecAuthRow" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px"><button id="ecAuth" type="button" class="ghost">Đăng nhập Streamlit cho hồ sơ content (một lần)</button><span id="ecAuthIcon" aria-live="polite" style="font-size:20px;line-height:1">⚪</span><small id="ecAuthMsg" style="flex:1;min-width:180px"></small></div>
+    <div id="ecNote">Mật khẩu lưu trong enzy.json (quyền 600), không gửi lại về trình duyệt. Địa chỉ trang dùng chung với cấu hình báo cáo Enzy. Tài khoản content dùng hồ sơ Chrome riêng (data/enzy/profile-content) nên phiên của nó không đè lên phiên tài khoản ads. Nút đăng nhập Streamlit chỉ cần khi ứng dụng Enzy ở chế độ riêng tư (khi quét idea báo “yêu cầu đăng nhập Streamlit Cloud”).</div>
+    <div id="ecErr"></div>
+    <div class="edBtns"><span></span><button id="ecCancel" type="button" class="ghost">Huỷ</button><button id="ecSave" type="submit">Lưu</button></div>
+  </form>
 </dialog>
 <dialog id="ezDlg">
   <form id="ezForm" method="dialog">

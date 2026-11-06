@@ -14,3 +14,6 @@
 /* nhãn gọn hơn, bỏ chip "Nhóm …": tên từng agent đứng đúng chỗ ngồi, không chồng lên nhau */
 .team-tag { display: none !important; }
 .tag { font-size: 11px; padding: 4px 9px 4px 7px; gap: 6px; }
+
+/* bỏ dải trạng thái agent ("CEO đang làm · Content Lead đang làm …") phía trên sân khấu: tên và trạng thái đã có ở nhãn từng nhân vật */
+#chips { display: none !important; }
