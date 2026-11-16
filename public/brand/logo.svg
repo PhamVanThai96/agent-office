@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b4a86"/><stop offset=".55" stop-color="#1d3566"/><stop offset="1" stop-color="#0c7a7a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".38" r=".6"><stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#f3e3c9"/></linearGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#06142e" flood-opacity=".45"/></filter>
+  </defs>
+  <!-- ô vuông bo góc kiểu macOS (chừa lề trong suốt 100px) -->
+  <rect x="100" y="100" width="824" height="824" rx="190" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="190" fill="url(#glow)"/>
+  <!-- mạng lưới agent phía sau -->
+  <g stroke="#9fd8e0" stroke-opacity=".5" stroke-width="7" stroke-linecap="round" fill="none">
+    <path d="M222 330 L372 250 M802 330 L652 250 M222 700 L330 760 M802 700 L694 760"/>
+  </g>
+  <g fill="#9fd8e0" fill-opacity=".9"><circle cx="222" cy="330" r="22"/><circle cx="802" cy="330" r="22"/><circle cx="222" cy="700" r="18"/><circle cx="802" cy="700" r="18"/></g>
+  <g fill="#f2994a"><circle cx="372" cy="250" r="14"/><circle cx="652" cy="250" r="14"/></g>
+  <!-- mèo -->
+  <g filter="url(#sh)">
+    <path d="M262 470 L286 252 Q290 232 308 244 L462 346 Z" fill="url(#fur)"/>
+    <path d="M762 470 L738 252 Q734 232 716 244 L562 346 Z" fill="url(#fur)"/>
+    <path d="M300 420 L312 296 L400 356 Z" fill="#f4b6b0"/>
+    <path d="M724 420 L712 296 L624 356 Z" fill="#f4b6b0"/>
+    <ellipse cx="512" cy="556" rx="268" ry="226" fill="url(#fur)"/>
+  </g>
+  <!-- vằn trán -->
+  <g stroke="#d9b98a" stroke-width="16" stroke-linecap="round"><path d="M512 346 L512 400"/><path d="M452 358 L466 406"/><path d="M572 358 L558 406"/></g>
+  <!-- mắt -->
+  <g fill="#1d2b4a"><ellipse cx="410" cy="566" rx="30" ry="38"/><ellipse cx="614" cy="566" rx="30" ry="38"/></g>
+  <g fill="#fff"><circle cx="420" cy="552" r="11"/><circle cx="624" cy="552" r="11"/></g>
+  <!-- mũi + miệng + râu -->
+  <path d="M488 626 Q512 650 536 626 Q512 612 488 626 Z" fill="#e58f8a"/>
+  <path d="M512 640 L512 668 M512 668 Q488 700 458 684 M512 668 Q536 700 566 684" stroke="#6b5a48" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <g stroke="#cdb28c" stroke-width="8" stroke-linecap="round"><path d="M330 640 L238 624 M330 668 L244 690 M694 640 L786 624 M694 668 L780 690"/></g>
+  <!-- tai nghe -->
+  <path d="M262 520 Q262 332 512 332 Q762 332 762 520" fill="none" stroke="#f2994a" stroke-width="34" stroke-linecap="round"/>
+  <rect x="226" y="488" width="64" height="130" rx="30" fill="#f2994a"/>
+  <rect x="734" y="488" width="64" height="130" rx="30" fill="#f2994a"/>
+  <path d="M766 600 Q790 700 640 724" fill="none" stroke="#f2994a" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="626" cy="726" r="22" fill="#f2994a"/>
+</svg>

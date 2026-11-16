@@ -1,61 +1,83 @@
 # File SINH TỰ ĐỘNG từ data/enzyidea/ideas.json — không sửa tay.
 id: 88-enzy-idea-bank
-title: Kho idea Enzy đã trích xuất (5 idea, từ trang "Nghiên cứu Content")
+title: Kho idea Enzy đã trích xuất (8 idea, từ trang "Nghiên cứu Content")
 summary: Các Big Idea có thể triển khai mà trang Enzy gợi ý (mâu thuẫn khách hàng, niềm tin cần thay đổi, vai trò riêng của Enzy…). Dùng để HỌC CÁCH LẬP LUẬN và lấy cảm hứng, không chép nguyên văn; tra bằng skill_search.
 agents: [signal, planner, writer, analyst, manager]
 exclude: [assistant]
 when: [kho idea enzy, idea bank enzy]
 tags: [idea, big idea, enzy, content]
 order: 88
-updated: 2026-11-06
+updated: 2026-11-12
 sections:
-  - id: idea-mw52wxdd4
-    title: Lần này, chọn bằng tên vị
-    tags: [Content branding, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+  - id: idea-mwcykoyp7
+    title: Kệ hàng tin bạn trước
+    tags: [Content đột phá, CẦN XÁC MINH, Kết, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng, Vai trò Enzy]
+    text: |-
+      Nhóm: Content đột phá
+      CẦN XÁC MINH: Một thử nghiệm kệ tự thanh toán Enzy sẽ được tổ chức tại địa điểm, thời gian và số lượng cụ thể. · Giá và phương thức thanh toán tại kệ áp dụng cho thử nghiệm. Đây là kịch bản đề xuất, chưa có sự kiệ…
+      Kết: “Một kệ hàng, một phép thử còn nhiều điều để học. Enzy tin bạn trước; kết quả cần được kể đúng.” Caption sau sự kiện dẫn người quan tâm tới hạt nêm 420g và giá online đã duyệt: một hũ 250.000đ + 30.0…
+      Cần xác minh: Một thử nghiệm kệ tự thanh toán Enzy sẽ được tổ chức tại địa điểm, thời gian và số lượng cụ thể. Giá và phương thức thanh toán tại kệ áp dụng cho thử nghiệm.
+      Từ trang Enzy 2026-11-12.
+  - id: idea-mwcykoyp6
+    title: Đến giờ trưa, người làm hạt nêm đổi vai
+    tags: [Content branding, CẦN XÁC MINH, "[CẦN XÁC MINH", Lời đọc hoàn chỉnh, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng]
     text: |-
       Nhóm: Content branding
-      Big Idea: Lần này, chọn rắc cơm Enzy bằng tên vị.
-      Cách hiểu đang thử: Tên vị không nổi trong bài/nhãn nên không nhớ.
-      Lời khách: “Cô mua mấy lần nhưng k để ý có mấy vị”
-      Cũng có thể là: Mua lại theo quen một vị nên không để ý vị khác.
-      Từ trang Enzy 2026-11-06.
-  - id: idea-mw52wxdc3
-    title: Món quen, lần đầu với Enzy
-    tags: [Content chuyển đổi, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+      CẦN XÁC MINH: Nhà máy có bữa ăn ca đang vận hành và dùng hạt nêm Enzy trong món được quay. Bản đề xuất phim tài liệu. Mở bằng cận bàn tay đang làm việc tại nhà máy Enzy ở Hòa Khánh, Đà Nẵng. Chữ: “Bạn đã thấy nhữn…
+      [CẦN XÁC MINH: nhà máy có bữa ăn ca đang vận hành và sử dụng hạt nêm Enzy trong món được quay.] Nếu điều kiện này đúng, quay người nấu thật lấy đúng hũ đang dùng, nêm món theo cách đang làm, rồi những người đồng ý …
+      Lời đọc hoàn chỉnh: “Trên nhãn là tên một thương hiệu. Ở Hòa Khánh là những người có một ngày làm việc, một giờ nghỉ, một bữa ăn. Bộ phim này dừng lại ở bữa trưa của họ. Không cần ai đọc một câu quảng cáo. Chỉ nhìn tiếp…
+      Từ trang Enzy 2026-11-12.
+  - id: idea-mwcykoyp5
+    title: Bữa về muộn, căn bếp hạ tiếng
+    tags: [Content chuyển đổi, Caption, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng, Điểm mới, Chuẩn bị]
     text: |-
       Nhóm: Content chuyển đổi
-      Big Idea: Món quen ở lại, Enzy là điều bạn tự thử: lần đầu có thể đặt riêng một hộp.
-      Cách hiểu đang thử: Sợ mua nhiều rồi vị không hợp nhà mình.
-      Lời khách: “chưa ăn nên không dám mua nhiều”
-      Cũng có thể là: Nhà nấu ít nên ngại giữ nhiều hũ, không phải sợ vị.
-      Từ trang Enzy 2026-11-06.
-  - id: idea-mw52wxdc2
-    title: Tìm hạt nêm thuần chay để nấu món mặn?
-    tags: [Content chuyển đổi, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+      Caption: “Có bữa mình về sau cả nhà. Phần ăn vẫn gồm cơm và các món đã chuẩn bị; rắc cơm là gia vị thêm vào, không thay cho bữa đầy đủ. Lắc đều trước khi dùng, đóng kín nắp sau khi rắc. Rong biển và Hạt có bộ…
+      Định dạng: Phim hài ít thoại 30–40 giây kèm caption
+      Vai trò Enzy: Rắc cơm dùng trực tiếp trên cơm nên được đặt vào đúng khoảnh khắc hoàn thiện phần ăn; sản phẩm không thay cả bữa và không được hứa hoàn toàn im lặng.
+      Từ trang Enzy 2026-11-12.
+  - id: idea-mwcykoyp4
+    title: Trả bát, xin thêm cách nấu
+    tags: [Content chuyển đổi, Họ viết lên mặt sau, Khung bán hàng, Caption, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng, Điểm mới]
     text: |-
       Nhóm: Content chuyển đổi
-      Big Idea: Đặt tiêu chí của bếp mình cạnh hũ Enzy: hợp điều đang tìm thì chọn phần hàng để mua.
-      Cách hiểu đang thử: Chưa thấy tiêu chí khác biệt nên chưa thấy lý do trả thêm.
-      Lời khách: “Cảm ơn shop. Giá cao vượt khả năng của mình nên mình ko mua đc ạ.”
-      Cũng có thể là: Lấy hạt nêm phổ thông làm mốc nên thấy giá cao. Tổng chi một lần vượt ngân sách lúc này, không phải chê giá trị.
-      Từ trang Enzy 2026-11-06.
-  - id: idea-mw52wxdb1
-    title: Gia Lai hay Đà Nẵng? Hai địa danh của Enzy
-    tags: [Content branding, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
-    text: |-
-      Nhóm: Content branding
-      Big Idea: Gia Lai là vùng nguyên liệu; Hòa Khánh là nhà máy Enzy.
-      Cách hiểu đang thử: Muốn biết ai đứng sau, làm ở đâu trước khi tin.
-      Lời khách: “Có đúng chất lượng như vậy ko?Cô sợ như cty Kera chị em rọt gì đó?”
-      Cũng có thể là: Lo quảng cáo nói quá so với sản phẩm. Muốn dấu hiệu hàng đang sản xuất, ngày rõ, thay lời hứa chất lượng.
-      Từ trang Enzy 2026-11-06.
-  - id: idea-mw52wxda0
-    title: Lần này, bạn cần một, ba hay năm hộp Enzy?
-    tags: [Content chuyển đổi, Cách hiểu đang thử, Lời khách, Cũng có thể là, Enzy có thể làm gì, Nhận xét phản biện, Cần biết thêm, Cách kiểm tra]
+      Họ viết lên mặt sau: “Nấm, đậu, rau. Sơ chế, nấu chín rồi nêm và nếm theo khẩu vị.” Tờ giấy được chuyển lại, một ô còn để trống: “Phần nêm?” Người nấu mỉm cười, đặt hũ Enzy 420g cạnh tờ giấy, viết tiếp: “Mình dùng hạt nê…
+      Khung bán hàng: “Một hũ hạt nêm Enzy 420g: 250.000đ + 30.000đ phí giao. Nhắn TRẢ BÁT để xem nhãn và đặt đúng hũ.”
+      Caption: “Một tình huống nhỏ về cách món ăn đưa người ta hỏi nhau cách nấu. Enzy là phần gia vị trong nồi canh ở phim; rau, nấm, đậu và khẩu vị của người nấu vẫn có vai trò riêng. Hạt nêm thuần chay dùng cho …
+      Từ trang Enzy 2026-11-12.
+  - id: idea-mwcykoyp3
+    title: 20/11, con nộp lại bài nấu đầu tiên
+    tags: [Content chuyển đổi, Khung mua hàng, Caption, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng, Điểm mới, Chuẩn bị]
     text: |-
       Nhóm: Content chuyển đổi
-      Big Idea: Chọn số hộp Enzy trên cùng một bảng: phần hàng, giá và phí luôn đi cùng nhau.
-      Cách hiểu đang thử: Nhớ tên gói khác (phối rắc cơm, 3 tặng 1) nên kỳ vọng phần khác.
-      Lời khách: “Hạt Nêm Chay Enzy - Cải Thiện Sức Khoẻ Cho Người Ăn Chay mua2 hộp mà không tặng gì cả vậy là nói dối để bán hàng à”
-      Cũng có thể là: Tên 'mua 2 tặng 1' đọc thành trả 2 hộp là có quà. Có sai lệch thật ở tư vấn hoặc đóng gói, không chỉ cách đọc ưu đãi.
-      Từ trang Enzy 2026-11-06.
+      Khung mua hàng: “Hạt nêm Enzy 420g. Một hũ 250.000đ + 30.000đ phí giao. Nhắn BÀI NẤU để đặt và hỏi thời gian giao thực tế.”
+      Caption: “Một lời cảm ơn gửi người đã dạy mình những việc nhỏ trong bếp. Enzy là hạt nêm thuần chay, dùng nêm khi nấu canh, xào, kho, ướp cho món chay hoặc món mặn; nếm và điều chỉnh theo khẩu vị. Nếu chọn là…
+      Định dạng: Tiểu phẩm gia đình 50–60 giây kèm caption bán hàng
+      Từ trang Enzy 2026-11-12.
+  - id: idea-mwcykoyp2
+    title: Bản lắp ráp một nồi canh
+    tags: [Content chuyển đổi, Ảnh 2 — nguyên liệu đã để riêng, Ảnh 3 — tay đặt nồi nước lên bếp, Ảnh 5 — muỗng riêng và dấu tích, Caption, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng]
+    text: |-
+      Nhóm: Content chuyển đổi
+      Ảnh 2 — nguyên liệu đã để riêng: “THẺ CHUẨN BỊ. Rửa rau và nấm, sơ chế phù hợp với loại đã chọn. Cắt đậu thành miếng vừa ăn. Để riêng phần sẽ cho vào nồi; đừng vừa nấu vừa tìm nguyên liệu.”
+      Ảnh 3 — tay đặt nồi nước lên bếp: “THẺ NẤU. Đun nước, cho nguyên liệu vào theo thứ tự phù hợp: nấm rồi đậu, rau sau. Nấu chín nguyên liệu của món. Hình này chỉ cách sắp việc; thời gian tùy loại và lượng bạn dùng.” Ảnh 4 — hũ Enzy cùn…
+      Ảnh 5 — muỗng riêng và dấu tích: “THẺ KIỂM TRA. Nguyên liệu đã chín chưa? Phần nêm đã vừa với mình chưa? Kiểm tra hai việc ấy trước khi múc. Có thể thêm theo nhu cầu; không cần nêm thêm chỉ để giống hình.” Ảnh 6 — sáu thẻ nằm cạnh b…
+      Từ trang Enzy 2026-11-12.
+  - id: idea-mwcykoyp1
+    title: Đừng chụp mỗi củ cà rốt
+    tags: [Content chuyển đổi, Người chụp kéo máy ra rộng hơn. Lời đọc, Nhân vật đặt tấm ảnh mới cạnh hũ, Caption, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng, Điểm mới]
+    text: |-
+      Nhóm: Content chuyển đổi
+      Người chụp kéo máy ra rộng hơn. Lời đọc: “Hạt nêm Enzy 420g có thành phần rau củ cùng những thành phần khác được ghi trên nhãn. Thuần chay, không bổ sung bột ngọt không có nghĩa là một hũ chỉ có rau.” Cảnh chuyển sang nhãn thật đủ rõ để dừn…
+      Nhân vật đặt tấm ảnh mới cạnh hũ: “Nếu chọn Enzy, hãy chọn vì bạn đã hiểu hũ này.” Khung kết: “Một hũ hạt nêm Enzy 420g: 250.000đ + 30.000đ phí giao. Nhắn XEM THÀNH PHẦN để xem nhãn và đặt mua.”
+      Caption: “Ảnh có thể chọn một góc; thông tin thành phần cần được đọc đầy đủ. Cà rốt, dứa, nấm hương là một phần danh sách, bên cạnh đường vàng, tinh bột sắn, chiết xuất nấm men và những thành phần khác trên n…
+      Từ trang Enzy 2026-11-12.
+  - id: idea-mwcykoyo0
+    title: Vẫn động tác rắc, thêm một lựa chọn
+    tags: [Content chuyển đổi, Một bàn tay nối hai thời điểm, Nhân vật nhìn tấm ảnh gia đình trên bàn, Caption, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng, Điểm mới]
+    text: |-
+      Nhóm: Content chuyển đổi
+      Một bàn tay nối hai thời điểm: cử chỉ rắc lên cơm mà nhân vật nhớ từ bữa nhà bà trở thành cách làm quen rắc cơm Enzy hôm nay. Bán sự dễ hiểu của cách dùng và lựa chọn nguyên liệu, không bán hoài niệm như bằng chứng ngon hơn. Hook …
+      Nhân vật nhìn tấm ảnh gia đình trên bàn: “Không phải món ngày xưa làm lại. Là thêm một vị để ăn cùng bát cơm hôm nay.” Khung cuối: “Rắc cơm Enzy Rong biển và Củ 300g. Nhắn RẮC CỦ để xem nhãn, hỏi giá và đặt hũ.”
+      Caption: “Có những cách ăn mình hiểu ngay từ động tác. Rong biển và Củ là một trong ba dòng rắc cơm 300g của Enzy; dùng trực tiếp lên cơm hoặc cháo, lắc đều trước khi dùng. Đây là phần gia vị thêm vào bữa ăn.…
+      Từ trang Enzy 2026-11-12.
