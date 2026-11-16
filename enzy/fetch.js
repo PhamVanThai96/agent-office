@@ -121,6 +121,22 @@ const loose = (s) => norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').re
 // Lỗi kèm danh sách lựa chọn thật đang có, để biết ngay trang đặt tên khác thế nào.
 export class OptionMissing extends Error { constructor(msg, available) { super(msg); this.available = available; } }
 
+// Mở danh sách của ô chọn Streamlit và chờ thấy các lựa chọn. Một cú click đôi khi không mở được (trang đang chạy lại sau khi đổi thương hiệu/hệ thống, hoặc click làm đóng danh sách):
+// thử tối đa 4 lần, xen kẽ click và phím ↓, nghỉ giữa các lần, trước khi chờ dài như cũ.
+async function openOptions(page, box) {
+  const opts = page.locator('[role="option"]');
+  for (let a = 0; a < 4; a++) {
+    await settle(page, 600);
+    await box.scrollIntoViewIfNeeded().catch(() => {});
+    if (a % 2 === 0) await box.click().catch(() => {}); else { await box.focus().catch(() => {}); await page.keyboard.press('ArrowDown').catch(() => {}); }
+    if (await opts.first().waitFor({ timeout: 8000 }).then(() => true).catch(() => false)) return;
+    await page.keyboard.press('Escape').catch(() => {});
+    await settle(page, 1500);
+  }
+  await box.click();
+  await opts.first().waitFor({ timeout: STEP_MS });
+}
+
 async function pickOption(page, text) {
   const want = norm(text), wantLoose = loose(text);
   const opts = page.locator('[role="option"]');
@@ -145,7 +161,7 @@ export async function selectBox(page, label, value) {
   const box = combo(page, label);
   await box.waitFor({ timeout: STEP_MS });
   if (norm(await box.inputValue()).includes(norm(value))) return true;
-  await box.click();
+  await openOptions(page, box);
   try { await pickOption(page, value); }
   catch (e) { if (e instanceof OptionMissing) throw new Error(`Ô "${label}": ${e.message}`); throw e; }
   await settle(page);
@@ -254,8 +270,73 @@ async function accountGrid(page) {
 }
 
 // Nút "Tải về file Excel" của trang: bảng từng quảng cáo (tên đầy đủ, hiển thị, nhấp, lead, đơn, doanh thu) — dùng cho dashboard theo người thực hiện.
+// CSV (RFC 4180) → mảng dòng; bỏ BOM, hỗ trợ ô có nháy kép/xuống dòng.
+export function parseCsv(text) {
+  const rows = []; let row = [], cur = '', q = false;
+  const s = String(text).replace(/^\uFEFF/, '');
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (q) { if (c === '"') { if (s[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; continue; }
+    if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && s[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some((x) => x !== '')) rows.push(row); row = []; }
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); if (row.some((x) => x !== '')) rows.push(row); }
+  return rows;
+}
+
+// Tên cột chuẩn mà owners.normalizeAds cần ↔ các cách gọi có thể gặp ở file tải về (so khớp lỏng, không dấu).
+const ADS_COLS = {
+  'Tài khoản QC': ['tai khoan qc', 'tai khoan'], 'Tên quảng cáo': ['ten quang cao', 'quang cao', 'ad name', 'ads'],
+  'Ads đã chi': ['ads da chi', 'chi tieu', 'da chi', 'spend'], 'Lượt hiển thị': ['luot hien thi', 'hien thi', 'impressions'],
+  'Click (all)': ['click all', 'click'], 'Lượt nhấp liên kết': ['luot nhap lien ket', 'nhap lien ket', 'link click'],
+  'Số lead': ['so lead', 'lead'], 'Số đơn hàng': ['so don hang', 'don thuc te', 'don hang'], 'Doanh thu trong kỳ': ['doanh thu trong ky', 'doanh thu'],
+};
+export function csvToAdsRows(text) {
+  const [head, ...body] = parseCsv(text);
+  if (!head) return [];
+  const hl = head.map((h) => loose(h));
+  const idx = {};
+  for (const [canon, aliases] of Object.entries(ADS_COLS)) {
+    let k = -1;
+    for (const a of aliases) { k = hl.findIndex((h) => h === a); if (k >= 0) break; }
+    if (k < 0) for (const a of aliases) { k = hl.findIndex((h) => h.startsWith(a)); if (k >= 0) break; }
+    if (k >= 0) idx[canon] = k;
+  }
+  if (idx['Tên quảng cáo'] == null) throw new Error(`File tải về không có cột tên quảng cáo (các cột: ${head.map((h) => h.trim()).join(' | ').slice(0, 300)}).`);
+  // Số kiểu Việt ("28.957.520", "1.234,5") → số chuẩn để owners.num đọc đúng.
+  const vnNum = (v) => (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(String(v).trim()) ? String(v).trim().replace(/\./g, '').replace(',', '.') : v);
+  return body.map((r) => Object.fromEntries(Object.entries(idx).map(([canon, k]) => [canon, r[k] === '' || r[k] == null ? null : canon === 'Tài khoản QC' || canon === 'Tên quảng cáo' ? r[k] : vnNum(r[k])])));
+}
+
+// Trang mới bỏ nút "Tải Excel" riêng: bảng "Chi tiết từng ads" (st.dataframe) có biểu tượng tải CSV ở thanh công cụ góc phải bảng (hiện khi rê chuột vào bảng).
+async function adsCsv(page) {
+  const tab = page.getByRole('tab', { name: /Chi tiết từng ads/i }).first();
+  if (await tab.count()) { await tab.click(); await settle(page, 1500); }
+  const dfs = page.locator('[role="tabpanel"]:visible [data-testid="stDataFrame"], [data-testid="stDataFrame"]:visible');
+  const n = Math.min(await dfs.count(), 4);
+  let lastErr = 'Không thấy bảng "Chi tiết từng ads".';
+  for (let i = 0; i < n; i++) {
+    const df = dfs.nth(i);
+    try {
+      await df.scrollIntoViewIfNeeded();
+      await df.hover();
+      const dl = df.locator('[data-testid="stElementToolbar"] button[aria-label*="ownload" i], [data-testid="stElementToolbar"] button[title*="ownload" i], [data-testid="stElementToolbar"] [aria-label*="Tải" i]').first();
+      await dl.waitFor({ state: 'visible', timeout: 8000 });
+      const [download] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), dl.click()]);
+      const rows = csvToAdsRows(fs.readFileSync(await download.path(), 'utf8'));
+      if (rows.length) return rows;
+      lastErr = 'File CSV tải về trống.';
+    } catch (e) { lastErr = e.message.split('\n')[0]; }
+  }
+  throw new Error(`Không tải được CSV từng quảng cáo từ biểu tượng tải của bảng (${lastErr}).`);
+}
+
 async function adsExcel(page) {
   const btn = page.locator('[data-testid="stDownloadButton"] button').first();
+  // Không còn nút tải Excel riêng (giao diện mới) → tải CSV từ thanh công cụ của bảng.
+  if (!(await btn.waitFor({ timeout: 10000 }).then(() => true).catch(() => false))) return adsCsv(page);
   await btn.waitFor({ timeout: STEP_MS });
   await btn.scrollIntoViewIfNeeded();
   const [download] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), btn.click()]);
@@ -415,9 +496,8 @@ export async function fillDateRange(page, from, to, opts = {}) {
 
 async function pickDates(page, from, to) {
   const box = combo(page, 'Khoảng thời gian');
-  await box.click();
+  await openOptions(page, box);
   const opts = page.locator('[role="option"]');
-  await opts.first().waitFor({ timeout: STEP_MS });
   const all = await opts.allInnerTexts();
   const i = all.findIndex((t) => /t[uù][yỳ]\s*(ch[oọ]n|ch[iỉ]nh)|tu[ỳy]\s*ch[ọo]n|custom|kho[aả]ng ng[aà]y|ch[oọ]n ng[aà]y/i.test(norm(t)) || /t[ùu]y|tuỳ|custom|ch[ọo]n ng/i.test(t));
   if (i < 0) { await page.keyboard.press('Escape'); throw new Error(`Trang báo cáo không có lựa chọn khoảng ngày tuỳ chọn (các lựa chọn hiện có: ${all.map((t) => t.trim()).join(' | ')}). Cần chọn khoảng ngày cố định ${isoDay(from)} – ${isoDay(to)}.`); }
@@ -459,13 +539,29 @@ export async function fetchEnzy(opts) {
     await gotoRetry(page, opts.url, { ctl: opts.ctl, onRetry: opts.onRetry });
     await login(page, opts);
     await page.locator('[data-testid="stMain"] h1', { hasText: 'Báo Cáo' }).first().waitFor({ timeout: 120000 }).catch(() => {});
-    if (opts.brand) await selectBox(page, 'Thương hiệu', opts.brand);
-    if (opts.system) await selectBox(page, 'hệ thống làm việc', opts.system);
-    await page.locator('[data-testid="stMain"] h1', { hasText: 'Báo Cáo Quảng Cáo' }).first().waitFor({ timeout: STEP_MS });
-    if (opts.dates) await pickDates(page, opts.dates.from, opts.dates.to); else await selectBox(page, 'Khoảng thời gian', opts.range);
-    await toggleCompare(page);
-    const accounts = await setAccounts(page, opts.accounts);
-    if (opts.store) await selectBox(page, 'Cửa hàng', opts.store);
+    // Các bước chọn thương hiệu → hệ thống → khoảng ngày → so sánh → tài khoản → cửa hàng. Streamlit đôi khi mất phiên giữa chừng và quay về màn hình đăng nhập
+    // (ô trống): khi đó đăng nhập lại và làm lại các bước (tối đa 2 lần làm lại) thay vì chờ ô chọn không bao giờ xuất hiện.
+    const loginShown = async () => (await page.locator('input[type="text"][aria-label*="Tài khoản"]').count().catch(() => 0)) > 0;
+    const setup = async () => {
+      if (opts.brand) await selectBox(page, 'Thương hiệu', opts.brand);
+      if (opts.system) await selectBox(page, 'hệ thống làm việc', opts.system);
+      await page.locator('[data-testid="stMain"] h1', { hasText: 'Báo Cáo Quảng Cáo' }).first().waitFor({ timeout: STEP_MS });
+      if (opts.dates) await pickDates(page, opts.dates.from, opts.dates.to); else await selectBox(page, 'Khoảng thời gian', opts.range);
+      await toggleCompare(page);
+      const acc = await setAccounts(page, opts.accounts);
+      if (opts.store) await selectBox(page, 'Cửa hàng', opts.store);
+      return acc;
+    };
+    let accounts;
+    for (let tryNo = 0; ; tryNo++) {
+      try { accounts = await setup(); break; }
+      catch (e) {
+        if (tryNo >= 2 || !(await loginShown())) throw e;
+        opts.onRetry?.(`Trang Enzy quay về màn hình đăng nhập giữa chừng, đang đăng nhập lại (lần ${tryNo + 1}/2)…`);
+        await login(page, opts);
+        await page.locator('[data-testid="stMain"] h1', { hasText: 'Báo Cáo' }).first().waitFor({ timeout: 120000 }).catch(() => {});
+      }
+    }
     await page.getByRole('button', { name: /Tạo báo cáo/ }).first().click();
     await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="stCode"]')].some((c) => c.innerText.includes('# TỔNG TÀI KHOẢN')), null, { timeout: REPORT_MS });
     await settle(page, 1500);
@@ -484,6 +580,14 @@ export async function fetchEnzy(opts) {
     let adsRows = null, adsError = '';
     if (opts.wantAds !== false) { try { adsRows = await adsExcel(page); } catch (e) { adsError = e.message; } }
     return { range: opts.range, accounts, grid, adsRows, adsError, ...info };
+  } catch (e) {
+    // Lưu ảnh chụp trang lúc lỗi để biết trang đang hiển thị gì (ghi đè mỗi lần lỗi, nằm trong data/ nên không lên repo).
+    try {
+      const shot = path.join(path.dirname(ENZY_PROFILE), 'last-error.png');
+      await page.screenshot({ path: shot, timeout: 10000 });
+      e.message += ` (ảnh chụp trang lúc lỗi: data/enzy/last-error.png)`;
+    } catch { /* không chụp được thì thôi */ }
+    throw e;
   } finally {
     await browser.close();
   }
