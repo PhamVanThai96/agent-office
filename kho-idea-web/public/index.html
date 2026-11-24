@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kho Idea Enzy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: thanh trên (tên, người dùng, 3 mục duyệt) → bộ lọc → bảng kiểu Excel cuộn ngang. */
+:root {
+  --bg: #f3f5f0; --surface: #ffffff; --ink: #19211b; --muted: #5d6a60; --line: #dde3d8; --grid: #e7ebe3; --head: #eef2ea;
+  --leaf: #2d7a4c; --leaf-ink: #ffffff; --leaf-soft: #e3f0e7; --turmeric: #b97a0b; --turmeric-soft: #fbf0d9;
+  --wait: #8a6a12; --wait-soft: #fbf3dc; --ok: #2d7a4c; --ok-soft: #e3f0e7; --no: #a33a3a; --no-soft: #f8e6e6;
+  --doing: #1d64c9; --doing-soft: #e4eefb; --todo: #6b7280; --todo-soft: #eef0f2;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #121612; --surface: #1b211c; --ink: #e7ece5; --muted: #9aa79c; --line: #2d362f; --grid: #262e28; --head: #222a24;
+  --leaf: #5cc08a; --leaf-ink: #0b1a10; --leaf-soft: #1d3326; --turmeric: #e6b04a; --turmeric-soft: #3a2e14;
+  --wait: #e6c35c; --wait-soft: #352d14; --ok: #5cc08a; --ok-soft: #1d3326; --no: #ef8f8f; --no-soft: #3a1f1f;
+  --doing: #7fb0f5; --doing-soft: #1a2a40; --todo: #a7adb5; --todo-soft: #262b30; color-scheme: dark; } }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); }
+[hidden] { display: none !important; }
+.wrap { max-width: 1600px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button { font: inherit; font-size: 13px; cursor: pointer; border-radius: 8px; padding: 6px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button:hover { border-color: var(--leaf); }
+button.primary { background: var(--leaf); color: var(--leaf-ink); border-color: var(--leaf); font-weight: 600; }
+button.ok { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); font-weight: 600; }
+button.no { background: var(--no-soft); color: var(--no); border-color: var(--no); font-weight: 600; }
+button.link { border: 0; background: none; color: var(--muted); padding: 4px 6px; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+button:disabled { opacity: .5; cursor: default; }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+
+/* Đăng nhập */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.login form { width: min(380px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 28px 24px; display: grid; gap: 14px; }
+.login h1 { margin: 0; font-size: 22px; font-weight: 800; }
+.login p { margin: 0; color: var(--muted); font-size: 13px; }
+.login label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.login input { width: 100%; font-size: 15px; }
+
+header.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 14px 0; }
+h1.brand { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+.sub { font-size: 13px; color: var(--muted); }
+.who { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+.role { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--leaf-soft); color: var(--leaf); }
+.role.staff { background: var(--head); color: var(--muted); }
+.flash { font-size: 13px; color: var(--no); width: 100%; min-height: 0; }
+nav.views { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; }
+.view { border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted); font: 600 15px var(--font-body); padding: 10px 14px; display: inline-flex; gap: 8px; align-items: baseline; border-radius: 0; }
+.view b { font: 500 12px var(--font-mono); padding: 1px 7px; border-radius: 999px; background: var(--head); color: var(--muted); }
+.view[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--leaf); }
+.view[data-v="cho"][aria-selected="true"] b { background: var(--wait-soft); color: var(--wait); }
+.view[data-v="duyet"][aria-selected="true"] b { background: var(--ok-soft); color: var(--ok); }
+.view[data-v="khong"][aria-selected="true"] b { background: var(--no-soft); color: var(--no); }
+
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; padding-block: 16px 10px; align-items: end; }
+.filters label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.filters select, .filters input { width: 100%; min-width: 0; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-bottom: 12px; }
+.toolbar .n { color: var(--muted); font-size: 13px; margin-right: auto; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; display: grid; gap: 10px; }
+.panel h2 { margin: 0; font-size: 16px; }
+.panel .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.panel label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.panel input, .panel select, .panel textarea { width: 100%; background: var(--bg); }
+.panel textarea { resize: vertical; }
+.panel .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.panel fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px 8px; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.panel fieldset legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
+.panel fieldset label { display: inline-flex; gap: 6px; align-items: center; color: var(--ink); font-size: 14px; }
+.panel fieldset input { width: auto; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.msg { font-size: 13px; } .msg.err { color: var(--no); }
+
+.sheet { overflow: auto; max-height: calc(100vh - 240px); min-height: 240px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; font-size: 13.5px; }
+th, td { border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { position: sticky; top: 0; z-index: 2; background: var(--head); font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+th.rownum, td.rownum { position: sticky; left: 0; z-index: 1; background: var(--head); color: var(--muted); font: 500 12px var(--font-mono); text-align: center; width: 40px; }
+thead th.rownum { z-index: 3; }
+td.mono { font: 500 12.5px var(--font-mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.c-idea { min-width: 380px; max-width: 520px; }
+td.c-idea p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+td.c-idea details { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+td.c-idea details summary { cursor: pointer; }
+td.c-idea details p { margin-top: 4px; color: var(--muted); }
+td.c-tags { min-width: 120px; }
+.tag { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: var(--leaf-soft); color: var(--leaf); margin: 0 4px 4px 0; }
+.prod { font-weight: 600; white-space: nowrap; }
+td.c-link { min-width: 180px; max-width: 220px; }
+td.c-link a { color: var(--leaf); overflow-wrap: anywhere; font-size: 12.5px; display: block; }
+td .cell { font-size: 13px; background: var(--bg); border-radius: 6px; padding: 5px 7px; width: 100%; min-width: 150px; }
+td textarea.cell { resize: vertical; min-height: 64px; }
+td.c-gopy { min-width: 240px; max-width: 320px; }
+td.c-gopy p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+td.c-act { min-width: 170px; }
+.acts { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.b-cho { background: var(--wait-soft); color: var(--wait); } .b-duyet { background: var(--ok-soft); color: var(--ok); } .b-khong { background: var(--no-soft); color: var(--no); }
+.st-todo { background: var(--todo-soft); color: var(--todo); } .st-doing { background: var(--doing-soft); color: var(--doing); }
+.st-done { background: var(--ok-soft); color: var(--ok); } .st-drop { background: var(--no-soft); color: var(--no); }
+select.st { font-weight: 600; border-radius: 999px; }
+.win-on { background: var(--turmeric-soft); color: var(--turmeric); border-color: var(--turmeric); font-weight: 700; }
+.when { font-size: 11.5px; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 48px 16px; }
+.empty h2 { color: var(--ink); font-size: 17px; margin: 0 0 6px; }
+.users { width: 100%; }
+.users td, .users th { white-space: nowrap; }
+footer { color: var(--muted); font-size: 12px; padding-block: 20px 32px; }
+@media (max-width: 640px) { .sheet { max-height: none; } td.c-idea { min-width: 300px; } .who { margin-left: 0; } }
+</style>
+</head>
+<body>
+
+<div class="login" id="loginView" hidden>
+  <form id="loginForm">
+    <h1>Kho Idea Enzy</h1>
+    <p>Đăng nhập để xem idea content của team.</p>
+    <label>Tên đăng nhập <input id="lUser" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
+    <label>Mật khẩu <input id="lPass" type="password" autocomplete="current-password" required></label>
+    <button type="submit" class="primary">Đăng nhập</button>
+    <span class="msg err" id="lMsg" role="alert"></span>
+  </form>
+</div>
+
+<div id="appView" hidden>
+<header class="top">
+  <div class="wrap">
+    <h1 class="brand">Kho Idea Enzy</h1>
+    <span class="sub" id="subline">Idea content mỗi ngày · leader duyệt trước khi team viết kịch bản</span>
+    <div class="who">
+      <span id="whoName"></span><span class="role" id="whoRole"></span>
+      <button type="button" class="link" id="btnUsers" hidden>Tài khoản</button>
+      <button type="button" class="link" id="btnPass">Đổi mật khẩu</button>
+      <button type="button" class="link" id="btnLogout">Đăng xuất</button>
+    </div>
+    <span class="flash" id="flash" role="status"></span>
+    <nav class="views" id="views" role="tablist" aria-label="Mục duyệt"></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <form class="panel" id="passPanel" hidden>
+    <h2>Đổi mật khẩu</h2>
+    <div class="grid">
+      <label>Mật khẩu hiện tại <input id="pCur" type="password" autocomplete="current-password" required></label>
+      <label>Mật khẩu mới (≥ 8 ký tự) <input id="pNew" type="password" autocomplete="new-password" minlength="8" required></label>
+    </div>
+    <div class="row"><button type="submit" class="primary">Lưu mật khẩu</button><button type="button" data-close="passPanel">Đóng</button><span class="msg" id="pMsg"></span></div>
+  </form>
+
+  <section class="panel" id="usersPanel" hidden>
+    <h2>Tài khoản</h2>
+    <p class="note">Nhân viên chỉ được xem. Admin được thêm, sửa, xoá, duyệt idea và quản lý tài khoản.</p>
+    <div class="sheet" style="max-height:none;min-height:0"><table class="users" id="usersTable"></table></div>
+    <form id="newUser" class="grid">
+      <label>Tên đăng nhập <input id="nUser" placeholder="vd: thuy.content" autocapitalize="none" spellcheck="false" required></label>
+      <label>Họ tên <input id="nName" placeholder="vd: Thuý"></label>
+      <label>Mật khẩu ban đầu (≥ 8 ký tự) <input id="nPass" type="text" minlength="8" required autocomplete="off"></label>
+      <label>Quyền <select id="nRole"><option value="staff">Nhân viên (chỉ xem)</option><option value="admin">Admin (toàn quyền)</option></select></label>
+      <div class="row" style="align-self:end"><button type="submit" class="primary">Tạo tài khoản</button></div>
+    </form>
+    <div class="row"><span class="msg" id="uMsg"></span><button type="button" data-close="usersPanel">Đóng</button></div>
+  </section>
+
+  <div class="filters">
+    <label>Sản phẩm
+      <select id="fProduct"><option value="">Tất cả sản phẩm</option><option>Hạt nêm chay Enzy</option><option>Rắc cơm thuần chay Enzy</option></select>
+    </label>
+    <label>Dạng content <select id="fType"><option value="">Tất cả dạng content</option></select></label>
+    <label>Người phát ngôn <select id="fSpeaker"><option value="">Tất cả người phát ngôn</option></select></label>
+    <label>Ngày <select id="fDay"><option value="">Tất cả ngày</option></select></label>
+    <label>Tìm <input id="q" type="search" placeholder="Từ khoá trong idea, voice…"></label>
+  </div>
+
+  <div class="toolbar">
+    <span class="n" id="count"></span>
+    <button type="button" id="btnCopy">Chép bảng vào Google Sheet</button>
+    <button type="button" id="btnImport" data-admin hidden>Nhập từ bảng</button>
+    <button type="button" class="primary" id="btnAdd" data-admin hidden>＋ Thêm idea</button>
+  </div>
+
+  <form class="panel" id="addPanel" hidden>
+    <h2 id="addTitle">Thêm idea</h2>
+    <div class="grid">
+      <label>Ngày <input id="aDay" type="date" required></label>
+      <label>Sản phẩm <select id="aProduct"><option>Hạt nêm chay Enzy</option><option>Rắc cơm thuần chay Enzy</option></select></label>
+      <label>Thời gian (cột sheet) <input id="aSlot" placeholder="vd: Tuần 1"></label>
+      <label>Dạng content <input id="aType" list="typeList" placeholder="vd: SALE, NHÀ MÁY"></label>
+      <label>Mục tiêu <select id="aGoal"><option>Chuyển đổi</option><option>Tương tác</option><option>Xây lòng tin</option><option>CSKH</option><option>Nhận biết</option></select></label>
+      <label>Số lượng <input id="aQty" type="number" min="1" value="1"></label>
+    </div>
+    <fieldset id="aSpeakers"><legend>Người phát ngôn</legend>
+      <label><input type="checkbox" value="Enzy" checked> Enzy</label>
+      <label><input type="checkbox" value="KOC"> KOC</label>
+      <label><input type="checkbox" value="KOL"> KOL</label>
+      <label><input type="checkbox" value="Chuyên gia"> Chuyên gia</label>
+    </fieldset>
+    <label>Idea (Intro / Hiệu ứng / Voice / Tệp khách / -> Dẫn vào…)
+      <textarea id="aIdea" rows="7" required placeholder="Intro: …&#10;Voice: …&#10;Tệp khách: …&#10;-> Dẫn vào các cảnh quay real (20s đầu) + Nhà máy"></textarea>
+    </label>
+    <label>Vì sao chọn <textarea id="aWhy" rows="2"></textarea></label>
+    <label>Link mẫu (nếu có) <input id="aRef" placeholder="https://…"></label>
+    <div class="row"><button type="submit" class="primary" id="aSubmit">Lưu vào Chờ duyệt</button><button type="button" data-close="addPanel">Đóng</button><span class="msg" id="addMsg"></span></div>
+  </form>
+
+  <form class="panel" id="importPanel" hidden>
+    <h2>Nhập từ bảng</h2>
+    <p class="note">Dán các dòng chép từ Google Sheet/Lark (10 cột: Thời gian · Loại content · Mục tiêu · Idea · Người phát ngôn · Số lượng · Tình trạng · Kết quả · Link mẫu · Link final). Bảng markdown cũng được. Hoặc dán file JSON xuất từ trang cũ. Idea nhập vào nằm ở mục Chờ duyệt.</p>
+    <div class="grid">
+      <label>Ngày gắn cho các idea <input id="iDay" type="date" required></label>
+      <label>Sản phẩm (nếu idea không ghi) <select id="iProduct"><option>Hạt nêm chay Enzy</option><option>Rắc cơm thuần chay Enzy</option></select></label>
+    </div>
+    <textarea id="iText" rows="7" aria-label="Dữ liệu dán vào"></textarea>
+    <div class="row"><button type="submit" class="primary">Nhập</button><button type="button" data-close="importPanel">Đóng</button><span class="msg" id="importMsg"></span></div>
+  </form>
+  <datalist id="typeList">
+    <option>LIVESTREAM</option><option>ẢNH</option><option>CÂU CHUYỆN</option><option>REP KHÁCH HÀNG</option><option>NHÀ MÁY</option>
+    <option>SALE</option><option>GIẢI TRÍ</option><option>THỜI SỰ</option><option>KOC</option><option>REVIEW</option><option>NẤU ĂN</option>
+    <option>GIỚI THIỆU SP</option><option>UNBOXING</option><option>PR BÁO CHÍ</option><option>POV</option><option>TREND</option>
+  </datalist>
+
+  <div class="sheet" id="sheet"><div class="empty"><h2>Đang tải kho idea…</h2></div></div>
+  <footer id="foot"></footer>
+</main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const PRODUCTS = ['Hạt nêm chay Enzy', 'Rắc cơm thuần chay Enzy'];
+const SPEAKERS = ['Enzy', 'KOC', 'KOL', 'Chuyên gia'];
+const VIEWS = [['cho', 'Chờ duyệt'], ['duyet', 'Leader đã duyệt'], ['khong', 'Không được duyệt']];
+const STATUS = [['⏳ Chưa làm', 'todo'], ['🔄 Doing', 'doing'], ['✅ Done', 'done'], ['❌ Bỏ', 'drop']];
+const stClass = (s) => (STATUS.find(([l]) => l === s) || STATUS[0])[1];
+const todayVN = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+const fmtDay = (d) => { const [y, m, dd] = String(d).split('-'); return dd ? `${dd}/${m}/${y}` : String(d || ''); };
+const fmtTime = (iso) => { try { return new Date(iso).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }); } catch { return ''; } };
+const safeUrl = (u) => (/^https:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '');
+const splitList = (s) => String(s || '').split(/[,;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean);
+const reviewOf = (i) => (i.duyet === 'duyet' || i.duyet === 'khong' ? i.duyet : 'cho');
+function prodOf(i) {
+  const raw = `${i.sanPham || ''} ${(/Sản phẩm:\s*([^\n]+)/i.exec(i.idea || '') || [])[1] || ''}`.toLowerCase();
+  if (raw.includes('rắc cơm')) return PRODUCTS[1];
+  if (raw.includes('hạt nêm')) return PRODUCTS[0];
+  return 'Chưa gắn';
+}
+const ideaBody = (t) => String(t || '').replace(/^\s*Sản phẩm:[^\n]*\n?/i, '');
+
+let me = null, ideas = [], view = 'cho', editingId = null;
+const isAdmin = () => me?.role === 'admin';
+const st = {};
+try { Object.assign(st, JSON.parse(localStorage.getItem('kho-idea-web') || '{}')); } catch {}
+if (VIEWS.some(([v]) => v === st.view)) view = st.view;
+['fProduct', 'q'].forEach((k) => { if (st[k]) $(k).value = st[k]; });
+const saveState = () => { try { localStorage.setItem('kho-idea-web', JSON.stringify({ view, fProduct: $('fProduct').value, fType: $('fType').value, fSpeaker: $('fSpeaker').value, q: $('q').value })); } catch {} };
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null) e.append(c);
+  return e;
+}
+let flashT;
+function flash(t) { $('flash').textContent = t; clearTimeout(flashT); flashT = setTimeout(() => { $('flash').textContent = ''; }, 6000); }
+
+async function api(path, { method = 'GET', body } = {}) {
+  const r = await fetch(path, { method, headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, credentials: 'same-origin' });
+  let j = {};
+  try { j = await r.json(); } catch {}
+  if (r.status === 401 && path !== '/api/login') { showLogin(); throw new Error('Phiên đăng nhập đã hết, đăng nhập lại.'); }
+  if (!r.ok) throw new Error(j.error || `Lỗi ${r.status}`);
+  return j;
+}
+
+// ---------- Đăng nhập ----------
+function showLogin() { me = null; $('appView').hidden = true; $('loginView').hidden = false; $('lUser').focus(); }
+function showApp() {
+  $('loginView').hidden = true; $('appView').hidden = false;
+  $('whoName').textContent = me.name || me.username;
+  $('whoRole').textContent = isAdmin() ? 'Admin' : 'Nhân viên';
+  $('whoRole').className = 'role' + (isAdmin() ? '' : ' staff');
+  $('btnUsers').hidden = !isAdmin();
+  document.querySelectorAll('[data-admin]').forEach((b) => { b.hidden = !isAdmin(); });
+  $('foot').textContent = isAdmin()
+    ? 'Bạn là admin: duyệt, không duyệt (kèm góp ý), sửa, xoá idea và quản lý tài khoản. Nhân viên chỉ xem.'
+    : 'Bạn đang xem với quyền nhân viên. Idea ở mục "Leader đã duyệt" là idea được giao để viết kịch bản.';
+  loadIdeas();
+}
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('lMsg').textContent = '';
+  try {
+    const j = await api('/api/login', { method: 'POST', body: { username: $('lUser').value, password: $('lPass').value } });
+    me = j.user; $('lPass').value = ''; showApp();
+  } catch (err) { $('lMsg').textContent = err.message; }
+});
+$('btnLogout').addEventListener('click', async () => { try { await api('/api/logout', { method: 'POST' }); } catch {} ideas = []; showLogin(); });
+
+// ---------- Dữ liệu ----------
+let pollT;
+async function loadIdeas() {
+  clearTimeout(pollT);
+  try {
+    const j = await api('/api/ideas');
+    ideas = j.ideas;
+    fillFilters(); render();
+  } catch (e) { if (me) flash(e.message); }
+  if (me) pollT = setTimeout(loadIdeas, 30000);
+}
+async function patch(id, body) {
+  try { await api('/api/ideas/' + encodeURIComponent(id), { method: 'PATCH', body }); await loadIdeas(); }
+  catch (e) { flash('Không lưu được: ' + e.message); }
+}
+
+function renderViews() {
+  const box = $('views'); box.replaceChildren();
+  for (const [v, label] of VIEWS) {
+    const n = ideas.filter((i) => reviewOf(i) === v && matchFilters(i)).length;
+    box.append(el('button', { type: 'button', class: 'view', role: 'tab', 'data-v': v, 'aria-selected': String(view === v),
+      onclick: () => { view = v; saveState(); render(); } }, label, el('b', { text: String(n) })));
+  }
+}
+function fillFilters() {
+  const types = new Set(), days = new Set();
+  for (const i of ideas) { splitList(i.loai).forEach((t) => types.add(t)); if (i.day) days.add(i.day); }
+  const fill = (sel, values, first, fmt = (x) => x) => {
+    const cur = sel.value || st[sel.id] || '';
+    sel.replaceChildren(el('option', { value: '', text: first }), ...values.map((v) => el('option', { value: v, text: fmt(v) })));
+    sel.value = values.includes(cur) ? cur : '';
+  };
+  fill($('fType'), [...types].sort(), 'Tất cả dạng content');
+  fill($('fSpeaker'), SPEAKERS, 'Tất cả người phát ngôn');
+  fill($('fDay'), [...days].sort().reverse(), 'Tất cả ngày', fmtDay);
+}
+function matchFilters(i) {
+  if ($('fProduct').value && prodOf(i) !== $('fProduct').value) return false;
+  if ($('fType').value && !splitList(i.loai).includes($('fType').value)) return false;
+  if ($('fSpeaker').value && !splitList(i.nguoiPhatNgon).includes($('fSpeaker').value.toUpperCase())) return false;
+  if ($('fDay').value && i.day !== $('fDay').value) return false;
+  const q = $('q').value.trim().toLowerCase();
+  if (q && !`${i.loai} ${i.mucTieu} ${i.idea} ${i.nguoiPhatNgon} ${i.why || ''} ${i.gopY || ''}`.toLowerCase().includes(q)) return false;
+  return true;
+}
+const visible = () => ideas.filter((i) => reviewOf(i) === view && matchFilters(i))
+  .sort((a, b) => (a.day === b.day ? String(a.createdAt).localeCompare(String(b.createdAt)) : a.day < b.day ? 1 : -1));
+
+function actionCell(i) {
+  const td = el('td', { class: 'c-act' });
+  const box = el('div', { class: 'acts' });
+  const r = reviewOf(i);
+  box.append(el('span', { class: 'badge b-' + r, text: VIEWS.find(([v]) => v === r)[1] }));
+  if (r !== 'cho' && i.duyetLuc) box.append(el('span', { class: 'when', text: `${i.duyetBoi ? i.duyetBoi + ' · ' : ''}${fmtTime(i.duyetLuc)}` }));
+  if (isAdmin()) {
+    if (r !== 'duyet') box.append(el('button', { type: 'button', class: 'ok', onclick: () => patch(i.id, { duyet: 'duyet' }) }, '✓ Duyệt'));
+    if (r === 'cho') {
+      const nb = el('button', { type: 'button', class: 'no' }, '✕ Không duyệt');
+      nb.addEventListener('click', () => {
+        nb.hidden = true;
+        clearTimeout(pollT); // tạm dừng làm mới khi đang viết góp ý
+        const ta = el('textarea', { class: 'cell', rows: '3', placeholder: 'Góp ý cho idea này (vì sao chưa oke, nên sửa gì)…', 'aria-label': 'Góp ý' });
+        const sendBtn = el('button', { type: 'button', class: 'no' }, 'Gửi & chuyển sang Không duyệt');
+        sendBtn.addEventListener('click', () => { if (!ta.value.trim()) { ta.focus(); ta.placeholder = 'Ghi góp ý trước khi gửi'; return; } patch(i.id, { duyet: 'khong', gopY: ta.value.trim() }); });
+        box.append(ta, sendBtn); ta.focus();
+      });
+      box.append(nb);
+    }
+    if (r !== 'cho') box.append(el('button', { type: 'button', onclick: () => patch(i.id, { duyet: 'cho' }) }, '↩ Đưa về chờ duyệt'));
+    box.append(el('button', { type: 'button', onclick: () => openEdit(i) }, '✎ Sửa'));
+    const del = el('button', { type: 'button', text: 'Xoá' });
+    let armed = false;
+    del.addEventListener('click', async () => {
+      if (!armed) { armed = true; del.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { armed = false; del.textContent = 'Xoá'; }, 3000); return; }
+      try { await api('/api/ideas/' + encodeURIComponent(i.id), { method: 'DELETE' }); await loadIdeas(); } catch (e) { flash('Không xoá được: ' + e.message); }
+    });
+    box.append(del);
+  }
+  td.append(box);
+  return td;
+}
+
+function row(i, n) {
+  const tr = el('tr');
+  const r = reviewOf(i);
+  tr.append(el('td', { class: 'rownum', text: String(n) }));
+  tr.append(el('td', { class: 'mono', text: fmtDay(i.day) }));
+  tr.append(el('td', {}, el('span', { class: 'prod', text: prodOf(i) })));
+  tr.append(el('td', { text: i.thoiGian || '' }));
+  tr.append(el('td', { class: 'c-tags' }, ...splitList(i.loai).map((t) => el('span', { class: 'tag', text: t }))));
+  tr.append(el('td', { text: i.mucTieu || '' }));
+  const ideaTd = el('td', { class: 'c-idea' }, el('p', { text: ideaBody(i.idea) }));
+  if (i.why) ideaTd.append(el('details', {}, el('summary', { text: 'Vì sao chọn' }), el('p', { text: i.why })));
+  tr.append(ideaTd);
+  tr.append(el('td', { text: i.nguoiPhatNgon || '' }));
+  tr.append(el('td', { class: 'mono', text: String(i.soLuong || 1) }));
+  const editable = isAdmin() && r === 'duyet';
+  const stv = i.tinhTrang || STATUS[0][0];
+  if (editable) {
+    const sel = el('select', { class: 'cell st st-' + stClass(stv), 'aria-label': 'Tình trạng' }, ...STATUS.map(([l]) => el('option', { value: l, text: l })));
+    sel.value = stv;
+    sel.addEventListener('change', () => patch(i.id, { tinhTrang: sel.value }));
+    tr.append(el('td', {}, sel));
+    tr.append(el('td', {}, el('button', { type: 'button', class: i.ketQua === 'WIN' ? 'win-on' : '', 'aria-pressed': String(i.ketQua === 'WIN'),
+      onclick: () => patch(i.id, { ketQua: i.ketQua === 'WIN' ? '' : 'WIN' }) }, i.ketQua === 'WIN' ? '★ WIN' : '☆ WIN')));
+  } else {
+    tr.append(el('td', {}, el('span', { class: 'badge st-' + stClass(stv), text: stv })));
+    tr.append(el('td', { text: i.ketQua || '' }));
+  }
+  const links = (s) => String(s || '').split(/\s+/).map(safeUrl).filter(Boolean).map((u) => el('a', { href: u, target: '_blank', rel: 'noopener noreferrer', text: u }));
+  tr.append(el('td', { class: 'c-link' }, ...links(i.linkMau)));
+  if (editable) {
+    const inp = el('input', { class: 'cell', type: 'url', placeholder: 'Dán link final…', 'aria-label': 'Link final', value: i.linkFinal || '' });
+    inp.addEventListener('focus', () => clearTimeout(pollT));
+    inp.addEventListener('change', () => { if (inp.value.trim() !== (i.linkFinal || '')) patch(i.id, { linkFinal: inp.value.trim() }); });
+    tr.append(el('td', { class: 'c-link' }, inp));
+  } else tr.append(el('td', { class: 'c-link' }, ...links(i.linkFinal)));
+  if (r === 'khong' && isAdmin()) {
+    const ta = el('textarea', { class: 'cell', rows: '3', 'aria-label': 'Góp ý' });
+    ta.value = i.gopY || '';
+    ta.addEventListener('focus', () => clearTimeout(pollT));
+    ta.addEventListener('change', () => { if (ta.value.trim() !== (i.gopY || '')) patch(i.id, { gopY: ta.value.trim() }); });
+    tr.append(el('td', { class: 'c-gopy' }, ta));
+  } else tr.append(el('td', { class: 'c-gopy' }, el('p', { text: i.gopY || '' })));
+  tr.append(actionCell(i));
+  return tr;
+}
+
+function render() {
+  renderViews();
+  const list = visible();
+  $('count').textContent = `${list.length} idea${$('fProduct').value ? ' · ' + $('fProduct').value : ''}`;
+  const sheet = $('sheet');
+  if (!ideas.length) {
+    sheet.replaceChildren(el('div', { class: 'empty' }, el('h2', { text: 'Chưa có idea nào' }),
+      el('p', { text: isAdmin() ? 'Agent sẽ đưa idea mới vào mục Chờ duyệt lúc 9h30 mỗi ngày. Bạn cũng có thể bấm "Thêm idea" hoặc "Nhập từ bảng".' : 'Idea mới sẽ xuất hiện ở đây khi admin đưa lên.' })));
+    return;
+  }
+  if (!list.length) {
+    const msg = { cho: 'Không còn idea nào chờ duyệt.', duyet: 'Chưa có idea nào được duyệt.', khong: 'Chưa có idea nào bị từ chối.' }[view];
+    sheet.replaceChildren(el('div', { class: 'empty' }, el('h2', { text: msg }), el('p', { text: 'Đổi bộ lọc hoặc chuyển sang mục khác ở phía trên.' })));
+    return;
+  }
+  const head = ['#', 'Ngày', 'Sản phẩm', 'Thời gian', 'Dạng content', 'Mục tiêu', 'Idea', 'Người phát ngôn', 'SL', 'Tình trạng', 'Kết quả', 'Link mẫu', 'Link final', 'Góp ý', isAdmin() && view === 'cho' ? 'Duyệt' : 'Trạng thái duyệt'];
+  sheet.replaceChildren(el('table', {},
+    el('thead', {}, el('tr', {}, ...head.map((h, k) => el('th', { class: k === 0 ? 'rownum' : '', scope: 'col', text: h })))),
+    el('tbody', {}, ...list.map((i, k) => row(i, k + 1)))));
+}
+
+// ---------- Chép / thêm / sửa / nhập ----------
+const tsvCell = (v) => { v = String(v ?? ''); return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+const toRow = (i) => [i.thoiGian, i.loai, i.mucTieu, i.idea, i.nguoiPhatNgon, i.soLuong, i.tinhTrang, i.ketQua, i.linkMau, i.linkFinal].map(tsvCell).join('\t');
+async function copyText(text, btn, done) {
+  try { await navigator.clipboard.writeText(text); }
+  catch { const ta = el('textarea'); ta.value = text; document.body.append(ta); ta.select(); try { document.execCommand('copy'); } catch {} ta.remove(); }
+  const old = btn.textContent; btn.textContent = done; setTimeout(() => { btn.textContent = old; }, 2500);
+}
+$('btnCopy').addEventListener('click', (e) => copyText(visible().map(toRow).join('\n'), e.currentTarget, '✓ Đã chép — dán vào ô THỜI GIAN'));
+const PANELS = ['addPanel', 'importPanel', 'usersPanel', 'passPanel'];
+function openPanel(id) { PANELS.forEach((p) => { $(p).hidden = p !== id || !$(p).hidden; }); if (!$(id).hidden) $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => { $(b.dataset.close).hidden = true; if (b.dataset.close === 'addPanel') editingId = null; }));
+function setSpeakers(v) { const s = splitList(v); document.querySelectorAll('#aSpeakers input').forEach((c) => { c.checked = s.includes(c.value.toUpperCase()); }); }
+$('btnAdd').addEventListener('click', () => {
+  editingId = null; $('addTitle').textContent = 'Thêm idea'; $('aSubmit').textContent = 'Lưu vào Chờ duyệt';
+  $('aDay').value = todayVN(); if ($('fProduct').value) $('aProduct').value = $('fProduct').value;
+  ['aSlot', 'aType', 'aIdea', 'aWhy', 'aRef'].forEach((k) => { $(k).value = ''; }); $('aQty').value = 1; setSpeakers('Enzy'); $('addMsg').textContent = '';
+  $('addPanel').hidden = true; openPanel('addPanel');
+});
+function openEdit(i) {
+  editingId = i.id; $('addTitle').textContent = 'Sửa idea'; $('aSubmit').textContent = 'Lưu thay đổi';
+  $('aDay').value = i.day; $('aProduct').value = prodOf(i) === PRODUCTS[1] ? PRODUCTS[1] : PRODUCTS[0];
+  $('aSlot').value = i.thoiGian || ''; $('aType').value = i.loai || ''; $('aGoal').value = i.mucTieu || 'Chuyển đổi';
+  $('aQty').value = i.soLuong || 1; setSpeakers(i.nguoiPhatNgon); $('aIdea').value = i.idea || ''; $('aWhy').value = i.why || ''; $('aRef').value = i.linkMau || '';
+  $('addMsg').textContent = ''; clearTimeout(pollT);
+  $('addPanel').hidden = true; openPanel('addPanel');
+}
+$('addPanel').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = { day: $('aDay').value, sanPham: $('aProduct').value, thoiGian: $('aSlot').value, loai: $('aType').value.toUpperCase(), mucTieu: $('aGoal').value,
+    idea: $('aIdea').value.trim(), why: $('aWhy').value.trim(), soLuong: $('aQty').value, linkMau: $('aRef').value.trim(),
+    nguoiPhatNgon: [...document.querySelectorAll('#aSpeakers input:checked')].map((c) => c.value).join(', ') || 'Enzy' };
+  try {
+    if (editingId) await api('/api/ideas/' + encodeURIComponent(editingId), { method: 'PATCH', body });
+    else await api('/api/ideas', { method: 'POST', body });
+    $('addMsg').className = 'msg'; $('addMsg').textContent = editingId ? 'Đã lưu thay đổi.' : 'Đã lưu vào Chờ duyệt.';
+    if (!editingId) { $('aIdea').value = ''; $('aWhy').value = ''; $('aRef').value = ''; } else { editingId = null; $('addPanel').hidden = true; }
+    await loadIdeas();
+  } catch (err) { $('addMsg').className = 'msg err'; $('addMsg').textContent = 'Không lưu được: ' + err.message; }
+});
+$('btnImport').addEventListener('click', () => { $('iDay').value ||= todayVN(); if ($('fProduct').value) $('iProduct').value = $('fProduct').value; openPanel('importPanel'); });
+function parseRows(text) {
+  text = String(text).replace(/\r\n?/g, '\n').trim();
+  if (!text) return [];
+  if (/^\s*\|/m.test(text) && !text.includes('\t')) {
+    return text.split('\n').filter((l) => /^\s*\|/.test(l) && !/^\s*\|[\s:|-]+\|\s*$/.test(l))
+      .map((l) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim().replace(/<br\s*\/?>/gi, '\n')));
+  }
+  const rows = []; let r = [], cell = '', q = false;
+  for (let k = 0; k < text.length; k++) {
+    const ch = text[k];
+    if (q) { if (ch === '"') { if (text[k + 1] === '"') { cell += '"'; k++; } else q = false; } else cell += ch; }
+    else if (ch === '"' && cell === '') q = true;
+    else if (ch === '\t') { r.push(cell); cell = ''; }
+    else if (ch === '\n') { r.push(cell); rows.push(r); r = []; cell = ''; }
+    else cell += ch;
+  }
+  r.push(cell); rows.push(r);
+  return rows.map((x) => x.map((c) => c.trim()));
+}
+$('importPanel').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = $('importMsg'), raw = $('iText').value.trim();
+  let items;
+  if (/^[[{]/.test(raw)) {
+    try { const j = JSON.parse(raw); items = (Array.isArray(j) ? j : j.ideas || []).map((x) => ({ ...x, day: x.day || $('iDay').value })); }
+    catch { msg.className = 'msg err'; msg.textContent = 'JSON không hợp lệ.'; return; }
+  } else {
+    items = parseRows(raw).filter((r) => r.length >= 4 && r[3] && !/^idea$/i.test(r[3])).map((r) => {
+      const guess = prodOf({ idea: r[3] });
+      return { day: $('iDay').value, sanPham: guess !== 'Chưa gắn' ? guess : $('iProduct').value, thoiGian: r[0], loai: (r[1] || '').toUpperCase(), mucTieu: r[2], idea: r[3],
+        nguoiPhatNgon: r[4] || 'Enzy', soLuong: r[5], tinhTrang: STATUS.some(([l]) => l === r[6]) ? r[6] : undefined, ketQua: r[7], linkMau: r[8], linkFinal: r[9], source: 'nhap', duyet: 'cho' };
+    });
+  }
+  if (!items.length) { msg.className = 'msg err'; msg.textContent = 'Không thấy dòng idea nào (cần ít nhất 4 cột, cột thứ 4 là Idea).'; return; }
+  let ok = 0; const errs = [];
+  for (let k = 0; k < items.length; k += 50) {
+    try { const j = await api('/api/ideas', { method: 'POST', body: { ideas: items.slice(k, k + 50) } }); ok += j.created.length; errs.push(...j.errors.map((x) => x.error)); }
+    catch (err) { errs.push(err.message); }
+  }
+  msg.className = errs.length ? 'msg err' : 'msg';
+  msg.textContent = `Đã nhập ${ok} idea.${errs.length ? ' Lỗi: ' + errs.slice(0, 3).join('; ') : ''}`;
+  if (ok) { $('iText').value = ''; await loadIdeas(); }
+});
+
+// ---------- Tài khoản ----------
+$('btnPass').addEventListener('click', () => { $('pMsg').textContent = ''; openPanel('passPanel'); });
+$('passPanel').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try { await api('/api/users/' + encodeURIComponent(me.id), { method: 'PATCH', body: { currentPassword: $('pCur').value, password: $('pNew').value } });
+    $('pMsg').className = 'msg'; $('pMsg').textContent = 'Đã đổi mật khẩu.'; $('pCur').value = ''; $('pNew').value = ''; }
+  catch (err) { $('pMsg').className = 'msg err'; $('pMsg').textContent = err.message; }
+});
+$('btnUsers').addEventListener('click', () => { openPanel('usersPanel'); loadUsers(); });
+async function loadUsers() {
+  const t = $('usersTable');
+  try {
+    const { users } = await api('/api/users');
+    const rows = users.map((u) => {
+      const tr = el('tr', {}, el('td', { text: u.username }), el('td', { text: u.name }),
+        el('td', {}, el('span', { class: 'role' + (u.role === 'admin' ? '' : ' staff'), text: u.role === 'admin' ? 'Admin' : 'Nhân viên' })),
+        el('td', { text: u.active ? 'Đang dùng' : 'Đã khoá' }));
+      const acts = el('td', {});
+      if (u.id !== me.id) {
+        acts.append(el('button', { type: 'button', onclick: async () => {
+          const pw = [...crypto.getRandomValues(new Uint8Array(9))].map((b) => 'abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 55]).join('');
+          try { await api('/api/users/' + u.id, { method: 'PATCH', body: { password: pw } }); $('uMsg').className = 'msg'; $('uMsg').textContent = `Mật khẩu mới của ${u.username}: ${pw} — gửi riêng cho người đó.`; }
+          catch (err) { $('uMsg').className = 'msg err'; $('uMsg').textContent = err.message; }
+        } }, 'Đặt lại mật khẩu'), ' ');
+        acts.append(el('button', { type: 'button', onclick: async () => {
+          try { await api('/api/users/' + u.id, { method: 'PATCH', body: { active: !u.active } }); loadUsers(); } catch (err) { $('uMsg').className = 'msg err'; $('uMsg').textContent = err.message; }
+        } }, u.active ? 'Khoá' : 'Mở khoá'), ' ');
+        const del = el('button', { type: 'button', text: 'Xoá' });
+        let armed = false;
+        del.addEventListener('click', async () => {
+          if (!armed) { armed = true; del.textContent = 'Bấm lần nữa'; setTimeout(() => { armed = false; del.textContent = 'Xoá'; }, 3000); return; }
+          try { await api('/api/users/' + u.id, { method: 'DELETE' }); loadUsers(); } catch (err) { $('uMsg').className = 'msg err'; $('uMsg').textContent = err.message; }
+        });
+        acts.append(del);
+      } else acts.append(el('span', { class: 'note', text: '(bạn)' }));
+      tr.append(acts);
+      return tr;
+    });
+    t.replaceChildren(el('thead', {}, el('tr', {}, ...['Tên đăng nhập', 'Họ tên', 'Quyền', 'Trạng thái', ''].map((h) => el('th', { text: h })))), el('tbody', {}, ...rows));
+  } catch (err) { $('uMsg').className = 'msg err'; $('uMsg').textContent = err.message; }
+}
+$('newUser').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/users', { method: 'POST', body: { username: $('nUser').value.trim().toLowerCase(), name: $('nName').value.trim(), password: $('nPass').value, role: $('nRole').value } });
+    $('uMsg').className = 'msg'; $('uMsg').textContent = `Đã tạo tài khoản ${$('nUser').value.trim().toLowerCase()}.`;
+    ['nUser', 'nName', 'nPass'].forEach((k) => { $(k).value = ''; }); $('nRole').value = 'staff';
+    loadUsers();
+  } catch (err) { $('uMsg').className = 'msg err'; $('uMsg').textContent = err.message; }
+});
+
+['fProduct', 'fType', 'fSpeaker', 'fDay', 'q'].forEach((k) => $(k).addEventListener('input', () => { saveState(); render(); }));
+document.addEventListener('visibilitychange', () => { if (!document.hidden && me) loadIdeas(); });
+
+(async () => {
+  try { const j = await api('/api/me'); me = j.user; showApp(); } catch { showLogin(); }
+})();
+</script>
+</body>
+</html>
