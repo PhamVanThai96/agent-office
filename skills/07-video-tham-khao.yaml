@@ -1,7 +1,7 @@
 id: 07-video-tham-khao
 title: "Video mẫu/tham khảo: quy tắc mặc định (CEO đã chốt)"
 summary: Khi CEO đưa video có sẵn (link hoặc file) để xem/transcript/review thì MẶC ĐỊNH là chỉ tham khảo cấu trúc hook-kịch bản-CTA để áp dụng cho Enzy; không hỏi lại, không copy claim; cảnh báo claim y tế/nội tiết.
-agents: [planner, writer, script_review, video_review, video, analyst, signal]
+agents: [ideator, planner, writer, script_review, video_review, video, analyst, signal]
 when: [video, transcript, tham khao, video mau, review video, xem video, link, facebook, tiktok, youtube, reel, hook, cta, kich ban]
 order: 7
 tags: [video mẫu, tham khảo, transcript, hook, cta, claim, nội tiết tố, pháp chế]

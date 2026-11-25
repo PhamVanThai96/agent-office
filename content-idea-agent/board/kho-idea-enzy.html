@@ -1,0 +1,455 @@
+<title>Kho Idea Enzy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: thanh trên (tên + 3 mục duyệt) → bộ lọc (sản phẩm, dạng content, người phát ngôn) → bảng kiểu Excel cuộn ngang. */
+:root {
+  --bg: #f3f5f0; --surface: #ffffff; --ink: #19211b; --muted: #5d6a60; --line: #dde3d8; --grid: #e7ebe3; --head: #eef2ea;
+  --leaf: #2d7a4c; --leaf-ink: #ffffff; --leaf-soft: #e3f0e7;
+  --turmeric: #b97a0b; --turmeric-soft: #fbf0d9;
+  --wait: #8a6a12; --wait-soft: #fbf3dc; --ok: #2d7a4c; --ok-soft: #e3f0e7; --no: #a33a3a; --no-soft: #f8e6e6;
+  --doing: #1d64c9; --doing-soft: #e4eefb; --todo: #6b7280; --todo-soft: #eef0f2;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121612; --surface: #1b211c; --ink: #e7ece5; --muted: #9aa79c; --line: #2d362f; --grid: #262e28; --head: #222a24;
+  --leaf: #5cc08a; --leaf-ink: #0b1a10; --leaf-soft: #1d3326; --turmeric: #e6b04a; --turmeric-soft: #3a2e14;
+  --wait: #e6c35c; --wait-soft: #352d14; --ok: #5cc08a; --ok-soft: #1d3326; --no: #ef8f8f; --no-soft: #3a1f1f;
+  --doing: #7fb0f5; --doing-soft: #1a2a40; --todo: #a7adb5; --todo-soft: #262b30; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121612; --surface: #1b211c; --ink: #e7ece5; --muted: #9aa79c; --line: #2d362f; --grid: #262e28; --head: #222a24;
+  --leaf: #5cc08a; --leaf-ink: #0b1a10; --leaf-soft: #1d3326; --turmeric: #e6b04a; --turmeric-soft: #3a2e14;
+  --wait: #e6c35c; --wait-soft: #352d14; --ok: #5cc08a; --ok-soft: #1d3326; --no: #ef8f8f; --no-soft: #3a1f1f;
+  --doing: #7fb0f5; --doing-soft: #1a2a40; --todo: #a7adb5; --todo-soft: #262b30; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 1600px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 14px 0; }
+h1 { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+.sub { font-size: 13px; color: var(--muted); }
+.flash { font-size: 13px; color: var(--no); margin-left: auto; }
+nav.views { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; margin-top: 6px; }
+.view { border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted); font: 600 15px var(--font-body); padding: 10px 14px; cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; border-radius: 0; }
+.view b { font: 500 12px var(--font-mono); padding: 1px 7px; border-radius: 999px; background: var(--head); color: var(--muted); }
+.view[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--leaf); }
+.view[data-v="cho"][aria-selected="true"] b { background: var(--wait-soft); color: var(--wait); }
+.view[data-v="duyet"][aria-selected="true"] b { background: var(--ok-soft); color: var(--ok); }
+.view[data-v="khong"][aria-selected="true"] b { background: var(--no-soft); color: var(--no); }
+
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; padding-block: 16px 10px; align-items: end; }
+.filters label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.filters select, .filters input { font: 500 14px var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0; text-transform: none; letter-spacing: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-bottom: 12px; }
+.toolbar .n { color: var(--muted); font-size: 13px; margin-right: auto; }
+button { font: inherit; font-size: 13px; cursor: pointer; border-radius: 8px; padding: 6px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button:hover { border-color: var(--leaf); }
+button.primary { background: var(--leaf); color: var(--leaf-ink); border-color: var(--leaf); font-weight: 600; }
+button.ok { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); font-weight: 600; }
+button.no { background: var(--no-soft); color: var(--no); border-color: var(--no); font-weight: 600; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+button:disabled { opacity: .5; cursor: default; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; display: grid; gap: 10px; }
+.panel h2 { margin: 0; font-size: 16px; }
+.panel .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.panel label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.panel input, .panel select, .panel textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+.panel textarea { resize: vertical; }
+.panel fieldset.speakers { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px 8px; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.panel fieldset.speakers legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
+.panel fieldset.speakers label { display: inline-flex; flex-direction: row; gap: 6px; align-items: center; color: var(--ink); font-size: 14px; }
+.panel fieldset.speakers input { width: auto; }
+.panel .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.msg { font-size: 13px; } .msg.err { color: var(--no); }
+
+/* Bảng kiểu Excel */
+.sheet { overflow: auto; max-height: calc(100vh - 230px); min-height: 240px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; font-size: 13.5px; }
+th, td { border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { position: sticky; top: 0; z-index: 2; background: var(--head); font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+th.rownum, td.rownum { position: sticky; left: 0; z-index: 1; background: var(--head); color: var(--muted); font: 500 12px var(--font-mono); text-align: center; width: 40px; }
+thead th.rownum { z-index: 3; }
+tbody tr:hover td { background: color-mix(in srgb, var(--leaf-soft) 45%, var(--surface)); }
+tbody tr:hover td.rownum { background: var(--head); }
+td.mono { font: 500 12.5px var(--font-mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.c-idea { min-width: 380px; max-width: 520px; }
+td.c-idea p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+td.c-idea details { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+td.c-idea details summary { cursor: pointer; }
+td.c-idea details p { margin-top: 4px; color: var(--muted); }
+td.c-tags { min-width: 120px; }
+.tag { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: var(--leaf-soft); color: var(--leaf); margin: 0 4px 4px 0; }
+.prod { font-weight: 600; white-space: nowrap; }
+td.c-link { min-width: 180px; max-width: 220px; }
+td.c-link a { color: var(--leaf); overflow-wrap: anywhere; font-size: 12.5px; }
+td input.cell, td textarea.cell, td select.cell { font: inherit; font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; width: 100%; min-width: 150px; }
+td textarea.cell { resize: vertical; min-height: 64px; }
+td.c-gopy { min-width: 240px; max-width: 320px; }
+td.c-gopy p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+td.c-act { min-width: 170px; }
+.acts { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.b-cho { background: var(--wait-soft); color: var(--wait); } .b-duyet { background: var(--ok-soft); color: var(--ok); } .b-khong { background: var(--no-soft); color: var(--no); }
+.st { font-weight: 600; border-radius: 999px; border: 1px solid transparent; }
+.st-todo { background: var(--todo-soft); color: var(--todo); } .st-doing { background: var(--doing-soft); color: var(--doing); }
+.st-done { background: var(--ok-soft); color: var(--ok); } .st-drop { background: var(--no-soft); color: var(--no); }
+.win-on { background: var(--turmeric-soft); color: var(--turmeric); border-color: var(--turmeric); font-weight: 700; }
+.when { font-size: 11.5px; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 48px 16px; }
+.empty h2 { color: var(--ink); font-size: 17px; margin: 0 0 6px; }
+footer { color: var(--muted); font-size: 12px; padding-block: 20px 32px; }
+@media (max-width: 640px) { .sheet { max-height: none; } td.c-idea { min-width: 300px; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <h1>Kho Idea Enzy</h1>
+    <span class="sub">Idea content mỗi ngày · leader duyệt trước khi team viết kịch bản</span>
+    <span class="flash" id="flash" role="status"></span>
+    <nav class="views" id="views" role="tablist" aria-label="Mục duyệt"></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="filters">
+    <label>Sản phẩm
+      <select id="fProduct"><option value="">Tất cả sản phẩm</option><option>Hạt nêm chay Enzy</option><option>Rắc cơm thuần chay Enzy</option></select>
+    </label>
+    <label>Dạng content <select id="fType"><option value="">Tất cả dạng content</option></select></label>
+    <label>Người phát ngôn <select id="fSpeaker"><option value="">Tất cả người phát ngôn</option></select></label>
+    <label>Ngày <select id="fDay"><option value="">Tất cả ngày</option></select></label>
+    <label>Tìm <input id="q" type="search" placeholder="Từ khoá trong idea, voice…"></label>
+  </div>
+
+  <div class="toolbar">
+    <span class="n" id="count"></span>
+    <button type="button" id="btnCopy">Chép bảng vào Google Sheet</button>
+    <button type="button" id="btnImport">Nhập từ bảng</button>
+    <button type="button" class="primary" id="btnAdd">＋ Thêm idea</button>
+  </div>
+
+  <form class="panel" id="addPanel" hidden>
+    <h2>Thêm idea</h2>
+    <div class="grid">
+      <label>Ngày <input id="aDay" type="date" required></label>
+      <label>Sản phẩm <select id="aProduct"><option>Hạt nêm chay Enzy</option><option>Rắc cơm thuần chay Enzy</option></select></label>
+      <label>Thời gian (cột sheet) <input id="aSlot" placeholder="vd: Tuần 1"></label>
+      <label>Dạng content <input id="aType" list="typeList" placeholder="vd: SALE, NHÀ MÁY"></label>
+      <label>Mục tiêu <select id="aGoal"><option>Chuyển đổi</option><option>Tương tác</option><option>Xây lòng tin</option><option>CSKH</option><option>Nhận biết</option></select></label>
+      <fieldset class="speakers" id="aSpeakers"><legend>Người phát ngôn</legend>
+        <label><input type="checkbox" value="Enzy" checked> Enzy</label>
+        <label><input type="checkbox" value="KOC"> KOC</label>
+        <label><input type="checkbox" value="KOL"> KOL</label>
+        <label><input type="checkbox" value="Chuyên gia"> Chuyên gia</label>
+      </fieldset>
+      <label>Số lượng <input id="aQty" type="number" min="1" value="1"></label>
+    </div>
+    <label>Idea (Intro / Hiệu ứng / Voice / Tệp khách / -> Dẫn vào…)
+      <textarea id="aIdea" rows="6" required placeholder="Intro: …&#10;Voice: …&#10;Tệp khách: …&#10;-> Dẫn vào các cảnh quay real (20s đầu) + Nhà máy"></textarea>
+    </label>
+    <label>Link mẫu (nếu có) <input id="aRef" type="url" placeholder="https://www.facebook.com/reel/…"></label>
+    <div class="row"><button type="submit" class="primary">Lưu vào Chờ duyệt</button><button type="button" data-close="addPanel">Đóng</button><span class="msg" id="addMsg"></span></div>
+  </form>
+
+  <form class="panel" id="importPanel" hidden>
+    <h2>Nhập từ bảng</h2>
+    <p class="note">Dán các dòng chép từ Google Sheet hoặc Content Idea Agent (10 cột: Thời gian · Loại content · Mục tiêu · Idea · Người phát ngôn · Số lượng · Tình trạng · Kết quả · Link mẫu · Link final). Bảng markdown cũng được. Idea nhập vào nằm ở mục Chờ duyệt.</p>
+    <div class="grid">
+      <label>Ngày gắn cho các idea <input id="iDay" type="date" required></label>
+      <label>Sản phẩm (nếu idea không ghi) <select id="iProduct"><option>Hạt nêm chay Enzy</option><option>Rắc cơm thuần chay Enzy</option></select></label>
+    </div>
+    <textarea id="iText" rows="7" aria-label="Dữ liệu dán vào"></textarea>
+    <div class="row"><button type="submit" class="primary">Nhập</button><button type="button" data-close="importPanel">Đóng</button><span class="msg" id="importMsg"></span></div>
+  </form>
+  <datalist id="typeList">
+    <option>LIVESTREAM</option><option>ẢNH</option><option>CÂU CHUYỆN</option><option>REP KHÁCH HÀNG</option><option>NHÀ MÁY</option>
+    <option>SALE</option><option>GIẢI TRÍ</option><option>THỜI SỰ</option><option>KOC</option><option>REVIEW</option><option>NẤU ĂN</option>
+    <option>GIỚI THIỆU SP</option><option>UNBOXING</option><option>TREND</option>
+  </datalist>
+
+  <div class="sheet" id="sheet"><div class="empty"><h2>Đang tải kho idea…</h2><p>Idea mới được agent đưa lên lúc 9h30 mỗi ngày.</p></div></div>
+  <footer>Leader bấm Duyệt hoặc Không duyệt (kèm góp ý). Idea được duyệt chuyển sang mục "Leader đã duyệt" để team viết kịch bản; góp ý ở mục "Không được duyệt" được agent đọc để lên idea ngày sau tốt hơn.</footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const PRODUCTS = ['Hạt nêm chay Enzy', 'Rắc cơm thuần chay Enzy'];
+const SPEAKERS = ['Enzy', 'KOC', 'KOL', 'Chuyên gia'];
+const VIEWS = [['cho', 'Chờ duyệt'], ['duyet', 'Leader đã duyệt'], ['khong', 'Không được duyệt']];
+const STATUS = [['⏳ Chưa làm', 'todo'], ['🔄 Doing', 'doing'], ['✅ Done', 'done'], ['❌ Bỏ', 'drop']];
+const stClass = (s) => (STATUS.find(([l]) => l === s) || STATUS[0])[1];
+const todayVN = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+const fmtDay = (d) => { const [y, m, dd] = String(d).split('-'); return dd ? `${dd}/${m}/${y}` : String(d || ''); };
+const fmtTime = (iso) => { try { return new Date(iso).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }); } catch { return ''; } };
+const safeUrl = (u) => (/^https:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '');
+const splitList = (s) => String(s || '').split(/[,;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean);
+const reviewOf = (i) => (i.duyet === 'duyet' || i.duyet === 'khong' ? i.duyet : 'cho');
+function prodOf(i) {
+  const raw = `${i.sanPham || ''} ${(/Sản phẩm:\s*([^\n]+)/i.exec(i.idea || '') || [])[1] || ''}`.toLowerCase();
+  if (raw.includes('rắc cơm')) return PRODUCTS[1];
+  if (raw.includes('hạt nêm')) return PRODUCTS[0];
+  return 'Chưa gắn';
+}
+const ideaBody = (t) => String(t || '').replace(/^\s*Sản phẩm:[^\n]*\n?/i, '');
+
+let db = null, canWrite = true, canApprove = false, canDelete = false, myId = null, ideas = [];
+let view = 'cho';
+const st = {};
+try { Object.assign(st, JSON.parse(localStorage.getItem('kho-idea-v2') || '{}')); } catch {}
+if (VIEWS.some(([v]) => v === st.view)) view = st.view;
+['fProduct', 'fType', 'fSpeaker', 'q'].forEach((k) => { if (st[k]) $(k).value = st[k]; });
+const saveState = () => { try { localStorage.setItem('kho-idea-v2', JSON.stringify({ view, fProduct: $('fProduct').value, fType: $('fType').value, fSpeaker: $('fSpeaker').value, q: $('q').value })); } catch {} };
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null) e.append(c);
+  return e;
+}
+let flashT;
+function flash(t) { $('flash').textContent = t; clearTimeout(flashT); flashT = setTimeout(() => { $('flash').textContent = ''; }, 5000); }
+const write = (id, patch) => db.doc('ideas/' + id).update({ ...patch, updatedAt: new Date().toISOString() }).catch((e) => {
+  if (e.code === 'invalid_argument') { canWrite = false; canApprove = false; render(); }
+  flash('Không lưu được: ' + (e.message || e.code));
+});
+
+function renderViews() {
+  const box = $('views'); box.replaceChildren();
+  for (const [v, label] of VIEWS) {
+    const n = ideas.filter((i) => reviewOf(i) === v && matchFilters(i)).length;
+    box.append(el('button', { type: 'button', class: 'view', role: 'tab', 'data-v': v, 'aria-selected': String(view === v),
+      onclick: () => { view = v; saveState(); render(); } }, label, el('b', { text: String(n) })));
+  }
+}
+function fillFilters() {
+  const types = new Set(), speakers = new Set(), days = new Set();
+  for (const i of ideas) { splitList(i.loai).forEach((t) => types.add(t)); splitList(i.nguoiPhatNgon).forEach((s) => speakers.add(s)); if (i.day) days.add(i.day); }
+  const fill = (sel, values, first, fmt = (x) => x) => {
+    const cur = sel.value || st[sel.id] || '';
+    sel.replaceChildren(el('option', { value: '', text: first }), ...values.map((v) => el('option', { value: v, text: fmt(v) })));
+    sel.value = values.includes(cur) ? cur : '';
+  };
+  fill($('fType'), [...types].sort(), 'Tất cả dạng content');
+  fill($('fSpeaker'), SPEAKERS, 'Tất cả người phát ngôn');
+  fill($('fDay'), [...days].sort().reverse(), 'Tất cả ngày', fmtDay);
+}
+function matchFilters(i) {
+  if ($('fProduct').value && prodOf(i) !== $('fProduct').value) return false;
+  if ($('fType').value && !splitList(i.loai).includes($('fType').value)) return false;
+  if ($('fSpeaker').value && !splitList(i.nguoiPhatNgon).includes($('fSpeaker').value.toUpperCase())) return false;
+  if ($('fDay').value && i.day !== $('fDay').value) return false;
+  const q = $('q').value.trim().toLowerCase();
+  if (q && !`${i.loai} ${i.mucTieu} ${i.idea} ${i.nguoiPhatNgon} ${i.why || ''} ${i.gopY || ''}`.toLowerCase().includes(q)) return false;
+  return true;
+}
+const visible = () => ideas.filter((i) => reviewOf(i) === view && matchFilters(i))
+  .sort((a, b) => (a.day === b.day ? String(a.createdAt).localeCompare(String(b.createdAt)) : a.day < b.day ? 1 : -1));
+
+// Ô hành động duyệt + góp ý theo từng mục
+function actionCell(i) {
+  const td = el('td', { class: 'c-act' });
+  const box = el('div', { class: 'acts' });
+  const r = reviewOf(i);
+  box.append(el('span', { class: 'badge b-' + r, text: VIEWS.find(([v]) => v === r)[1] }));
+  if (r !== 'cho' && i.duyetLuc) box.append(el('span', { class: 'when', text: fmtTime(i.duyetLuc) }));
+  if (canApprove) {
+    const stamp = () => ({ duyetLuc: new Date().toISOString(), duyetBoi: myId || '' });
+    if (r !== 'duyet') box.append(el('button', { type: 'button', class: 'ok', onclick: () => write(i.id, { duyet: 'duyet', ...stamp() }) }, '✓ Duyệt'));
+    if (r === 'cho') {
+      const nb = el('button', { type: 'button', class: 'no' }, '✕ Không duyệt');
+      nb.addEventListener('click', () => {
+        nb.hidden = true;
+        const ta = el('textarea', { class: 'cell', rows: '3', placeholder: 'Góp ý cho idea này (vì sao chưa oke, nên sửa gì)…', 'aria-label': 'Góp ý' });
+        const send = el('button', { type: 'button', class: 'no' }, 'Gửi & chuyển sang Không duyệt');
+        send.addEventListener('click', () => { if (!ta.value.trim()) { ta.focus(); ta.placeholder = 'Ghi góp ý trước khi gửi'; return; } write(i.id, { duyet: 'khong', gopY: ta.value.trim(), ...stamp() }); });
+        box.append(ta, send); ta.focus();
+      });
+      box.append(nb);
+    }
+    if (r !== 'cho') box.append(el('button', { type: 'button', onclick: () => write(i.id, { duyet: 'cho' }) }, '↩ Đưa về chờ duyệt'));
+  }
+  if (canDelete) {
+    const del = el('button', { type: 'button', text: 'Xoá' });
+    let armed = false;
+    del.addEventListener('click', () => {
+      if (!armed) { armed = true; del.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { armed = false; del.textContent = 'Xoá'; }, 3000); return; }
+      db.doc('ideas/' + i.id).delete().catch((e) => flash('Không xoá được: ' + (e.message || e.code)));
+    });
+    box.append(del);
+  }
+  td.append(box);
+  return td;
+}
+
+function row(i, n) {
+  const tr = el('tr');
+  const r = reviewOf(i);
+  tr.append(el('td', { class: 'rownum', text: String(n) }));
+  tr.append(el('td', { class: 'mono', text: fmtDay(i.day) }));
+  tr.append(el('td', {}, el('span', { class: 'prod', text: prodOf(i) })));
+  tr.append(el('td', { text: i.thoiGian || '' }));
+  tr.append(el('td', { class: 'c-tags' }, ...splitList(i.loai).map((t) => el('span', { class: 'tag', text: t }))));
+  tr.append(el('td', { text: i.mucTieu || '' }));
+  const ideaTd = el('td', { class: 'c-idea' }, el('p', { text: ideaBody(i.idea) }));
+  if (i.why) ideaTd.append(el('details', {}, el('summary', { text: 'Vì sao chọn' }), el('p', { text: i.why })));
+  tr.append(ideaTd);
+  tr.append(el('td', { text: i.nguoiPhatNgon || '' }));
+  tr.append(el('td', { class: 'mono', text: String(i.soLuong || 1) }));
+  // Tình trạng sản xuất + WIN + link final: chỉnh được ở mục đã duyệt
+  const editable = canWrite && r === 'duyet';
+  const stv = i.tinhTrang || STATUS[0][0];
+  if (editable) {
+    const sel = el('select', { class: 'cell st st-' + stClass(stv), 'aria-label': 'Tình trạng' }, ...STATUS.map(([l]) => el('option', { value: l, text: l })));
+    sel.value = stv;
+    sel.addEventListener('change', () => { sel.className = 'cell st st-' + stClass(sel.value); write(i.id, { tinhTrang: sel.value }); });
+    tr.append(el('td', {}, sel));
+    const win = el('button', { type: 'button', class: i.ketQua === 'WIN' ? 'win-on' : '', 'aria-pressed': String(i.ketQua === 'WIN'), text: i.ketQua === 'WIN' ? '★ WIN' : '☆ WIN' });
+    win.addEventListener('click', () => write(i.id, { ketQua: i.ketQua === 'WIN' ? '' : 'WIN' }));
+    tr.append(el('td', {}, win));
+  } else {
+    tr.append(el('td', {}, el('span', { class: 'badge st-' + stClass(stv), text: stv })));
+    tr.append(el('td', { text: i.ketQua || '' }));
+  }
+  const ref = safeUrl(i.linkMau);
+  tr.append(el('td', { class: 'c-link' }, ref ? el('a', { href: ref, target: '_blank', rel: 'noopener', text: ref }) : ''));
+  const fin = safeUrl(i.linkFinal);
+  if (editable) {
+    const inp = el('input', { class: 'cell', type: 'url', placeholder: 'Dán link final…', 'aria-label': 'Link final', value: i.linkFinal || '' });
+    inp.addEventListener('change', () => { if (inp.value.trim() !== (i.linkFinal || '')) write(i.id, { linkFinal: inp.value.trim() }); });
+    tr.append(el('td', { class: 'c-link' }, inp));
+  } else tr.append(el('td', { class: 'c-link' }, fin ? el('a', { href: fin, target: '_blank', rel: 'noopener', text: fin }) : ''));
+  // Góp ý: sửa được ở mục Không được duyệt (người duyệt), các mục khác chỉ hiển thị
+  if (r === 'khong' && canApprove) {
+    const ta = el('textarea', { class: 'cell', rows: '3', 'aria-label': 'Góp ý' });
+    ta.value = i.gopY || '';
+    ta.addEventListener('change', () => { if (ta.value.trim() !== (i.gopY || '')) write(i.id, { gopY: ta.value.trim() }); });
+    tr.append(el('td', { class: 'c-gopy' }, ta));
+  } else tr.append(el('td', { class: 'c-gopy' }, el('p', { text: i.gopY || '' })));
+  tr.append(actionCell(i));
+  return tr;
+}
+
+function render() {
+  renderViews();
+  const list = visible();
+  $('count').textContent = `${list.length} idea${$('fProduct').value ? ' · ' + $('fProduct').value : ''}`;
+  const sheet = $('sheet');
+  if (!ideas.length) {
+    sheet.replaceChildren(el('div', { class: 'empty' }, el('h2', { text: 'Chưa có idea nào' }), el('p', { text: 'Lúc 9h30 mỗi ngày agent tự đưa 5 idea Hạt nêm chay và 5 idea Rắc cơm vào mục Chờ duyệt. Bạn cũng có thể bấm "Thêm idea".' })));
+    return;
+  }
+  if (!list.length) {
+    const msg = { cho: 'Không còn idea nào chờ duyệt.', duyet: 'Chưa có idea nào được duyệt.', khong: 'Chưa có idea nào bị từ chối.' }[view];
+    sheet.replaceChildren(el('div', { class: 'empty' }, el('h2', { text: msg }), el('p', { text: 'Đổi bộ lọc hoặc chuyển sang mục khác ở phía trên.' })));
+    return;
+  }
+  const head = ['#', 'Ngày', 'Sản phẩm', 'Thời gian', 'Dạng content', 'Mục tiêu', 'Idea', 'Người phát ngôn', 'SL', 'Tình trạng', 'Kết quả', 'Link mẫu', 'Link final', 'Góp ý', view === 'cho' ? 'Duyệt' : 'Trạng thái duyệt'];
+  const table = el('table', {},
+    el('thead', {}, el('tr', {}, ...head.map((h, k) => el('th', { class: k === 0 ? 'rownum' : '', scope: 'col', text: h })))),
+    el('tbody', {}, ...list.map((i, k) => row(i, k + 1))));
+  sheet.replaceChildren(table);
+}
+
+// ---------- Chép / thêm / nhập ----------
+const tsvCell = (v) => { v = String(v ?? ''); return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+const toRow = (i) => [i.thoiGian, i.loai, i.mucTieu, i.idea, i.nguoiPhatNgon, i.soLuong, i.tinhTrang, i.ketQua, i.linkMau, i.linkFinal].map(tsvCell).join('\t');
+async function copyText(text, btn, done) {
+  try { await navigator.clipboard.writeText(text); }
+  catch { const ta = el('textarea'); ta.value = text; document.body.append(ta); ta.select(); try { document.execCommand('copy'); } catch {} ta.remove(); }
+  const old = btn.textContent; btn.textContent = done; setTimeout(() => { btn.textContent = old; }, 2500);
+}
+$('btnCopy').addEventListener('click', (e) => copyText(visible().map(toRow).join('\n'), e.currentTarget, '✓ Đã chép — dán vào ô THỜI GIAN'));
+function openPanel(id) { ['addPanel', 'importPanel'].forEach((p) => { $(p).hidden = p !== id || !$(p).hidden; }); }
+$('btnAdd').addEventListener('click', () => { $('aDay').value ||= todayVN(); if ($('fProduct').value) $('aProduct').value = $('fProduct').value; openPanel('addPanel'); });
+$('btnImport').addEventListener('click', () => { $('iDay').value ||= todayVN(); if ($('fProduct').value) $('iProduct').value = $('fProduct').value; openPanel('importPanel'); });
+document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => { $(b.dataset.close).hidden = true; }));
+
+const newDoc = (day, f) => {
+  const guess = prodOf({ idea: f.idea });
+  return {
+    day, sanPham: f.sanPham || (guess !== 'Chưa gắn' ? guess : f.fallback || ''), thoiGian: f.thoiGian || '', loai: (f.loai || '').toUpperCase(), mucTieu: f.mucTieu || '',
+    idea: f.idea || '', nguoiPhatNgon: f.nguoiPhatNgon || 'Enzy', soLuong: Number(f.soLuong) || 1,
+    tinhTrang: STATUS.some(([l]) => l === f.tinhTrang) ? f.tinhTrang : STATUS[0][0], ketQua: f.ketQua === 'WIN' ? 'WIN' : (f.ketQua || ''),
+    linkMau: f.linkMau || '', linkFinal: f.linkFinal || '', why: '', duyet: 'cho', gopY: '', source: f.source || 'tay', createdAt: new Date().toISOString(),
+  };
+};
+$('addPanel').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!db || !canWrite) return;
+  try {
+    await db.collection('ideas').add(newDoc($('aDay').value, { sanPham: $('aProduct').value, thoiGian: $('aSlot').value, loai: $('aType').value, mucTieu: $('aGoal').value, idea: $('aIdea').value.trim(), nguoiPhatNgon: [...document.querySelectorAll('#aSpeakers input:checked')].map((c) => c.value).join(', ') || 'Enzy', soLuong: $('aQty').value, linkMau: $('aRef').value.trim() }));
+    $('aIdea').value = ''; $('aRef').value = ''; $('addMsg').className = 'msg'; $('addMsg').textContent = 'Đã lưu vào Chờ duyệt.';
+  } catch (err) { $('addMsg').className = 'msg err'; $('addMsg').textContent = 'Không lưu được: ' + (err.message || err.code); }
+});
+function parseRows(text) {
+  text = String(text).replace(/\r\n?/g, '\n').trim();
+  if (!text) return [];
+  if (/^\s*\|/m.test(text) && !text.includes('\t')) {
+    return text.split('\n').filter((l) => /^\s*\|/.test(l) && !/^\s*\|[\s:|-]+\|\s*$/.test(l))
+      .map((l) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim().replace(/<br\s*\/?>/gi, '\n')));
+  }
+  const rows = []; let r = [], cell = '', q = false;
+  for (let k = 0; k < text.length; k++) {
+    const ch = text[k];
+    if (q) { if (ch === '"') { if (text[k + 1] === '"') { cell += '"'; k++; } else q = false; } else cell += ch; }
+    else if (ch === '"' && cell === '') q = true;
+    else if (ch === '\t') { r.push(cell); cell = ''; }
+    else if (ch === '\n') { r.push(cell); rows.push(r); r = []; cell = ''; }
+    else cell += ch;
+  }
+  r.push(cell); rows.push(r);
+  return rows.map((x) => x.map((c) => c.trim()));
+}
+$('importPanel').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!db || !canWrite) return;
+  const rows = parseRows($('iText').value).filter((r) => r.length >= 4 && r[3] && !/^idea$/i.test(r[3]));
+  const msg = $('importMsg');
+  if (!rows.length) { msg.className = 'msg err'; msg.textContent = 'Không thấy dòng idea nào (cần ít nhất 4 cột, cột thứ 4 là Idea).'; return; }
+  let ok = 0;
+  for (const r of rows) {
+    try {
+      await db.collection('ideas').add(newDoc($('iDay').value, { fallback: $('iProduct').value, thoiGian: r[0], loai: r[1], mucTieu: r[2], idea: r[3], nguoiPhatNgon: r[4], soLuong: r[5], tinhTrang: r[6], ketQua: r[7], linkMau: r[8], linkFinal: r[9], source: 'nhap' }));
+      ok++;
+    } catch (err) { msg.className = 'msg err'; msg.textContent = `Dừng ở dòng ${ok + 1}: ${err.message || err.code}`; return; }
+  }
+  msg.className = 'msg'; msg.textContent = `Đã nhập ${ok} idea vào Chờ duyệt.`; $('iText').value = '';
+});
+
+['fProduct', 'fType', 'fSpeaker', 'fDay', 'q'].forEach((k) => $(k).addEventListener('input', () => { saveState(); render(); }));
+
+// ---------- Kết nối kho dữ liệu chung ----------
+(async () => {
+  const timer = setTimeout(() => { if (!ideas.length) $('sheet').replaceChildren(el('div', { class: 'empty' }, el('h2', { text: 'Chưa kết nối được kho idea' }), el('p', { text: 'Mở trang khi đã đăng nhập claude.ai. Nếu vẫn vậy, tải lại trang sau ít phút.' }))); }, 10000);
+  const [dbNs, user] = await Promise.all([window.claude?.use?.('db'), window.claude?.use?.('user')]);
+  db = dbNs || null;
+  if (!db) {
+    clearTimeout(timer);
+    $('sheet').replaceChildren(el('div', { class: 'empty' }, el('h2', { text: 'Cần đăng nhập để xem kho idea' }), el('p', { text: 'Kho idea chỉ mở cho thành viên được chia sẻ. Đăng nhập claude.ai rồi mở lại link này.' })));
+    ['btnAdd', 'btnImport'].forEach((b) => { $(b).disabled = true; });
+    return;
+  }
+  if (user) {
+    canWrite = (await user.can('data.write')) !== false;
+    const [owner, editor] = await Promise.all([user.isOwner(), user.canEdit()]);
+    canApprove = Boolean(owner || editor);
+    canDelete = Boolean(editor || owner);
+    try { myId = (await user.me())?.id || null; } catch {}
+  }
+  if (!canWrite) { $('btnAdd').hidden = true; $('btnImport').hidden = true; }
+  db.collection('ideas').orderBy('day', 'desc').limit(1000).onSnapshot((snap) => {
+    clearTimeout(timer);
+    ideas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    fillFilters(); render();
+  }, (e) => { clearTimeout(timer); flash('Mất kết nối kho idea: ' + (e.message || e.code)); });
+})();
+</script>

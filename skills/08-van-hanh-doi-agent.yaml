@@ -1,7 +1,7 @@
 id: 08-van-hanh-doi-agent
 title: "Vận hành đội agent: nhật ký, mã kịch bản, QA 3 mức, sprint tuần, thư viện hook"
 summary: Quy trình học từ một đội agent marketing mẫu (nhật ký làm việc, kịch bản đánh mã, QA theo lô tuần, nghiên cứu đối thủ ra bảng + công thức hook), đã chỉnh cho đội Enzy.
-agents: [manager, planner, signal, writer, script_review, video, video_review, designer, analyst]
+agents: [ideator, manager, planner, signal, writer, script_review, video, video_review, designer, analyst]
 when: [kich ban, brief, duyet, qa, tuan, sprint, hook, doi thu, nghien cuu, nhat ky, backlog, review, thu vien, cong thuc]
 order: 8
 tags: [vận hành, nhật ký, mã kịch bản, QA, sprint tuần, hook, đối thủ, nỗi đau]

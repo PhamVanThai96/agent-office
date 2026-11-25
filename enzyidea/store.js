@@ -90,7 +90,7 @@ export function writeSkill() {
   fs.writeFileSync(SKILL_FILE, '# File SINH TỰ ĐỘNG từ data/enzyidea/ideas.json — không sửa tay.\n' + stringifyYaml({
     id: '88-enzy-idea-bank', title: `Kho idea Enzy đã trích xuất (${ideas.length} idea, từ trang "Nghiên cứu Content")`,
     summary: 'Các Big Idea có thể triển khai mà trang Enzy gợi ý (mâu thuẫn khách hàng, niềm tin cần thay đổi, vai trò riêng của Enzy…). Dùng để HỌC CÁCH LẬP LUẬN và lấy cảm hứng, không chép nguyên văn; tra bằng skill_search.',
-    agents: ['signal', 'planner', 'writer', 'analyst', 'manager'], exclude: ['assistant'], when: WHEN, tags: ['idea', 'big idea', 'enzy', 'content'], order: 88, updated: today(),
+    agents: ['signal', 'ideator', 'planner', 'writer', 'analyst', 'manager'], exclude: ['assistant'], when: WHEN, tags: ['idea', 'big idea', 'enzy', 'content'], order: 88, updated: today(),
     sections: sections.length ? sections : [{ id: 'trong', title: 'Chưa có idea', tags: [], text: 'Kho chưa có idea nào. Không bịa idea của Enzy.' }],
   }));
   return ideas.length;

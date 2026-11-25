@@ -1,14 +1,68 @@
 # File SINH TỰ ĐỘNG từ data/enzyidea/ideas.json — không sửa tay.
 id: 88-enzy-idea-bank
-title: Kho idea Enzy đã trích xuất (8 idea, từ trang "Nghiên cứu Content")
+title: Kho idea Enzy đã trích xuất (14 idea, từ trang "Nghiên cứu Content")
 summary: Các Big Idea có thể triển khai mà trang Enzy gợi ý (mâu thuẫn khách hàng, niềm tin cần thay đổi, vai trò riêng của Enzy…). Dùng để HỌC CÁCH LẬP LUẬN và lấy cảm hứng, không chép nguyên văn; tra bằng skill_search.
-agents: [signal, planner, writer, analyst, manager]
+agents: [ideator, signal, planner, writer, analyst, manager]
 exclude: [assistant]
 when: [kho idea enzy, idea bank enzy]
 tags: [idea, big idea, enzy, content]
 order: 88
-updated: 2026-11-12
+updated: 2026-11-18
 sections:
+  - id: idea-mwljkotk5
+    title: Sạp đổi công thức — trang đầu còn để trống
+    tags: [Content đột phá, CẦN XÁC MINH, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng]
+    text: |-
+      Nhóm: Content đột phá
+      CẦN XÁC MINH: Enzy sẽ mở phiên thử tối đa 20 lượt, đổi mỗi công thức tự viết hợp lệ lấy một hũ 420g nguyên niêm phong mà không bắt mua hàng hoặc khen sản phẩm. · Các công thức được phép sẽ được biên tập và chia sẻ…
+      Cần xác minh: Enzy sẽ mở phiên thử tối đa 20 lượt, đổi mỗi công thức tự viết hợp lệ lấy một hũ 420g nguyên niêm phong mà không bắt mua hàng hoặc khen sản phẩm. Các công thức được phép sẽ được biên tập và chia sẻ t…
+      Cách kiểm: Chủ shop duyệt ngân sách/hũ, địa điểm/giờ, cách tính lượt, điều kiện minh bạch, nhân sự và khả năng tổ chức; diễn tập một lượt. Chỉ công bố sau khi các điều kiện có thể thực hiện và ngày/giờ được chố…
+      Từ trang Enzy 2026-11-18.
+  - id: idea-mwljkotk4
+    title: Một tiếng lửa, một tên thành phần
+    tags: [Content branding, CẦN XÁC MINH, Phim mở bằng nền âm yên. Chữ xuất hiện, Caption, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng]
+    text: |-
+      Nhóm: Content branding
+      CẦN XÁC MINH: Cảnh và tiếng làm muối hầm trong phim phản ánh đúng nguyên liệu/quy trình liên quan đến sản phẩm Enzy.
+      Phim mở bằng nền âm yên. Chữ xuất hiện: “Tắt nhạc một chút.” [CẦN XÁC MINH: cảnh và tiếng của công đoạn làm muối hầm thực tế, đúng loại nguyên liệu được dùng cho sản phẩm Enzy; xác nhận địa điểm, thời điểm, quyền sử dụng và cách chú thích]…
+      Caption: “Một chiếc hũ có nhiều thành phần. Khi nhìn gần một chi tiết, ta dễ muốn kể thêm cả một câu chuyện về nó. Với Enzy, câu chuyện ấy cần đi cùng điều có thể xác nhận. Muối hầm là một dòng trong bảng thà…
+      Từ trang Enzy 2026-11-18.
+  - id: idea-mwljkotk3
+    title: Mở một hũ, giữ quyền quyết định hai hũ còn lại
+    tags: [Content chuyển đổi, CẦN XÁC MINH, Đầu video hiện dải chữ rõ, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng, Vai trò Enzy]
+    text: |-
+      Nhóm: Content chuyển đổi
+      CẦN XÁC MINH: Enzy sẽ thử gói ba hũ với quyền yêu cầu trả hai hũ chưa mở trong 7 ngày, hoàn giá thực trả theo từng dòng, khách chịu cước về và không hoàn cước đi nếu có.
+      Đầu video hiện dải chữ rõ: “MẪU CHƯƠNG TRÌNH ĐỀ XUẤT — CHƯA ÁP DỤNG”. Trên bàn có ba hũ nguyên niêm phong và hai vùng giấy. Người dẫn đưa một hũ vào vùng “đang thử”: “Nếu mua một gói, điều khiến bạn ngại có phải là chưa biết m…
+      Cần xác minh: Enzy sẽ thử gói ba hũ với quyền yêu cầu trả hai hũ chưa mở trong 7 ngày, hoàn giá thực trả theo từng dòng, khách chịu cước về và không hoàn cước đi nếu có.
+      Từ trang Enzy 2026-11-18.
+  - id: idea-mwljkotk2
+    title: Một mẻ phải khớp trên hai vế
+    tags: [Content chuyển đổi, CẦN XÁC MINH, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng]
+    text: |-
+      Nhóm: Content chuyển đổi
+      CẦN XÁC MINH: Hồ sơ một mẻ Enzy cho phép cân đối đầy đủ đầu vào, phần tách/hao hụt/giữ lại và thành phẩm ở phạm vi công đoạn đã chọn. · Mẻ được chọn có số hũ 420g đạt thực tế như phần kết phim nêu. Mở tại bàn có h…
+      Cần xác minh: Hồ sơ một mẻ Enzy cho phép cân đối đầy đủ đầu vào, phần tách/hao hụt/giữ lại và thành phẩm ở phạm vi công đoạn đã chọn. Mẻ được chọn có số hũ 420g đạt thực tế như phần kết phim nêu.
+      Cách kiểm: Sản xuất và QA đối chiếu phiếu cân, bổ sung nguyên liệu, ghi nhận đầu ra, thời điểm và mã mẻ; xác định sai số đo và phần chưa đo. Chủ shop duyệt bản công khai, chỉ công bố số thực. Ghép biên bản thàn…
+      Từ trang Enzy 2026-11-18.
+  - id: idea-mwljkotk1
+    title: Kiện hàng dừng ở đâu trên đường về nhà?
+    tags: [Content chuyển đổi, CẦN XÁC MINH, Khung 1 đặt câu hỏi đã khử danh tính, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng, Vai trò Enzy]
+    text: |-
+      Nhóm: Content chuyển đổi
+      CẦN XÁC MINH: Một đơn Enzy cụ thể đã xuất từ điểm và đi qua các mốc thời gian hiển thị trong carousel.
+      Khung 1 đặt câu hỏi đã khử danh tính: “Hàng ship từ nước ngoài về hay sao mà 5–7 ngày thế?”. Dưới câu hỏi là hũ Enzy và dòng: “Địa chỉ nhà máy và hành trình giao một kiện là hai thông tin cần xem riêng.” Khung 2: “Hạt nêm Enzy có nhà máy…
+      Cần xác minh: Một đơn Enzy cụ thể đã xuất từ điểm và đi qua các mốc thời gian hiển thị trong carousel.
+      Từ trang Enzy 2026-11-18.
+  - id: idea-mwljkotk0
+    title: Câu hỏi còn mở trên bàn người tư vấn
+    tags: [Content chuyển đổi, CẦN XÁC MINH, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng, Vai trò Enzy, Cầu nối đến mua hàng]
+    text: |-
+      Nhóm: Content chuyển đổi
+      CẦN XÁC MINH: Enzy có quy trình chuyển câu hỏi chưa rõ cho người phụ trách và phản hồi lại người hỏi. Mở phim ở bàn làm việc có hũ hạt nêm Enzy và tấm thẻ: “Dùng được bao lâu sau khi mở hộp?”. Chữ đầu phim: “Câu h…
+      Cần xác minh: Enzy có quy trình chuyển câu hỏi chưa rõ cho người phụ trách và phản hồi lại người hỏi.
+      Cách kiểm: Trưởng nhóm tư vấn xác nhận người nhận, cách lưu câu hỏi, khả năng phản hồi và một trường hợp đã khử dữ liệu cá nhân; QA duyệt mọi hướng dẫn sau mở nếu có. Không ấn định SLA chưa có.
+      Từ trang Enzy 2026-11-18.
   - id: idea-mwcykoyp7
     title: Kệ hàng tin bạn trước
     tags: [Content đột phá, CẦN XÁC MINH, Kết, Cần xác minh, Cách kiểm, Nếu chưa xác nhận được, Định dạng, Vai trò Enzy]

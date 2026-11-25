@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a9160"/><stop offset="1" stop-color="#235f3b"/></linearGradient></defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g)"/>
+  <path transform="translate(120,-30)" d="M690 250c-170 10-270 110-285 250 60-80 140-130 230-150-110 60-180 140-215 245 190-25 280-160 270-345z" fill="#e6b04a"/>
+  <text x="250" y="770" font-family="Helvetica Neue, Arial" font-weight="800" font-size="430" fill="#ffffff">E</text>
+</svg>

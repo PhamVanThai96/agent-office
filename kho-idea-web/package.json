@@ -1,0 +1,13 @@
+{
+  "name": "kho-idea-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Kho Idea Enzy — website độc lập: admin toàn quyền, nhân viên chỉ xem.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

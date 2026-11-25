@@ -1,7 +1,7 @@
 id: 12-tiktok-viet-nam
 title: TikTok & video ngắn tại Việt Nam
 summary: "Mục tiêu tham khảo (hiệu chỉnh theo dữ liệu kênh của team): xem hết ≥35–40% với video 15–45s, tương tác ≥5%, tin nhắn/1.000 lượt xem tăng dần."
-agents: [planner, writer, video]
+agents: [ideator, planner, writer, video]
 when: [tiktok, reels, shorts, video ngan, viral, hook, kich ban, koc, kol]
 order: 12
 tags: [tổng, quan, thuật, toán, tiên, xem, hết, thời, cấu, trúc, 45s, hook]

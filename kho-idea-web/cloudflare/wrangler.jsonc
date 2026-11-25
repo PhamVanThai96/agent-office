@@ -1,0 +1,12 @@
+{
+  // Kho Idea Enzy trên Cloudflare Workers (gói miễn phí)
+  "name": "kho-idea-enzy",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": { "directory": "../public", "binding": "ASSETS", "not_found_handling": "single-page-application" },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "kho-idea-enzy", "database_id": "THAY_BANG_ID_SAU_KHI_TAO" }
+  ],
+  "triggers": { "crons": ["0 20 * * *"] },
+  "observability": { "enabled": true }
+}

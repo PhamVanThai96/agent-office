@@ -9,6 +9,28 @@
         "start"
       ],
       "port": 3000
+    },
+    {
+      "name": "content-idea-agent",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "content-idea-agent",
+        "start"
+      ],
+      "port": 3100
+    },
+    {
+      "name": "kho-idea-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=kho-idea-web/data/test-local.env",
+        "kho-idea-web/server.js"
+      ],
+      "port": 3200,
+      "env": {
+        "PORT": "3200"
+      }
     }
   ]
 }

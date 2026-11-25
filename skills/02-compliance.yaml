@@ -1,7 +1,7 @@
 id: 02-compliance
 title: Tuân thủ quảng cáo & tính chính xác
 summary: Áp dụng cho mọi nội dung đăng công khai. Khi nghi ngờ, ghi "Cần pháp chế/Leader xác nhận" thay vì tự quyết.
-agents: [planner, writer, script_review, video, designer, video_review]
+agents: [ideator, planner, writer, script_review, video, designer, video_review]
 exclude: [assistant]
 order: 2
 tags: [tổng, quan, phải, kiểm, tra, trước, bàn, giao]

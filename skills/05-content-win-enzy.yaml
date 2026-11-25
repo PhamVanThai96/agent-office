@@ -1,7 +1,7 @@
 id: 05-content-win-enzy
 title: Yếu tố khiến content Enzy THẮNG (đào tạo đợt 1/4)
 summary: "Nguồn: 23 content \"WIN\" mạnh nhất trong 91 content thắng của page Hạt Nêm Chay (đọc từ Facebook công khai: chữ mô tả, cảm xúc/bình luận/chia sẻ,…"
-agents: [planner, writer, video, script_review, video_review]
+agents: [ideator, planner, writer, video, script_review, video_review]
 when: [kich ban, content, video, hook, caption, bai viet, quang cao, ads, idea, y tuong, brief, noi dung, backlog, review, reel]
 order: 5
 tags: [tổng, quan, hook, đầu, dòng, caption, chữ, trên, cấu, trúc, video, thắng]

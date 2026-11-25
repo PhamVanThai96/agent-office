@@ -1,7 +1,7 @@
 id: 01-brand-voice
 title: Thông tin thương hiệu & giọng điệu
 summary: Team cần điền phần trong [ngoặc vuông]. Phần nào còn để trống thì agent phải ghi rõ "Giả định:" khi dùng, không tự bịa thành sự thật.
-agents: [planner, writer, script_review, designer, video, video_review]
+agents: [ideator, planner, writer, script_review, designer, video, video_review]
 exclude: [assistant]
 order: 1
 tags: [tổng, quan, thương, hiệu, khách, hàng, mục, tiêu, giọng, điệu, cta, chuẩn]

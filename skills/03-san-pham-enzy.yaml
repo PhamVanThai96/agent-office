@@ -1,7 +1,7 @@
 id: 03-san-pham-enzy
 title: Sản phẩm Enzy (đã xác thực từ website)
 summary: "Nguồn: trang sản phẩm enzy.vn, lấy ngày 24/10/2026. Đây là thông tin WEBSITE CÔNG BỐ. Giá/ưu đãi hay đổi: trước khi đăng phải đối chiếu lại trên…"
-agents: [signal, planner, writer, script_review, video_review]
+agents: [ideator, signal, planner, writer, script_review, video_review]
 order: 3
 tags: [tổng, quan, công, dòng, thuần, chay, gắn, nhãn, hạt, nêm, enzy, rau]
 updated: 2026-10-24

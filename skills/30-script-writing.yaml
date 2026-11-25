@@ -1,7 +1,7 @@
 id: 30-script-writing
 title: Viết kịch bản video ngắn & bài đăng
 summary: Cấu trúc 5 phần (bắt buộc với video)
-agents: [writer, script_review]
+agents: [ideator, writer, script_review]
 order: 30
 tags: [cấu, trúc, phần, bắt, buộc, video, công, thức, hook, hay, dùng, khung]
 updated: 2026-10-24

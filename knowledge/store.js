@@ -85,7 +85,7 @@ const block = (a) => [
 export function writeSkills() {
   const arts = loadArticles();
   const sections = arts.slice(0, 300).map((a) => ({ id: `${a.source}-${a.id}`.slice(0, 90), title: a.title, tags: [a.brand, a.category, ...a.tags].filter(Boolean), text: block(a) }));
-  const head = { agents: ['signal', 'planner', 'writer', 'analyst'], exclude: ['assistant'], when: WHEN, tags: ['case study', 'chiến dịch', 'trend', 'brandsvietnam'] };
+  const head = { agents: ['signal', 'ideator', 'planner', 'writer', 'analyst'], exclude: ['assistant'], when: WHEN, tags: ['case study', 'chiến dịch', 'trend', 'brandsvietnam'] };
   fs.writeFileSync(CASES_SKILL, '# File SINH TỰ ĐỘNG từ knowledge/data — không sửa tay.\n' + stringifyYaml({
     id: '86-knowledge-casestudies', title: `Kho case-study & kiến thức marketing (${arts.length} bài, Brands Vietnam)`,
     summary: 'Tóm tắt case-study, phân tích chiến dịch, kiến thức marketing đã đọc; tra bằng skill_search để lấy cảm hứng/ví dụ có nguồn. Không sao chép nguyên văn, luôn dẫn link nguồn.',

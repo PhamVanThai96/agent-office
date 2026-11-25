@@ -1,7 +1,7 @@
 id: 06-khach-hang-muc-tieu
 title: "Khách hàng mục tiêu: Hạt nêm chay & Rắc cơm Enzy"
 summary: Chân dung nữ 40–60 tuổi, khó tính, thu nhập trung bình khá trở lên, nội trợ/ăn chay/quan tâm sức khoẻ; cách viết, hình ảnh và điều cần tránh để nhắm đúng.
-agents: [planner, writer, video, designer, script_review, video_review, signal]
+agents: [ideator, planner, writer, video, designer, script_review, video_review, signal]
 when: [kich ban, content, video, hook, caption, bai viet, quang cao, ads, idea, y tuong, brief, noi dung, backlog, review, reel, thiet ke, banner, thumbnail, livestream, khach hang]
 order: 6
 tags: [khách hàng, chân dung, persona, nữ 40-60, nội trợ, ăn chay, sức khoẻ, giọng văn]

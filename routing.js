@@ -26,6 +26,7 @@ export function classify(command) {
 const TITLES = {
   signal: '01 Thu thập tín hiệu: {c}',
   planner: '02-03 Backlog, ưu tiên và brief: {c}',
+  ideator: 'Lên idea kịch bản: {c}',
   writer: '04 Viết kịch bản: {c}',
   script_review: '05 Duyệt 1: Leader duyệt kịch bản',
   video: '06 Dựng video: {c}',

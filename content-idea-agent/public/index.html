@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Content Idea Agent</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --ink: #1f1d1a; --muted: #6b665e; --line: #e4dfd5;
+    --accent: #c2410c; --accent-ink: #ffffff; --soft: #fbefe6; --user: #f1ece3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161513; --panel: #1f1e1b; --ink: #ece8e1; --muted: #a29b90; --line: #34312c;
+      --accent: #f97316; --accent-ink: #1a0f06; --soft: #2a1d13; --user: #2a2824; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: baseline; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 55px); }
+  aside { border-right: 1px solid var(--line); padding: 16px; overflow-y: auto; background: var(--panel); }
+  aside h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 10px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
+  textarea { resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .check { display: flex; gap: 8px; align-items: center; margin-top: 14px; color: var(--ink); font-size: 14px; }
+  .check input { width: auto; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 12px; }
+  section.chat { display: flex; flex-direction: column; min-width: 0; }
+  #log { flex: 1; overflow-y: auto; padding: 20px; }
+  .msg { max-width: 920px; margin: 0 auto 16px; padding: 14px 16px; border-radius: 12px; }
+  .msg.user { background: var(--user); white-space: pre-wrap; }
+  .msg.bot { background: var(--panel); border: 1px solid var(--line); }
+  .msg.bot table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 14px; display: block; overflow-x: auto; }
+  .msg.bot th, .msg.bot td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  .msg.bot h3 { margin: 18px 0 6px; color: var(--accent); }
+  .msg.bot blockquote { margin: 8px 0; padding: 6px 12px; border-left: 3px solid var(--accent); background: var(--soft); }
+  .msg .tools { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .status { color: var(--muted); font-style: italic; font-size: 13px; }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .empty { max-width: 640px; margin: 60px auto; text-align: center; color: var(--muted); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+  form.composer { border-top: 1px solid var(--line); padding: 12px 20px; background: var(--panel); }
+  .composer .inner { max-width: 920px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; }
+  .composer textarea { min-height: 48px; max-height: 200px; }
+  button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-size: 15px; padding: 10px 18px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .daily { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 18px; background: var(--soft); }
+  .daily h2 { margin-bottom: 6px; }
+  .daily .state { font-size: 13px; margin: 4px 0 8px; }
+  .days { list-style: none; padding: 0; margin: 8px 0 0; max-height: 180px; overflow-y: auto; }
+  .days li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .days li:hover { background: var(--panel); }
+  .days .n { color: var(--muted); font-size: 12px; }
+  details.dcfg summary { cursor: pointer; font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .error { color: #dc2626; }
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; height: auto; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+    #log { min-height: 50vh; padding: 16px; }
+    form.composer { position: sticky; bottom: 0; padding: 12px 16px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>💡 Content Idea Agent</h1>
+  <span class="sub" id="health">Lên idea content cho team viết kịch bản</span>
+</header>
+<main>
+  <aside>
+    <div class="daily">
+      <h2>📅 Idea hằng ngày</h2>
+      <div class="state" id="dstate">Đang tải…</div>
+      <div class="btnrow">
+        <button type="button" id="drun">▶ Lên idea hôm nay ngay</button>
+      </div>
+      <ul class="days" id="days"></ul>
+      <details class="dcfg">
+        <summary>Cài đặt lịch</summary>
+        <label class="check"><input type="checkbox" id="denabled"> Tự chạy mỗi ngày</label>
+        <div class="row">
+          <div><label for="dtime">Giờ chạy</label><input id="dtime" type="time"></div>
+          <div><label for="dcount">Số idea (≥ 5)</label><input id="dcount" type="number" min="5" max="20"></div>
+        </div>
+        <label for="dfocus">Trọng tâm dặn agent</label>
+        <textarea id="dfocus" rows="2" placeholder="vd: tháng này đẩy combo Tết, ưu tiên SALE + NHÀ MÁY"></textarea>
+        <button type="button" id="dsave" style="margin-top:8px">Lưu lịch</button>
+      </details>
+    </div>
+    <h2>Brief (tuỳ chọn)</h2>
+    <div class="row">
+      <div><label for="week">Thời gian</label><input id="week" placeholder="vd: Tuần 1"></div>
+      <div><label for="count">Số idea</label><input id="count" type="number" min="1" max="20" placeholder="6"></div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="goal">Mục tiêu</label>
+        <select id="goal">
+          <option value="">— trộn —</option>
+          <option>Chuyển đổi</option>
+          <option>Tương tác</option>
+          <option>Xây lòng tin</option>
+          <option>CSKH</option>
+          <option>Nhận biết</option>
+        </select>
+      </div>
+      <div>
+        <label for="speaker">Người phát ngôn</label>
+        <select id="speaker">
+          <option value="">— trộn —</option>
+          <option>Enzy</option>
+          <option>KOC</option>
+          <option>KOL</option>
+          <option>Chuyên gia</option>
+        </select>
+      </div>
+    </div>
+    <label for="type">Loại content</label>
+    <input id="type" list="types" placeholder="vd: SALE, NHÀ MÁY, REP KHÁCH HÀNG (bỏ trống = trộn)">
+    <datalist id="types">
+      <option>LIVESTREAM</option><option>ẢNH</option><option>CÂU CHUYỆN</option><option>REP KHÁCH HÀNG</option>
+      <option>NHÀ MÁY</option><option>SALE</option><option>GIẢI TRÍ</option><option>THỜI SỰ</option><option>KOC</option>
+      <option>REVIEW</option><option>NẤU ĂN</option><option>GIỚI THIỆU SP</option><option>UNBOXING</option>
+    </datalist>
+    <label for="product">Sản phẩm</label>
+    <input id="product" placeholder="vd: Hạt nêm chay (HNC) không bột ngọt">
+    <label for="audience">Tệp khách</label>
+    <input id="audience" placeholder="vd: Healthy, dị ứng bột ngọt, nội trợ">
+    <label for="pain">Insight / nỗi đau khách hàng</label>
+    <textarea id="pain" rows="3" placeholder="vd: sợ mua phải hàng giả; chỉ dùng hạt nêm chay ngày rằm"></textarea>
+    <label for="refs">Video mẫu (link Facebook/TikTok/YouTube, mỗi dòng 1 link)</label>
+    <textarea id="refs" rows="3" placeholder="https://www.facebook.com/reel/…"></textarea>
+    <label for="sale">Chương trình sale đang chạy</label>
+    <input id="sale" placeholder="vd: Mua 2 tặng 1 đến 31/12 (bỏ trống nếu không)">
+    <label for="notes">Ghi chú thêm</label>
+    <textarea id="notes" rows="2" placeholder="vd: dịp Tết, không quay ngoài trời"></textarea>
+    <label class="check"><input type="checkbox" id="trends"> Bắt trend mới trên web</label>
+    <p class="hint">Brief gửi kèm mỗi tin nhắn. Agent tự đọc kho insight khách hàng (Inbox + Comment) và chép lời video mẫu.</p>
+    <button type="button" id="reset" style="margin-top:8px">↺ Cuộc trò chuyện mới</button>
+  </aside>
+  <section class="chat">
+    <div id="log">
+      <div class="empty" id="empty">
+        <p>Agent lên idea theo đúng bảng của team (Thời gian · Loại content · Mục tiêu · Idea · Người phát ngôn…) từ insight khách hàng thật và video mẫu — bấm "Chép vào Google Sheet" để dán thẳng vào sheet.</p>
+        <div class="chips">
+          <button type="button" data-q="Lên 6 idea cho tuần tới, tập trung chuyển đổi, đi từ nỗi đau khách hàng trong kho insight">6 idea tuần tới</button>
+          <button type="button" data-q="Lên idea xử lý nỗi lo hàng giả và hỏi hạn dùng của khách">Hàng giả · hạn dùng</button>
+          <button type="button" data-q="Học công thức các idea SALE đã WIN, lên thêm 4 idea SALE mới">Nhân bản idea WIN</button>
+        </div>
+      </div>
+    </div>
+    <form class="composer" id="form">
+      <div class="inner">
+        <textarea id="input" rows="2" placeholder="vd: Lên 6 idea chuyển đổi cho tuần 1 từ video mẫu này: https://… (Enter để gửi, Shift+Enter xuống dòng)"></textarea>
+        <button class="primary" id="send" type="submit">Gửi</button>
+      </div>
+    </form>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const log = $('log');
+let conversationId = null, busy = false;
+
+const md = (s) => DOMPurify.sanitize(marked.parse(s || ''));
+const briefFields = ['week', 'count', 'goal', 'speaker', 'type', 'product', 'audience', 'pain', 'refs', 'sale', 'notes'];
+try { const saved = JSON.parse(localStorage.getItem('idea-brief') || '{}'); briefFields.forEach((k) => { if (saved[k]) $(k).value = saved[k]; }); } catch {}
+const brief = () => {
+  const b = Object.fromEntries(briefFields.map((k) => [k, $(k).value]));
+  try { localStorage.setItem('idea-brief', JSON.stringify(b)); } catch {}
+  return { ...b, trends: $('trends').checked };
+};
+
+fetch('/api/health').then((r) => r.json()).then((h) => {
+  const via = h.backend === 'cli' ? 'Claude CLI' : 'Claude API';
+  $('health').textContent = `${h.model} qua ${via} · ${h.knowledge.length} tài liệu thương hiệu`;
+  if (h.cli && (!h.cli.found || !h.cli.loggedIn)) {
+    const w = addMsg('bot', '');
+    w.innerHTML = '<p class="error"></p>';
+    w.firstChild.textContent = !h.cli.found
+      ? 'Không tìm thấy lệnh "claude" trên máy. Cài Claude Code: curl -fsSL https://claude.ai/install.sh | bash'
+      : 'Claude CLI chưa đăng nhập hoặc đã hết phiên. Mở Terminal, chạy: claude auth login — xong thì tải lại trang này.';
+  }
+}).catch(() => {});
+
+function addMsg(cls, html) {
+  $('empty')?.remove();
+  const el = document.createElement('div');
+  el.className = 'msg ' + cls;
+  el.innerHTML = html;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  return el;
+}
+
+// Bảng idea → TSV (dòng đầu là tiêu đề thì bỏ), xuống dòng trong ô giữ nguyên để dán vào Google Sheet.
+function tableToTsv(el) {
+  const table = [...el.querySelectorAll('table')].find((t) => /IDEA/i.test(t.querySelector('tr')?.textContent || ''));
+  if (!table) return '';
+  const cell = (td) => {
+    const c = td.cloneNode(true);
+    c.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+    const v = c.textContent.trim();
+    return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  };
+  return [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.children].map(cell).join('\t')).join('\n');
+}
+async function copy(text, btn, done) {
+  try { await navigator.clipboard.writeText(text); } catch {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  const old = btn.textContent; btn.textContent = done; setTimeout(() => { btn.textContent = old; }, 2500);
+}
+
+function addTools(el, text) {
+  const t = document.createElement('div');
+  t.className = 'tools';
+  const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = fn; t.appendChild(b); };
+  const tsv = tableToTsv(el);
+  if (tsv) mk('📊 Chép vào Google Sheet', (ev) => copy(tsv, ev.target, '✓ Đã chép — dán vào ô THỜI GIAN'));
+  mk('Phát triển idea số 1 thành kịch bản', () => ask('Phát triển idea số 1 thành kịch bản chi tiết.'));
+  mk('Thêm idea khác', () => ask('Cho thêm 6 idea khác, góc khác hẳn các idea trên.'));
+  mk('📋 Chép chữ', (ev) => copy(text, ev.target, '✓ Đã chép'));
+  mk('⬇ Tải .md', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown' }));
+    a.download = `idea-kich-ban-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+  });
+  el.appendChild(t);
+}
+
+async function ask(message) {
+  if (busy || !message.trim()) return;
+  busy = true; $('send').disabled = true;
+  addMsg('user', '').textContent = message;
+  const bot = addMsg('bot', '<div class="status">Đang gửi…</div>');
+  const body = document.createElement('div'); const status = bot.firstChild;
+  bot.appendChild(body);
+  let text = '', usage = null;
+  try {
+    const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ conversationId, message, brief: brief() }) });
+    if (!res.ok || !res.body) throw new Error(await res.text() || `HTTP ${res.status}`);
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const ev = /^event: (.*)$/m.exec(chunk)?.[1]; const data = JSON.parse(/^data: (.*)$/m.exec(chunk)?.[1] || '{}');
+        if (ev === 'meta') conversationId = data.conversationId;
+        else if (ev === 'status') status.textContent = data.text;
+        else if (ev === 'text') { text += data.text; body.innerHTML = md(text); log.scrollTop = log.scrollHeight; }
+        else if (ev === 'usage') usage = data;
+        else if (ev === 'error') { status.innerHTML = ''; body.insertAdjacentHTML('beforeend', `<p class="error"></p>`); body.lastChild.textContent = data.text; }
+      }
+    }
+    status.remove();
+    if (text) addTools(bot, text);
+    if (usage) bot.insertAdjacentHTML('beforeend', `<div class="meta">${usage.model || ''} · vào ${usage.input ?? 0} (cache ${usage.cacheRead ?? 0}) · ra ${usage.output ?? 0} token</div>`);
+  } catch (e) {
+    status.className = 'error'; status.textContent = e.message;
+  } finally {
+    busy = false; $('send').disabled = false; $('input').focus();
+  }
+}
+
+$('form').addEventListener('submit', (e) => { e.preventDefault(); const v = $('input').value; $('input').value = ''; ask(v); });
+$('input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('form').requestSubmit(); } });
+document.querySelectorAll('[data-q]').forEach((b) => b.addEventListener('click', () => ask(b.dataset.q)));
+$('reset').addEventListener('click', () => { conversationId = null; log.innerHTML = '<div class="empty" id="empty"><p>Cuộc trò chuyện mới. Mô tả bạn cần idea gì.</p></div>'; });
+// ---------- Idea hằng ngày ----------
+const fmtDay = (d) => d.split('-').reverse().join('/');
+const ST = { done: '✅', partial: '⚠️', error: '❌', running: '⏳' };
+let dailyPoll = null;
+async function loadDaily() {
+  try {
+    const d = await (await fetch('/api/daily')).json();
+    const c = d.config;
+    $('denabled').checked = c.enabled; $('dtime').value = c.time; $('dcount').value = c.count; $('dfocus').value = c.focus || '';
+    const todayRec = d.days[0];
+    const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    $('dstate').textContent = d.running ? '⏳ Đang tìm kiếm và lên idea hôm nay…'
+      : (c.enabled ? `Tự chạy lúc ${c.time} mỗi ngày · tối thiểu ${c.count} idea` : 'Lịch đang tắt');
+    $('drun').disabled = d.running;
+    $('days').innerHTML = '';
+    for (const x of d.days) {
+      const li = document.createElement('li');
+      li.innerHTML = '<span></span><span class="n"></span>';
+      li.firstChild.textContent = `${ST[x.status] || ''} ${fmtDay(x.day)}${x.day === now ? ' (hôm nay)' : ''}`;
+      li.lastChild.textContent = x.status === 'error' ? 'lỗi' : `${x.count} idea`;
+      li.onclick = () => showDay(x.day);
+      $('days').appendChild(li);
+    }
+    if (!d.days.length) $('days').innerHTML = '<li class="n">Chưa có ngày nào.</li>';
+    clearTimeout(dailyPoll);
+    if (d.running) dailyPoll = setTimeout(loadDaily, 15000);
+  } catch { $('dstate').textContent = 'Không tải được lịch.'; }
+}
+async function showDay(day) {
+  const r = await fetch('/api/daily/day/' + day);
+  if (!r.ok) return;
+  const rec = await r.json();
+  $('empty')?.remove();
+  const head = addMsg('user', '');
+  head.textContent = `📅 Idea ngày ${fmtDay(day)} — ${rec.rows.length} idea`;
+  const bot = addMsg('bot', '');
+  if (rec.status === 'error') { bot.innerHTML = '<p class="error"></p>'; bot.firstChild.textContent = 'Lần chạy lỗi: ' + rec.error; return; }
+  if (rec.status === 'running') { bot.textContent = 'Đang lên idea, đợi một lát rồi bấm lại.'; return; }
+  bot.innerHTML = md(rec.markdown);
+  addTools(bot, rec.markdown);
+  head.scrollIntoView({ behavior: 'smooth' });
+}
+$('drun').onclick = async () => {
+  const r = await fetch('/api/daily/run', { method: 'POST' });
+  if (!r.ok) alert((await r.json()).error);
+  loadDaily();
+};
+$('dsave').onclick = async () => {
+  const r = await fetch('/api/daily/config', { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ enabled: $('denabled').checked, time: $('dtime').value, count: $('dcount').value, focus: $('dfocus').value }) });
+  $('dsave').textContent = r.ok ? '✓ Đã lưu' : 'Lưu lỗi';
+  setTimeout(() => { $('dsave').textContent = 'Lưu lịch'; }, 2000);
+  loadDaily();
+};
+loadDaily();
+</script>
+</body>
+</html>

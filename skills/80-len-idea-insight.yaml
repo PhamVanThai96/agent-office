@@ -1,7 +1,7 @@
 id: 80-len-idea-insight
 title: Lên idea từ insight khách hàng (hỏi lại CEO, không giả định)
 summary: Khi lên idea phải đủ thông tin CEO xác nhận + dùng kho insight (ý kiến khách thật); thiếu thì hỏi lại, không giả định, không bịa trích dẫn.
-agents: [signal, planner, writer, analyst]
+agents: [ideator, signal, planner, writer, analyst]
 exclude: [assistant]
 when: [idea, y tuong, insight, diem cham, y kien khach hang, khach hang dang]
 order: 80

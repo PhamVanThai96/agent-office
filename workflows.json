@@ -49,6 +49,63 @@
       "noSummary": true
     },
     {
+      "id": "script_idea",
+      "name": "Lên idea kịch bản",
+      "when": "lên idea/ý tưởng/concept/outline kịch bản video (TikTok, Reels, Shorts, Facebook) để chọn trước khi viết kịch bản chi tiết",
+      "template": "Lên 5 idea kịch bản TikTok cho: ",
+      "keywords": [
+        "idea kich ban",
+        "y tuong kich ban",
+        "kich ban idea",
+        "concept kich ban",
+        "outline kich ban",
+        "dan y kich ban",
+        "idea video",
+        "y tuong video",
+        "idea tiktok",
+        "y tuong tiktok",
+        "idea reels",
+        "goc ke"
+      ],
+      "unless": [
+        "gia vang",
+        "ty gia",
+        "bao cao ngay",
+        "bao cao tuan",
+        "bao cao thang",
+        "chi so",
+        "thumbnail",
+        "banner",
+        "poster",
+        "shot list"
+      ],
+      "clarify": true,
+      "insight": true,
+      "steps": [
+        "ideator",
+        {
+          "agent": "writer",
+          "when": [
+            "viet luon",
+            "viet kich ban chi tiet",
+            "kich ban chi tiet"
+          ],
+          "title": "04 Viết kịch bản chi tiết cho idea được #ideator đề xuất số 1"
+        },
+        {
+          "agent": "script_review",
+          "when": [
+            "viet luon",
+            "viet kich ban chi tiet",
+            "kich ban chi tiet"
+          ]
+        }
+      ],
+      "titles": {
+        "ideator": "Lên idea kịch bản: {c}"
+      }
+    },
+    {
       "id": "video_ref",
       "name": "Phân tích video tham khảo",
       "when": "xem video / transcript / học cấu trúc từ video mẫu (link Facebook, YouTube, TikTok…) để áp dụng cho sản phẩm Enzy",
